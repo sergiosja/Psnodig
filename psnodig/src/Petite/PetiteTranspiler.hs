@@ -25,6 +25,13 @@ transpileStmt (Loop expr stmts) = do
     mapM_ (\stmt -> tell "\t" >> transpileStmt stmt >> tell "\n") $ init stmts
     tell "\t"
     transpileStmt $ last stmts
+transpileStmt (If expr stmts) = do
+    tell "if "
+    transpileExp expr
+    tell ":\n"
+    mapM_ (\stmt -> tell "\t" >> transpileStmt stmt >> tell "\n") $ init stmts
+    tell "\t"
+    transpileStmt $ last stmts
 transpileStmt (Print expr) = do
     tell "print("
     transpileExp expr

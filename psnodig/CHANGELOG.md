@@ -18,3 +18,5 @@ and this project adheres to the
 
 - Written a transpiler, PetiteTranspiler, which takes an AST and returns code in Petite syntax
 - Written a transpiler, GourmetTranspiler, which takes an AST and returns code in Gourmet syntax
+- Added "If" statement to Petite and Gourmet
+- Thought: Are functions relevant? If this tool is used for algorithms: should not each algorithm be their own file? And would this in turn be something that solidified Psnodig's status as a DSL rather than a GPL?

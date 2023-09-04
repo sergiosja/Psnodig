@@ -24,6 +24,12 @@ transpileStmt (Loop expr stmts) = do
     tell " {\n"
     mapM_ (\stmt -> tell "\t" >> transpileStmt stmt >> tell "\n") stmts
     tell "}"
+transpileStmt (If expr stmts) = do
+    tell "if "
+    transpileExp expr
+    tell " {\n"
+    mapM_ (\stmt -> tell "\t" >> transpileStmt stmt >> tell "\n") stmts
+    tell "}"
 transpileStmt (Print expr) = do
     tell "fmt.Println("
     transpileExp expr

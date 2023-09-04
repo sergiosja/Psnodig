@@ -11,7 +11,9 @@ lexer = Token.makeTokenParser emptyDef {
            Token.identStart = letter,
            Token.identLetter = alphaNum <|> char '\'',
            Token.reservedOpNames =
-            ["=", "+", "-", "*", "/", "<", ">", "==", "!=", "print", "while", ":"]
+            [ "=", "+", "-", "*", "/", "<", ">"
+            , "==", "!=", "print", "while", ":", "if"
+            ]
        }
 
 identifier :: Parser String
@@ -72,6 +74,7 @@ parseStmt :: Parser Statement
 parseStmt = choice
     [ try parseAssignment
     , try loopStmt
+    , try ifStmt
     , printStmt
     ]
     where
@@ -86,6 +89,12 @@ parseStmt = choice
             reservedOp ":"
             statements <- many parseStmt
             return (Loop cond statements)
+        ifStmt = do
+            reservedOp "if"
+            cond <- parseExpr
+            reservedOp ":"
+            statements <- many parseStmt
+            return (If cond statements)
         printStmt = do
             reservedOp "print"
             expr <- parens parseExpr

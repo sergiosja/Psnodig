@@ -29,9 +29,15 @@ main = do
             p <- readFile file
             let selectedParser = selectParser fromLang
                 selectedTranspiler = selectTranspiler toLang        
-            if (isJust selectedParser) && (isJust selectedTranspiler) then
-                transpile p (fromJust selectedParser) (fromJust selectedTranspiler)
+            if (isJust selectedParser) && (isJust selectedTranspiler)
+            then transpile p (fromJust selectedParser) (fromJust selectedTranspiler)
             else die $ "Either " ++ fromLang ++ " or " ++ toLang ++ " not found."
+        [fromLang, file] -> do
+            p <- readFile file
+            let selectedParser = selectParser fromLang
+            if (isJust selectedParser)
+            then getAST p (fromJust selectedParser)
+            else die $ fromLang ++ " parser not found."
         _ -> die "Usage:\n stack run -- <fromLang> <toLang> <file>"
 
 selectParser :: String -> Maybe (Parser Program)
@@ -52,3 +58,10 @@ transpile program fromLang toLang = do
         (Right p) -> do
             let transpiled = execWriter $ toLang p
             writeFile "output.txt" transpiled
+
+getAST :: String -> Parser Program -> IO ()
+getAST program fromLang = do
+    let parsed = parse fromLang "" program
+    case parsed of
+        (Left err) -> putStrLn $ show err
+        (Right p) -> print p

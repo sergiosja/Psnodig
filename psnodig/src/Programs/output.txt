@@ -1,4 +1,6 @@
 x = 5
-while x > 0:
-	x = x - 1
-	print(x)
+y = x + 1
+if x != y:
+	x = y
+if x + y == x - y:
+	print(x * y)
