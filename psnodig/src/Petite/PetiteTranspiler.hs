@@ -3,7 +3,6 @@ module Petite.PetiteTranspiler (transpilePetite) where
 import Control.Monad.Writer
 import Syntax
 
--- The monad. Simple writer should do
 type PetiteTranspiler = Writer String
 
 transpileExp :: Expression -> PetiteTranspiler ()
@@ -22,8 +21,10 @@ transpileStmt (Assignment var expr) = do
 transpileStmt (Loop expr stmts) = do
     tell "while "
     transpileExp expr
-    tell ":"
-    mapM_ transpileStmt stmts
+    tell ":\n"
+    mapM_ (\stmt -> tell "\t" >> transpileStmt stmt >> tell "\n") $ init stmts
+    tell "\t"
+    transpileStmt $ last stmts
 transpileStmt (Print expr) = do
     tell "print("
     transpileExp expr
@@ -42,4 +43,4 @@ transpileOp NotEqual = tell " != "
 
 transpilePetite :: Program -> PetiteTranspiler ()
 transpilePetite (Program stmts) =
-    mapM_ transpileStmt stmts
+    mapM_ (\stmt -> transpileStmt stmt >> tell "\n") stmts

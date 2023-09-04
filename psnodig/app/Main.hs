@@ -1,5 +1,8 @@
 module Main (main) where
 
+-- Psnodig syntax
+import Syntax
+
 -- Petite lang
 import Petite.PetiteParser (parsePetite)
 import Petite.PetiteTranspiler (transpilePetite)
@@ -9,35 +12,43 @@ import Gourmet.GourmetParser (parseGourmet)
 import Gourmet.GourmetTranspiler (transpileGourmet)
 
 -- External imports
-import Control.Monad.Writer
 import System.Environment (getArgs)
 import System.Exit (die)
 import Text.Parsec
+import Text.Parsec.String
+import Control.Monad.Writer
+import Data.Maybe (isJust, fromJust)
+
+type Transpiler = Program -> Writer String ()
 
 main :: IO ()
 main = do
     args <- getArgs
     case args of
-        ["-g2p", file] -> do
+        [fromLang, toLang, file] -> do
             p <- readFile file
-            gourmet2petite p
-        ["-p2g", file] -> do
-            p <- readFile file
-            petite2gourmet p
-        _ ->
-            die "Usage:\n\
-            \ stack run -- <flag> <file>"
+            let selectedParser = selectParser fromLang
+                selectedTranspiler = selectTranspiler toLang        
+            if (isJust selectedParser) && (isJust selectedTranspiler) then
+                transpile p (fromJust selectedParser) (fromJust selectedTranspiler)
+            else die $ "Either " ++ fromLang ++ " or " ++ toLang ++ " not found."
+        _ -> die "Usage:\n stack run -- <fromLang> <toLang> <file>"
 
-gourmet2petite :: String -> IO ()
-gourmet2petite program =
-    let parsed = parse parseGourmet "" program
-    in case parsed of
-        (Left err) -> putStrLn $ show err
-        (Right p) -> putStrLn $ execWriter (transpilePetite p)
+selectParser :: String -> Maybe (Parser Program)
+selectParser "Gourmet" = Just parseGourmet
+selectParser "Petite" = Just parsePetite
+selectParser _ = Nothing
 
-petite2gourmet :: String -> IO ()
-petite2gourmet program =
-    let parsed = parse parsePetite "" program
-    in case parsed of
+selectTranspiler :: String -> Maybe Transpiler
+selectTranspiler "Gourmet" = Just transpileGourmet
+selectTranspiler "Petite" = Just transpilePetite
+selectTranspiler _ = Nothing
+
+transpile :: String -> Parser Program -> Transpiler -> IO ()
+transpile program fromLang toLang = do
+    let parsed = parse fromLang "" program
+    case parsed of
         (Left err) -> putStrLn $ show err
-        (Right p) -> putStrLn $ execWriter (transpileGourmet p)
+        (Right p) -> do
+            let transpiled = execWriter $ toLang p
+            writeFile "output.txt" transpiled

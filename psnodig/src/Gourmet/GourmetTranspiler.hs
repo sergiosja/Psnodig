@@ -3,7 +3,6 @@ module Gourmet.GourmetTranspiler (transpileGourmet) where
 import Control.Monad.Writer
 import Syntax
 
--- The monad. Simple writer should do
 type GourmetTranspiler = Writer String
 
 transpileExp :: Expression -> GourmetTranspiler ()
@@ -22,9 +21,9 @@ transpileStmt (Assignment var expr) = do
 transpileStmt (Loop expr stmts) = do
     tell "while "
     transpileExp expr
-    tell " { "
-    mapM_ transpileStmt stmts
-    tell " }"
+    tell " {\n"
+    mapM_ (\stmt -> tell "\t" >> transpileStmt stmt >> tell "\n") stmts
+    tell "}"
 transpileStmt (Print expr) = do
     tell "fmt.Println("
     transpileExp expr
@@ -43,4 +42,4 @@ transpileOp NotEqual = tell " != "
 
 transpileGourmet :: Program -> GourmetTranspiler ()
 transpileGourmet (Program stmts) =
-    mapM_ transpileStmt stmts
+    mapM_ (\stmt -> transpileStmt stmt >> tell "\n") stmts

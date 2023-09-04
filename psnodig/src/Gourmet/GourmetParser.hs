@@ -6,15 +6,6 @@ import Text.Parsec.String
 import qualified Text.Parsec.Token as Token
 import Text.Parsec.Language
 
-{-
-x := 5
-while x > 0 {
-    x = x - 1
-    print(x)
-}
--}
-
--- Define a lexer
 lexer :: Token.TokenParser ()
 lexer = Token.makeTokenParser emptyDef {
            Token.identStart = letter,

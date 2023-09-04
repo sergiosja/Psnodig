@@ -6,7 +6,6 @@ import Text.Parsec.String
 import qualified Text.Parsec.Token as Token
 import Text.Parsec.Language
 
--- Define a lexer
 lexer :: Token.TokenParser ()
 lexer = Token.makeTokenParser emptyDef {
            Token.identStart = letter,
