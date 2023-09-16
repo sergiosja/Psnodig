@@ -26,7 +26,8 @@ source-repository head
 library
   exposed-modules:
       Gourmet.GourmetParser
-      Gourmet.GourmetTranspiler
+      Gourmet.GourmetWriter
+      LaTeX.LatexWriter
       Petite.PetiteParser
       Petite.PetiteTranspiler
       Syntax
@@ -36,7 +37,8 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , mtl
     , parsec
   default-language: Haskell2010
@@ -49,7 +51,8 @@ executable psnodig-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , mtl
     , parsec
     , psnodig
@@ -59,12 +62,15 @@ test-suite psnodig-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TestArbitraries
       Paths_psnodig
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
+    , hspec
     , mtl
     , parsec
     , psnodig

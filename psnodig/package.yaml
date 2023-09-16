@@ -23,6 +23,7 @@ dependencies:
   - base >= 4.7 && < 5
   - parsec
   - mtl
+  - QuickCheck
 
 ghc-options:
   - -Wall
@@ -60,3 +61,5 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - psnodig
+      - QuickCheck
+      - hspec
