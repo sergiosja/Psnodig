@@ -1,6 +1,25 @@
-x = 5
-y = x + 1
-if x != y:
-	x = y
-if x + y == x - y:
-	print(x * y)
+func bs(A, x) {
+	ans := bs'(A, x, 0, len(A))
+	fmt.Println(ans)
+}
+
+func bs'(A, x, low, high) {
+	high := high - 1
+	if low >= high {
+		return false
+	}
+	middle := low + high / 2
+	if A[middle] == x {
+		return true
+	}
+	if A[middle] < x {
+		newlow := low + 1
+		return bs'(A, x, newlow, high)
+	}
+	if A[middle] > x {
+		newhigh := high - 1
+		return bs'(A, x, low, newhigh)
+	}
+}
+
+bs([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 5)

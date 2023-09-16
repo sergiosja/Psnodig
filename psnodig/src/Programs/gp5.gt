@@ -1,0 +1,14 @@
+func program1(y, z) {
+    x := true
+    while x != false {
+        x := false
+        fmt.Println(x)
+        if y != false {
+            k := gcd(broren, 1+1)
+            l := [1, 2, 3+4, program1(69, 69), true]
+            return false
+        }
+    }
+}
+
+program1(y)

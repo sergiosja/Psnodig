@@ -1,0 +1,6 @@
+func program4(u, io, lp) {
+    while -1 != u {
+        pass
+        fmt.Println(1 != io + lp + 1)
+    }
+}

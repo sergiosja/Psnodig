@@ -46,14 +46,3 @@ data Operator =
     | Equal
     | NotEqual
     deriving (Eq, Show, Read)
-
-{-
-* 0 or more
-+ 1 or more
-
-Program := Statement*
-Statement := Assignment | Loop | Print
-Expression := Constant | VariableExpression | BinaryExpression
-Operator := + | - | * | / | < | > | == | !=
-
--}

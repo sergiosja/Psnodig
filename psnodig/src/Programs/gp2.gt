@@ -1,0 +1,12 @@
+func program2(x, y, z) {
+    x := 5
+    y := x + 1
+
+    if x != y {
+        x := y
+    }
+
+    if x + y == x - y {
+        fmt.Println(x * y)
+    }
+}
