@@ -5,7 +5,7 @@ import Syntax
 
 type GourmetWriter = Writer String
 
--- Helper methods
+-- Helper funcs
 
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
@@ -82,11 +82,10 @@ writeFunc (Function funcname args stmts) = do
         0 -> tell ") {\n"
         1 -> tell $ head args ++ ") {\n"
         _ -> do
-            mapM_ (\a -> (tell a >> tell ", ")) (init args)
+            mapM_ (\a -> (tell $ a ++ ", ")) (init args)
             tell $ last args ++ ") {\n"
     mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
     tell "}"
-
 
 writeOp :: Operator -> GourmetWriter ()
 writeOp Plus = tell " + "

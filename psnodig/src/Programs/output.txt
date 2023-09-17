@@ -1,25 +1,45 @@
-func bs(A, x) {
-	ans := bs'(A, x, 0, len(A))
-	fmt.Println(ans)
-}
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwPrint}{print}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
 
-func bs'(A, x, low, high) {
-	high := high - 1
-	if low >= high {
-		return false
-	}
-	middle := low + high / 2
-	if A[middle] == x {
-		return true
-	}
-	if A[middle] < x {
-		newlow := low + 1
-		return bs'(A, x, newlow, high)
-	}
-	if A[middle] > x {
-		newhigh := high - 1
-		return bs'(A, x, low, newhigh)
-	}
-}
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$bs(A, x)$}{
+	$\var{ans} \gets bs'(\var{A}, \var{x}, 0, len(\var{A}))$ \;
+	\KwPrint $\var{ans}$ \;
+}\caption{Hva heter algoritmen?}
+\end{algorithm}
 
-bs([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 5)
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$bs'(A, x, low, high)$}{
+	$\var{high} \gets \var{high} - 1$ \;
+	\uIf{$\var{low} \geq \var{high}$}{
+		\Return $\KwFalse$
+	}
+	$\var{middle} \gets \var{low} + \var{high} / 2$ \;
+	\uIf{$\var{A}[\var{middle}] = \var{x}$}{
+		\Return $\KwTrue$
+	}
+	\uIf{$\var{A}[\var{middle}] < \var{x}$}{
+		$\var{newlow} \gets \var{low} + 1$ \;
+		\Return $bs'(\var{A}, \var{x}, \var{newlow}, \var{high})$
+	}
+	\uIf{$\var{A}[\var{middle}] > \var{x}$}{
+		$\var{newhigh} \gets \var{high} - 1$ \;
+		\Return $bs'(\var{A}, \var{x}, \var{low}, \var{newhigh})$
+	}
+}\caption{Hva heter algoritmen?}
+\end{algorithm}
+
+\end{document}
