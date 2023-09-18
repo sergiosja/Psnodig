@@ -1,0 +1,98 @@
+\documentclass{article}
+%\documentclass{report}
+
+% Language setting
+\usepackage[english]{babel}
+
+% Set page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+% Avoid automatic indentation
+\setlength{\parindent}{0pt}
+
+% bib
+\usepackage[backend=biber,firstinits=true,doi=false,isbn=false,url=false]{biblatex}
+\addbibresource{refs.bib}
+
+\title{Psnodig: From source to pseudo}
+\author{Sergey Jakobsen}
+
+\begin{document}
+\maketitle
+
+% link in text:
+%\href{https://www.overleaf.com/learn}{help library}
+
+% innholdsfortegnelse:
+%\renewcommand*\contentsname{Table of contents}
+%\tableofcontents
+
+\section{Introduction}
+\begin{itemize}
+    \item Set up the entire report
+    \item What is my motivation?
+    \item What is the problem I'm trying to solve?
+    \item Hypothesis
+\end{itemize}
+
+\section{Background}
+\begin{itemize}
+    \item Previous work within the scope of the thesis
+    \item Relevant related work like Pandoc and Derw
+\end{itemize}
+
+\section{Analysis}
+\begin{itemize}
+    \item What am I looking at?
+    \item Analysing papers
+    \item What is relevant to include?
+    \item Builds on the background chapter
+\end{itemize}
+
+\section{Design}
+\begin{itemize}
+    \item This is how I intend to solve the problem!
+    \item Builds on the analysis chapter
+\end{itemize}
+
+% From now on, nothing new should be introduced!
+
+\section{Implementation}
+\begin{itemize}
+    \item Which tools am I using?
+    \item Concrete implementation of the Psnodig tool
+    \item Testing: How can I be certain that Psnodig works?
+\end{itemize}
+
+\section{Evaluation}
+\begin{itemize}
+    \item Use cases
+    \item Examples of how it works in practice
+    \item Strengts, weaknesses etc.
+    \item Maybe: Test it on students that take/have taken IN2010? let them write algorithms and let the transpiler do the work
+\end{itemize}
+
+\section{Discussion}
+\begin{itemize}
+    \item How does my solution hold up against the problem?
+    \item Does it solve \textit{anything}?
+    \item Is it better than what is currently available?
+\end{itemize}
+
+\section{Conclusion}
+\begin{itemize}
+    \item Future work
+    \item Optimisations etc.
+    \item Important: Remind the reader of all the good stuff!
+\end{itemize}
+
+
+\printbibliography
+
+\end{document}
