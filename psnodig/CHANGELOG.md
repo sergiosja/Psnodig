@@ -50,24 +50,19 @@ and this project adheres to the
 - Successfully managed to transpile a (hacky) version of binary search from Gourmet to Gourmet
 - Successfully managed to transpile a (hacky) version of binary search from Gourmet to LaTeX
 
+## 0.1.0.3 - 17-09-2023
+
+- Added IfElse and Else
+- Successfully managed to transpile the lecture version of binary search from Gourmet to LaTeX
+
+## 0.1.0.4 - 18-09-2023
+
+- Added code to create PDF from LaTeX file you get from using the LaTeX writer
+- Cleaned up src/Programs folder
+
 ## TODO:
 
-- Add "else <cond> {}" and "else {}" to the language
-- if <c0> {} else if <c1> {} .. {} else if <cn> {}
-- if <c0> {} else {}
-
-k1 = if ? {}
-k2 = if ? {} else {}
-k3 = if ? {} else if ? {}
-k4 = if ? {} else if ? {} else {}
-
-data k1 = expr [stmt]
-data k2 = expr [stmt] [stmt]
-data k3 = k1 k1
-data k4 = k1 k2
-
 - Use a reader monad to traverse the AST and store relevant metadata for binary search, e.g. functions and arrays
-
 - Try more algorithms
 - Write an interpreter for Gourmet
 - Get at least 1 test actually working

@@ -1,9 +1,0 @@
-Program
-[Loop (BinaryExp NotEqual (Constant (-1)) (VariableExp "u"))
-[Print (BinaryExp NotEqual (BinaryExp Plus
-(BinaryExp Plus (Constant 1) (VariableExp "io")) (VariableExp "lp")) (Constant 1))]]
-
-Program
-[Loop (BinaryExp NotEqual (Constant (-1)) (VariableExp "u"))
-[Print (BinaryExp NotEqual (Constant 1)
-(BinaryExp Plus (VariableExp "io") (BinaryExp Plus (VariableExp "lp") (Constant 1))))]]

@@ -15,7 +15,7 @@ lexer = Token.makeTokenParser emptyDef {
             [ ":=", "+", "-", "*", "/", "<", ">", "=="
             , "!=", "fmt.Println", "while", "{", "}", "if"
             , "pass", "func", "(", ")", ">=", "<=", "true"
-            , "false", "return", "[", "]"
+            , "false", "return", "[", "]", "else"
             ]
        }
 
@@ -135,9 +135,10 @@ parseStmt = choice
             reservedOp "if"
             cond <- parseExpr
             reservedOp "{"
-            statements <- many1 parseStmt
+            statements <- many parseStmt
             reservedOp "}"
-            return (If cond statements)
+            elsePart <- optionMaybe parseElse
+            return (If cond statements elsePart)
         passStmt = do
             reservedOp "pass"
             return Pass
@@ -149,6 +150,25 @@ parseStmt = choice
             reservedOp "fmt.Println"
             expr <- parens parseExpr
             return (Print expr)
+
+parseElse :: Parser Else
+parseElse = (try parseElseIf) <|> parsePlainElse
+    where
+        parseElseIf = do
+            reservedOp "else"
+            reservedOp "if"
+            expr <- parseExpr
+            reservedOp "{"
+            stmts <- many parseStmt
+            reservedOp "}"
+            elsePart <- optionMaybe parseElse
+            return $ ElseIf expr stmts elsePart
+        parsePlainElse = do
+            reservedOp "else"
+            reservedOp "{"
+            stmts <- many parseStmt
+            reservedOp "}"
+            return $ Else stmts
 
 parseGourmet :: Parser Program
 parseGourmet = do

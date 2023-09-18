@@ -1,8 +1,0 @@
-x = 5
-y = x + 1
-
-if x != y:
-    x = y
-
-if x + y == x - y:
-    print(x * y)

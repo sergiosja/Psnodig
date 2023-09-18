@@ -59,12 +59,15 @@ writeStmt (Loop expr stmts) indent = do
     tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
-writeStmt (If expr stmts) indent = do
+writeStmt (If expr stmts maybeElse) indent = do
     tell "if "
     writeExp expr
     tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
+    case maybeElse of
+        Just elsePart -> writeElse elsePart indent
+        Nothing -> return ()
 writeStmt Pass _ = do
     tell "pass"
 writeStmt (Return expr) _ = do
@@ -74,6 +77,20 @@ writeStmt (Print expr) _ = do
     tell "fmt.Println("
     writeExp expr
     tell ")"
+
+writeElse :: Else -> Int -> GourmetWriter ()
+writeElse (ElseIf expr stmts maybeElse) indent = do
+    tell " else if " >> writeExp expr >> tell " {\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+    case maybeElse of
+        Just elsePart -> writeElse elsePart indent
+        Nothing -> return ()
+writeElse (Else stmts) indent = do
+    tell " else {\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+
 
 writeFunc :: Function -> GourmetWriter ()
 writeFunc (Function funcname args stmts) = do

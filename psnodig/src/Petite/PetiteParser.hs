@@ -1,107 +1,116 @@
 module Petite.PetiteParser (parsePetite) where
 
-import Syntax
-import Text.Parsec
-import Text.Parsec.String
-import qualified Text.Parsec.Token as Token
-import Text.Parsec.Language
+parsePetite :: Int
+parsePetite = 1
 
-lexer :: Token.TokenParser ()
-lexer = Token.makeTokenParser emptyDef {
-           Token.identStart = letter,
-           Token.identLetter = alphaNum <|> char '\'',
-           Token.reservedOpNames =
-            [ "=", "+", "-", "*", "/", "<", ">"
-            , "==", "!=", "print", "while", ":", "if"
-            ]
-       }
+-- import Syntax
+-- import Text.Parsec
+-- import Text.Parsec.String
+-- import Text.Parsec.Language
+-- import Text.Parsec.Expr (buildExpressionParser, Assoc(..), Operator(..))
+-- import qualified Text.Parsec.Token as Token
+-- -- import qualified Text.Parsec.Indent as Indent
 
-identifier :: Parser String
-identifier = Token.identifier lexer
+-- lexer :: Token.TokenParser ()
+-- lexer = Token.makeTokenParser emptyDef {
+--            Token.identStart = letter,
+--            Token.identLetter = alphaNum <|> char '\'',
+--            Token.reservedOpNames =
+--             [ "=", "+", "-", "*", "/", "<", ">"
+--             , "==", "!=", "print", "while", ":", "if"
+--             , "pass"
+--             ]
+--        }
 
-reservedOp :: String -> Parser ()
-reservedOp = Token.reservedOp lexer
+-- identifier :: Parser String
+-- identifier = Token.identifier lexer
 
-whiteSpace :: Parser ()
-whiteSpace = Token.whiteSpace lexer
+-- reservedOp :: String -> Parser ()
+-- reservedOp = Token.reservedOp lexer
 
-integer :: Parser Integer
-integer = Token.integer lexer
+-- whiteSpace :: Parser ()
+-- whiteSpace = Token.whiteSpace lexer
 
-parens :: Parser Expression -> Parser Expression
-parens = Token.parens lexer
+-- integer :: Parser Integer
+-- integer = Token.integer lexer
 
-parseOp :: Parser Operator
-parseOp = choice
-    [ reservedOp "+" >> return Plus
-    , reservedOp "-" >> return Minus
-    , reservedOp "*" >> return Times
-    , reservedOp "/" >> return Division
-    , reservedOp "<" >> return LessThan
-    , reservedOp ">" >> return GreaterThan
-    , reservedOp "==" >> return Equal
-    , reservedOp "!=" >> return NotEqual
-    ]
+-- parens :: Parser Expression -> Parser Expression
+-- parens = Token.parens lexer
 
-parseVariableExp :: Parser Expression
-parseVariableExp = do
-    var <- identifier
-    return (VariableExp var)
+-- -- indent :: Parser ()
+-- -- indent = Indent.indent lexer
 
-parseConstant :: Parser Expression
-parseConstant = do
-    value <- integer
-    return (Constant (fromIntegral value))
+-- -- dedent :: Parser ()
+-- -- dedent = Indent.dedent lexer
 
-parseBinaryExp :: Parser Expression
-parseBinaryExp = try $ do
-    expr <- parseTerm
-    binop <- parseOp
-    expr' <- parseExpr
-    return (BinaryExp binop expr expr')
+-- {- Parsing -}
 
-parseTerm :: Parser Expression
-parseTerm = try parseVariableExp <|> parseConstant
+-- parseExpr :: Parser Expression
+-- parseExpr = buildExpressionParser table term
+--     where
+--         table = [ [ Infix (reservedOp "*" >> return (BinaryExp Times)) AssocLeft
+--                     , Infix (reservedOp "/" >> return (BinaryExp Division)) AssocLeft]
+--                 , [ Infix (reservedOp "+" >> return (BinaryExp Plus)) AssocLeft
+--                     , Infix (reservedOp "-" >> return (BinaryExp Minus)) AssocLeft]
+--                 , [ Infix (reservedOp "==" >> return (BinaryExp Equal)) AssocNone
+--                     , Infix (reservedOp "!=" >> return (BinaryExp NotEqual)) AssocNone
+--                     , Infix (reservedOp "<" >> return (BinaryExp LessThan)) AssocNone
+--                     , Infix (reservedOp ">" >> return (BinaryExp GreaterThan)) AssocNone]
+--                 ]
+--         term = choice
+--             [ try parseVariableExp
+--             , parseConstant
+--             , parens parseExpr
+--             ]
+--             where
+--                 parseVariableExp = do
+--                     var <- identifier
+--                     return (VariableExp var)
 
-parseExpr :: Parser Expression
-parseExpr = choice
-    [ parseBinaryExp
-    , try parseVariableExp
-    , parseConstant
-    ]
+--                 parseConstant = do
+--                     value <- integer
+--                     return (Constant (fromIntegral value))
 
-parseStmt :: Parser Statement
-parseStmt = choice
-    [ try parseAssignment
-    , try loopStmt
-    , try ifStmt
-    , printStmt
-    ]
-    where
-        parseAssignment = do
-            var <- identifier
-            reservedOp "="
-            expr <- parseExpr
-            return (Assignment var expr)
-        loopStmt = do
-            reservedOp "while"
-            cond <- parseExpr
-            reservedOp ":"
-            statements <- many parseStmt
-            return (Loop cond statements)
-        ifStmt = do
-            reservedOp "if"
-            cond <- parseExpr
-            reservedOp ":"
-            statements <- many parseStmt
-            return (If cond statements)
-        printStmt = do
-            reservedOp "print"
-            expr <- parens parseExpr
-            return (Print expr)
+-- parseStmt :: Parser Statement
+-- parseStmt = choice
+--     [ try parseAssignment
+--     , try loopStmt
+--     , try ifStmt
+--     , try passStmt
+--     , printStmt
+--     ]
+--     where
+--         parseAssignment = do
+--             var <- identifier
+--             reservedOp "="
+--             expr <- parseExpr
+--             return (Assignment var expr)
+--         loopStmt = do
+--             reservedOp "while"
+--             cond <- parseExpr
+--             reservedOp ":"
+--             -- indent
+--             statements <- many1 parseStmt
+--             -- dedent
+--             return (Loop cond statements)
+--         ifStmt = do
+--             reservedOp "if"
+--             cond <- parseExpr
+--             reservedOp ":"
+--             -- indent
+--             statements <- many1 parseStmt
+--             -- dedent
+--             return (If cond statements)
+--         passStmt = do
+--             reservedOp "pass"
+--             return Pass
+--         printStmt = do
+--             reservedOp "print"
+--             expr <- parens parseExpr
+--             return (Print expr)
 
-parsePetite :: Parser Program
-parsePetite = do
-    whiteSpace
-    statements <- parseStmt `endBy` whiteSpace
-    return (Program statements)
+-- parsePetite :: Parser Program
+-- parsePetite = do
+--     whiteSpace
+--     statements <- parseStmt `endBy` whiteSpace
+--     return (Program statements)

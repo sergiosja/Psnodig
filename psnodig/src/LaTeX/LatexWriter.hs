@@ -16,9 +16,7 @@ writeExp :: Expression -> LatexWriter ()
 writeExp (Constant n) = tell $ show n
 writeExp (VariableExp var) = tell $ "\\var{" ++ var ++ "}"
 writeExp (BinaryExp op exp1 exp2) = do
-    writeExp exp1
-    transpileOp op
-    writeExp exp2
+    writeExp exp1 >> transpileOp op >> writeExp exp2
 writeExp (Boolean val) = case val of
     True -> tell "\\KwTrue"
     False -> tell "\\KwFalse"
@@ -61,12 +59,15 @@ writeStmt (Loop expr stmts) indent = do
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
-writeStmt (If expr stmts) indent = do
+writeStmt (If expr stmts maybeElse) indent = do
     tell "\\uIf{$"
     writeExp expr
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
+    case maybeElse of
+        Just elsePart -> writeElse elsePart indent
+        Nothing -> return ()
 writeStmt Pass _ = do
     tell "$\\var{pass}$ \\;"
 writeStmt (Return expr) _ = do
@@ -78,6 +79,20 @@ writeStmt (Print expr) _ = do
     writeExp expr
     tell "$ \\;"
 
+writeElse :: Else -> Int -> LatexWriter ()
+writeElse (ElseIf expr stmts maybeElse) indent = do
+    tell $ "\n" ++ (addIndents indent)
+    tell "\\uElseIf{$" >> writeExp expr >> tell "$}{\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+    case maybeElse of
+        Just elsePart -> writeElse elsePart indent
+        Nothing -> return ()
+writeElse (Else stmts) indent = do
+    tell $ "\n" ++ (addIndents indent)
+    tell "\\uElse{\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
 
 -- \proc{$\BinarySearch(\A, x)$}{}
 writeFunc :: Function -> LatexWriter ()
