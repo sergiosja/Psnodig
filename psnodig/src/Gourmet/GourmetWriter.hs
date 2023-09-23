@@ -22,9 +22,20 @@ writeExp (BinaryExp op exp1 exp2) = do
     writeExp exp1
     writeOp op
     writeExp exp2
-writeExp (Call functioncall) = do
+writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (Array entries) = do
+writeExp (ArrayExp array) =
+    writeArray array
+writeExp (ArrayIndex name index) = do
+    tell $ name ++ "["
+    writeExp index
+    tell "]"
+writeExp (Not expr) = do
+    tell $ "!"
+    writeExp expr
+
+writeArray :: Array -> GourmetWriter ()
+writeArray (Array entries) = do
     tell "["
     case length entries of
         0 -> tell "]"
@@ -32,10 +43,6 @@ writeExp (Array entries) = do
         _ -> do
             mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
             (writeExp $ last entries) >> tell "]"
-writeExp (ArrayExp name index) = do
-    tell $ name ++ "["
-    writeExp index
-    tell "]"
 
 writeFunctionCall :: FunctionCall -> GourmetWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
@@ -47,16 +54,34 @@ writeFunctionCall (FunctionCall funcname args) = do
             mapM_ (\arg -> (writeExp arg) >> tell ", ") (init args)
             (writeExp $ last args) >> tell ")"
 
+writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
+writeAssignmentTarget (VariableTarget var) = tell var
+writeAssignmentTarget (ArrayIndexTarget var expr) = do -- fix this when we collect arrays globally
+    tell $ var ++ "["
+    writeExp expr
+    tell "]"
 
 writeStmt :: Statement -> Int -> GourmetWriter ()
-writeStmt (Assignment var expr) _ = do
-    tell var
+writeStmt (Assignment target expr) _ = do
+    writeAssignmentTarget target
     tell " := "
     writeExp expr
 writeStmt (Loop expr stmts) indent = do
     tell "while "
     writeExp expr
     tell " {\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+writeStmt (ForEach item array stmts) indent = do
+    tell $ "for " ++ item ++ " := " ++ array ++ " {\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+writeStmt (For item from to stmts) indent = do
+    tell $ "for " ++ item ++ " := "
+    writeExp from
+    tell ", "
+    writeExp to
+    tell "{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (If expr stmts maybeElse) indent = do
@@ -73,10 +98,8 @@ writeStmt Pass _ = do
 writeStmt (Return expr) _ = do
     tell "return "
     writeExp expr
-writeStmt (Print expr) _ = do
-    tell "fmt.Println("
-    writeExp expr
-    tell ")"
+writeStmt (CallStmt functioncall) _ = do
+    writeFunctionCall functioncall
 
 writeElse :: Else -> Int -> GourmetWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
@@ -115,6 +138,8 @@ writeOp GreaterThan = tell " > "
 writeOp GreaterThanEqual = tell " >= "
 writeOp Equal = tell " == "
 writeOp NotEqual = tell " != "
+writeOp And = tell " and "
+writeOp Or = tell " or "
 
 writeGourmet :: Program -> GourmetWriter ()
 writeGourmet (Program funcs funcCall) = do

@@ -10,6 +10,15 @@ type LatexWriter = Writer String
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
 
+-- type Env = Map String [String]
+
+-- initialEnv :: Env
+-- initialEnv = Map.fromList [("arrays", []), ("funcs", [])]
+
+-- modifyEnv :: String -> String -> Env -> Env
+-- modifyEnv key value env =
+--     Map.adjust (value :) key env
+
 -- Expressions
 
 writeExp :: Expression -> LatexWriter ()
@@ -20,9 +29,20 @@ writeExp (BinaryExp op exp1 exp2) = do
 writeExp (Boolean val) = case val of
     True -> tell "\\KwTrue"
     False -> tell "\\KwFalse"
-writeExp (Call functioncall) = do
+writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (Array entries) = do
+writeExp (ArrayExp array) =
+    writeArray array
+writeExp (ArrayIndex name index) = do -- fix this later when reader monad stores arrays
+    tell $ "\\var{" ++ name ++ "}["
+    writeExp index
+    tell "]"
+writeExp (Not expr) = do
+    tell "\\KwNot "
+    writeExp expr
+
+writeArray :: Array -> LatexWriter ()
+writeArray (Array entries) = do
     tell "["
     case length entries of
         0 -> tell "]"
@@ -30,32 +50,67 @@ writeExp (Array entries) = do
         _ -> do
             mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
             (writeExp $ last entries) >> tell "]"
-writeExp (ArrayExp name index) = do -- fix this later when reader monad stores arrays
-    tell $ "\\var{" ++ name ++ "}["
-    writeExp index
-    tell "]"
+
+-- length(array), ceil(expr), floor(expr), contains(array, expr)
 
 writeFunctionCall :: FunctionCall -> LatexWriter ()
-writeFunctionCall (FunctionCall funcname args) = do
-    tell $ funcname ++ "(" -- her vil funcname mappe til FuncName eller noe, så må vi hente det. prefix \\
-    case length args of
-        0 -> tell ")"
-        1 -> (writeExp $ head args) >> tell ")"
+writeFunctionCall (FunctionCall funcname args) =
+    case funcname of
+        "length" -> do
+            tell "\\abs{"
+            writeExp $ head args
+            tell "}"
+        "ceil" -> do
+            tell "\\lceil "
+            writeExp $ head args
+            tell "\\rceil"
+        "floor" -> do
+            tell "\\lfloor "
+            writeExp $ head args
+            tell "\\rfloor"
+        "contains" -> do
+            writeExp $ last args
+            tell $ " \\in "
+            writeExp $ head args
         _ -> do
-            mapM_ (\arg -> (writeExp arg) >> tell ", ") (init args)
-            (writeExp $ last args) >> tell ")"
+            tell $ funcname ++ "(" -- her vil funcname mappe til \FuncName eller noe, så må vi hente det. prefix \\
+            case length args of
+                0 -> tell ")"
+                1 -> (writeExp $ head args) >> tell ")"
+                _ -> do
+                    mapM_ (\arg -> (writeExp arg) >> tell ", ") (init args)
+                    (writeExp $ last args) >> tell ")"
+
+writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
+writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
+writeAssignmentTarget (ArrayIndexTarget var expr) = do -- fix this when we collect arrays globally
+    tell $ "$\\var{" ++ var ++ "}["
+    writeExp expr
+    tell "]"
 
 -- Statements
 
 writeStmt :: Statement -> Int -> LatexWriter ()
-writeStmt (Assignment var expr) _ = do
-    tell $ "$\\var{" ++ var ++ "} "
+writeStmt (Assignment target expr) _ = do
+    writeAssignmentTarget target
     tell "\\gets "
     writeExp expr
     tell "$ \\;"
 writeStmt (Loop expr stmts) indent = do
     tell "\\While{$"
     writeExp expr
+    tell "$}{\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+writeStmt (ForEach item array stmts) indent = do
+    tell $ "\\For{$" ++ item ++ "$ \\forin $" ++ array ++ "$}{\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+writeStmt (For item from to stmts) indent = do
+    tell $ "\\For{$" ++ item ++ " \\gets "
+    writeExp from
+    tell $ "$ \\KwTo $"
+    writeExp to
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
@@ -74,10 +129,9 @@ writeStmt (Return expr) _ = do
     tell "\\Return $"
     writeExp expr
     tell "$"
-writeStmt (Print expr) _ = do
-    tell "\\KwPrint $"
-    writeExp expr
-    tell "$ \\;"
+writeStmt (CallStmt functioncall) _ = do
+    writeFunctionCall functioncall
+    tell " \\;"
 
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
@@ -119,13 +173,16 @@ transpileOp op = tell $ case op of
     GreaterThanEqual -> " \\geq "
     Equal            -> " = "
     NotEqual         -> " \\neq "
+    And              -> " \\land "
+    Or               -> " \\lor "
 
 
 -- Static stuff
 
 constantConfig :: LatexWriter ()
 constantConfig =
-    tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwPrint}{print}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
+    tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwPrint}{print}\n\\SetKw{KwTo}{to}\n\\SetKw{forin}{in}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n" -- kan fjerne KwPrint når jeg har hentet alle funksjoner globalt
+    -- bare inkluder feks. "to" hvis det er en for-løkke i programmet og sånt
 
 funcStart :: LatexWriter ()
 funcStart =

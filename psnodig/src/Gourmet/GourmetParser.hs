@@ -13,9 +13,11 @@ lexer = Token.makeTokenParser emptyDef {
            Token.identLetter = alphaNum <|> char '\'',
            Token.reservedOpNames =
             [ ":=", "+", "-", "*", "/", "<", ">", "=="
-            , "!=", "fmt.Println", "while", "{", "}", "if"
+            , "!=", "while", "{", "}", "if"
             , "pass", "func", "(", ")", ">=", "<=", "true"
-            , "false", "return", "[", "]", "else"
+            , "false", "return", "[", "]", "else", "&&"
+            , "||", "!", "for", ",", "contains", "length"
+            , "ceil", "floor"
             ]
        }
 
@@ -39,20 +41,23 @@ parens = Token.parens lexer
 parseExpr :: Parser Expression
 parseExpr = buildExpressionParser table term
     where
-        table = [ [ Infix (reservedOp "*" >> return (BinaryExp Times)) AssocLeft
-                    , Infix (reservedOp "/" >> return (BinaryExp Division)) AssocLeft]
-                , [ Infix (reservedOp "+" >> return (BinaryExp Plus)) AssocLeft
-                    , Infix (reservedOp "-" >> return (BinaryExp Minus)) AssocLeft]
-                , [ Infix (reservedOp "==" >> return (BinaryExp Equal)) AssocNone
-                    , Infix (reservedOp "!=" >> return (BinaryExp NotEqual)) AssocNone
-                    , Infix (reservedOp "<" >> return (BinaryExp LessThan)) AssocNone
-                    , Infix (reservedOp "<=" >> return (BinaryExp LessThanEqual)) AssocNone
-                    , Infix (reservedOp ">" >> return (BinaryExp GreaterThan)) AssocNone
-                    , Infix (reservedOp ">=" >> return (BinaryExp GreaterThanEqual)) AssocNone]
+        table = [ [ Infix (BinaryExp Times <$ reservedOp "*") AssocLeft
+                    , Infix (BinaryExp Division <$ reservedOp "/") AssocLeft]
+                , [ Infix (BinaryExp Plus <$ reservedOp "+") AssocLeft
+                    , Infix (BinaryExp Minus <$ reservedOp "-") AssocLeft]
+                , [ Infix (BinaryExp And <$ reservedOp "&&") AssocLeft
+                    , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
+                , [ Infix (BinaryExp Equal <$ reservedOp "==") AssocNone
+                    , Infix (BinaryExp NotEqual <$ reservedOp "!=") AssocNone
+                    , Infix (BinaryExp LessThan <$ reservedOp "<") AssocNone
+                    , Infix (BinaryExp LessThanEqual <$ reservedOp "<=") AssocNone
+                    , Infix (BinaryExp GreaterThan <$ reservedOp ">") AssocNone
+                    , Infix (BinaryExp GreaterThanEqual <$ reservedOp ">=") AssocNone]
                 ]
         term = choice
-            [ try parseArray
+            [ try parseNotExp
             , try parseArrayExp
+            , try parseArrayIndexExp
             , try parseFunctionCallExp
             , try parseBool
             , try parseVariableExp
@@ -60,34 +65,34 @@ parseExpr = buildExpressionParser table term
             , try $ parens parseExpr
             ]
             where
-                parseArray = do
-                    reservedOp "["
-                    entries <- parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
-                    reservedOp "]"
-                    return $ Array entries
-                parseArrayExp = do
-                    array <- identifier
-                    reservedOp "["
-                    index <- parseExpr
-                    reservedOp "]"
-                    return $ ArrayExp array index
-                parseFunctionCallExp = do
-                    functioncall <- parseFunctionCall
-                    return $ Call functioncall
-                parseVariableExp = do
-                    var <- identifier
-                    return (VariableExp var)
-                parseConstant = do
-                    value <- integer
-                    return (Constant (fromIntegral value))
+                parseNotExp =
+                    Not <$> (reservedOp "!" *> parseExpr)
+                parseArrayExp =
+                    ArrayExp <$> parseArray
+                parseArrayIndexExp =
+                    ArrayIndex <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
+                parseFunctionCallExp =
+                    CallExp <$> parseFunctionCall
+                parseVariableExp =
+                    VariableExp <$> identifier
+                parseConstant =
+                    Constant .fromIntegral <$> integer
                 parseBool = parseTrue <|> parseFalse
                     where
-                        parseTrue = do
-                            reservedOp "true"
-                            return (Boolean True)
-                        parseFalse = do
-                            reservedOp "false"
-                            return (Boolean False)
+                        parseTrue = Boolean True <$ reservedOp "true"
+                        parseFalse = Boolean False <$ reservedOp "false"
+{-
+<$> betyr: bruk det som kommer nå som args
+a1 >> a2 betyr: les a1 og a2 men discard res av a1
+<* betyr: les men discard resultat
+-}
+
+parseArray :: Parser Array
+parseArray = do
+    reservedOp "["
+    entries <- parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+    reservedOp "]"
+    return $ Array entries
 
 parseFunction :: Parser Function
 parseFunction = do
@@ -109,28 +114,57 @@ parseFunctionCall = do
     reservedOp ")"
     return (FunctionCall funcname args)
 
+parseAssignmentTarget :: Parser AssignmentTarget
+parseAssignmentTarget = try parseArrayIndexTarget <|> parseVariableTarget
+    where
+        parseArrayIndexTarget = ArrayIndexTarget <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
+        parseVariableTarget = VariableTarget <$> identifier
+
 parseStmt :: Parser Statement
 parseStmt = choice
     [ try parseAssignment
-    , try loopStmt
+    , try whileStmt
+    , try forEachStmt
+    , try forStmt
     , try ifStmt
     , try passStmt
     , try returnStmt
-    , printStmt
+    , try parseFunctionCallStmt
     ]
     where
-        parseAssignment = do
-            var <- identifier
-            reservedOp ":="
-            expr <- parseExpr
-            return (Assignment var expr)
-        loopStmt = do
+        parseFunctionCallStmt =
+            CallStmt <$> parseFunctionCall
+        parseAssignment =
+            Assignment <$> parseAssignmentTarget <* reservedOp ":=" <*> parseExpr
+        whileStmt = do
             reservedOp "while"
             cond <- parseExpr
             reservedOp "{"
             statements <- many1 parseStmt
             reservedOp "}"
             return (Loop cond statements)
+-- for <var> := <collection> {}
+        forEachStmt = do
+            reservedOp "for"
+            var <- identifier
+            reservedOp ":="
+            array <- identifier
+            reservedOp "{"
+            statements <- many parseStmt
+            reservedOp "}"
+            return $ ForEach var array statements
+-- for <var> := <from>, <to> [, <step>] {}
+        forStmt = do
+            reservedOp "for"
+            var <- identifier
+            reservedOp ":="
+            from <- parseExpr
+            reservedOp ","
+            to <- parseExpr
+            reservedOp "{"
+            statements <- many parseStmt
+            reservedOp "}"
+            return $ For var from to statements
         ifStmt = do
             reservedOp "if"
             cond <- parseExpr
@@ -139,17 +173,10 @@ parseStmt = choice
             reservedOp "}"
             elsePart <- optionMaybe parseElse
             return (If cond statements elsePart)
-        passStmt = do
-            reservedOp "pass"
-            return Pass
+        passStmt =
+            reservedOp "pass" *> pure Pass
         returnStmt = do
-            reservedOp "return"
-            expr <- parseExpr
-            return (Return expr)
-        printStmt = do
-            reservedOp "fmt.Println"
-            expr <- parens parseExpr
-            return (Print expr)
+            Return <$> (reservedOp "return" *> parseExpr)
 
 parseElse :: Parser Else
 parseElse = (try parseElseIf) <|> parsePlainElse

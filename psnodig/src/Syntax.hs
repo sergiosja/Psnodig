@@ -13,13 +13,25 @@ data Function = Function String [String] [Statement]
 data FunctionCall = FunctionCall String [Expression]
     deriving (Eq, Show, Read)
 
+data Array = Array [Expression]
+    deriving (Eq, Show, Read)
+
+data AssignmentTarget =
+      VariableTarget String
+    | ArrayIndexTarget String Expression
+    deriving (Eq, Show, Read)
+
 -- Statements and expressions
 
+-- legge til funcs her, som ikke har returverdi. da må man feks skrive _ foran
+-- _print, _swap etc.
 data Statement =
-      Assignment String Expression
+      Assignment AssignmentTarget Expression
     | Loop Expression [Statement]
     | If Expression [Statement] (Maybe Else)
-    | Print Expression
+    | ForEach String String [Statement] -- (Either String Array) can also work in the future. must study more code
+    | For String Expression Expression [Statement] -- if I need to add step: (Maybe Expression).
+    | CallStmt FunctionCall
     | Return Expression
     | Pass
     deriving (Eq, Show, Read)
@@ -33,13 +45,15 @@ data Expression =
       Constant Int
     | VariableExp String
     | BinaryExp Operator Expression Expression
-    | Array [Expression]
-    | ArrayExp String Expression
-    -- FIXME:
-    -- f()[4] is valid if f -> Array. Suggestion: Make Array it's own data type. Consequence: Refactor assignments
+    | ArrayExp Array
+    | ArrayIndex String Expression
+    -- TODO:
+    -- f()[4] should be valid valid if f -> Array. Suggestion: Make Array it's own data type. Consequence: Refactor assignments
     -- Should also be able to do k[1][2][3]etc. Suggestion: String Expression (Maybe [Expression])
+    -- although, when is f()[4] ever necessary when writing algorithms? must study more algorithms!!
     | Boolean Bool
-    | Call FunctionCall
+    | CallExp FunctionCall
+    | Not Expression
     deriving (Eq, Show, Read)
 
 -- Operators
@@ -55,4 +69,6 @@ data Operator =
     | GreaterThanEqual
     | Equal
     | NotEqual
+    | And
+    | Or
     deriving (Eq, Show, Read)
