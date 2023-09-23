@@ -60,9 +60,57 @@ and this project adheres to the
 - Added code to create PDF from LaTeX file you get from using the LaTeX writer
 - Cleaned up src/Programs folder
 
+## 0.1.0.5 - 22-09-2023
+
+- Added "and" and "or" to operators
+- Added "not" expression
+
+## 0.1.0.6 - 23-09-2023
+
+- Refactored grammar, made Arrays their own "thing"
+- Added foreach- and for-loops to grammar
+- Wrote parser and writer for Gourmet and Latex for for-loops
+- Refactored parts of the Gourmet parser to use applicative style over monadic
+- Refactored assigning to include assigning on array index
+- Successfully transpiled bubble and insertion sort from Gourmet to Latex
+- Added "build-in functions" length, ceil, floor and contains to Latex Writer, since they can be represented with mathematical symbols
+- When transpiling a file, a .tex file maching the name of the original file is created. Previously "algo.txt" was always created
+- EDIT: The "pdflatex" command is only ran when the file does not already exist (because the pdf is re-rendered anway if the .tex-file is changed) [edit: reverted it as it didn't seem to work after all]
+- Added possibility to call functions as statements. Divided into CallExp and CallStmt, which are basically identical
+
 ## TODO:
 
 - Use a reader monad to traverse the AST and store relevant metadata for binary search, e.g. functions and arrays
+
+interpreter notes:
+if from > to, we increment index in each step.
+else we decrement index
+
+- Make it possible to take stdin/args to the function from the cmd line
+  ^ e.g. in bs: I have hardcoded list. Should be posible to read list from a different file or something
+
+- Add classes
+- ^have common data structures like tree and graph built-in?
+
+- Idé! Se på dette https://github.uio.no/IN2010/algoritmene/blob/main/sort/pseudo/bubble_sort.svg
+
+Kan bruke "#" for å definere kode som skal leses av interpreten, men ikke writeren! Så feks
+func BubbleSort(A) { # n = length(A)
+for i := 0, n-2 { ... }
+...
+}
+
+slik at man ikke får kjøretidsfeil på "n-2", men vi skriver det ikke! gøøøy <3:)
+
+også trenger jeg en sånn til writeren: "ikke prøv å oversett dette, bare skriv det nøyaktig som det er". Kunne feks annotations?
+
+@ Finn og returner det minste elementet i lista
+{for i := array { if i == min { return i }}}
+
+Dette tolkes som AnnotationStatement eller noe, så interpreten vil kjøre koden og behandle teksten etter krøllalfaet som en kommentar, mens writeren vil gjøre det motsatte! Den vil skrive det som står etter krøllalfaet, også ignorere resten av statementet!
+
 - Try more algorithms
+
 - Write an interpreter for Gourmet
+
 - Get at least 1 test actually working

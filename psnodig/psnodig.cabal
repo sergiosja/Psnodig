@@ -27,6 +27,7 @@ library
   exposed-modules:
       Gourmet.GourmetParser
       Gourmet.GourmetWriter
+      LaTeX.LatexEnv
       LaTeX.LatexWriter
       Petite.PetiteParser
       Petite.PetiteTranspiler
@@ -39,6 +40,7 @@ library
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , containers
     , mtl
     , parsec
     , process
@@ -54,6 +56,7 @@ executable psnodig-exe
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , containers
     , mtl
     , parsec
     , process
@@ -72,6 +75,7 @@ test-suite psnodig-test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , containers
     , hspec
     , mtl
     , parsec
