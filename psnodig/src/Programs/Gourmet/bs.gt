@@ -1,4 +1,4 @@
-func bs(A, x) {
+func BinarySearch(A, x) {
     low := 0
     high := len(A)
 
@@ -16,4 +16,4 @@ func bs(A, x) {
     return false
 }
 
-bs([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 5)
+BinarySearch([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 5)

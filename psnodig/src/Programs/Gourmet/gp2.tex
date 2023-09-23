@@ -5,7 +5,10 @@
 \SetKwProg{proc}{Procedure}{}{}
 \SetKw{KwFalse}{false}
 \SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
 \SetKw{KwPrint}{print}
+\SetKw{KwTo}{to}
+\SetKw{forin}{in}
 \newcommand{\var}{\texttt}
 \DontPrintSemicolon
 \begin{document}
@@ -13,8 +16,14 @@
 \begin{algorithm}[H]
 \KwIn{Input}
 \KwOut{Output}
-\proc{$f(x, y)$}{
-	$\var{x} \gets lilfunction(\var{x}, \var{y})$ \;
+\proc{$InsertionSort(A)$}{
+	\For{$i \gets 1$ \KwTo $\var{n} - 1$}{
+		$\var{j} \gets \var{i}$ \;
+		\While{$\var{j} > 0 \land \var{A}[\var{j} - 1] > \var{A}[\var{j}]$}{
+			swap(\var{A}[\var{j} - 1], \var{A}[\var{j}]) \;
+			$\var{j} \gets \var{j} - 1$ \;
+		}
+	}
 }\caption{Hva heter algoritmen?}
 \end{algorithm}
 

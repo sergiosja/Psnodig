@@ -1,5 +1,0 @@
-func f(x, y) {
-    x := lilfunction(x, y)
-}
-
-f()
