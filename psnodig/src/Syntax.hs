@@ -7,24 +7,24 @@ module Syntax where
 data Program = Program [Function] FunctionCall
     deriving (Eq, Show, Read)
 
-data Function = Function String [String] [Statement]
+-- Function related 
+
+data Function = Function String [FunctionArg] [Statement]
+    deriving (Eq, Show, Read)
+
+data FunctionArg = IntArg String String | ArrayArg String String
     deriving (Eq, Show, Read)
 
 data FunctionCall = FunctionCall String [Expression]
     deriving (Eq, Show, Read)
 
-data Array = Array [Expression]
-    deriving (Eq, Show, Read)
+-- Array
 
-data AssignmentTarget =
-      VariableTarget String
-    | ArrayIndexTarget String Expression
+data Array = Array [Expression]
     deriving (Eq, Show, Read)
 
 -- Statements and expressions
 
--- legge til funcs her, som ikke har returverdi. da må man feks skrive _ foran
--- _print, _swap etc.
 data Statement =
       Assignment AssignmentTarget Expression
     | Loop Expression [Statement]
@@ -36,9 +36,10 @@ data Statement =
     | Pass
     deriving (Eq, Show, Read)
 
-data Else =
-      ElseIf Expression [Statement] (Maybe Else)
-    | Else [Statement]
+data AssignmentTarget = VariableTarget String | ArrayIndexTarget String Expression
+    deriving (Eq, Show, Read)
+
+data Else = ElseIf Expression [Statement] (Maybe Else) | Else [Statement]
     deriving (Eq, Show, Read)
 
 data Expression =

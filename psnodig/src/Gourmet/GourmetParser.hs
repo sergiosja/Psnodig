@@ -13,11 +13,11 @@ lexer = Token.makeTokenParser emptyDef {
            Token.identLetter = alphaNum <|> char '\'',
            Token.reservedOpNames =
             [ ":=", "+", "-", "*", "/", "<", ">", "=="
-            , "!=", "while", "{", "}", "if"
-            , "pass", "func", "(", ")", ">=", "<=", "true"
+            , "!=", "while", "{", "}", "if", "pass"
+            , "func", "(", ")", ">=", "<=", "true"
             , "false", "return", "[", "]", "else", "&&"
             , "||", "!", "for", ",", "contains", "length"
-            , "ceil", "floor"
+            , "ceil", "floor", ":"
             ]
        }
 
@@ -94,12 +94,20 @@ parseArray = do
     reservedOp "]"
     return $ Array entries
 
+parseFunctionArg :: Parser FunctionArg
+parseFunctionArg = try parseArrayArg <|> parseStringArg
+    where
+        parseArrayArg =
+            ArrayArg <$> identifier <* (whiteSpace >> char ':' >> whiteSpace) <*> string "A"
+        parseStringArg =
+            IntArg <$> identifier <* (whiteSpace >> char ':' >> whiteSpace) <*> string "I"
+
 parseFunction :: Parser Function
 parseFunction = do
     reservedOp "func"
     funcname <- identifier
     reservedOp "("
-    args <- identifier `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+    args <- parseFunctionArg `sepBy` (whiteSpace >> char ',' >> whiteSpace)
     reservedOp ")"
     reservedOp "{"
     stmts <- parseStmt `endBy` whiteSpace

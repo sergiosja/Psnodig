@@ -9,17 +9,38 @@ type Collector = State (Set String, Set String)
 
 collectNames :: Program -> Collector ()
 collectNames (Program funcs _) =
-    mapM_ collectFunc funcs
+    mapM_ collectFuncDeclarations funcs
 
-collectFunc :: Function -> Collector ()
-collectFunc (Function name _ stmts) = do
+collectFuncDeclarations :: Function -> Collector ()
+collectFuncDeclarations (Function name args stmts) = do
     modify (\(funcs, arrays) -> (Set.insert name funcs, arrays))
-    mapM_ collectArray stmts
+    mapM_ collectArgs args
+    mapM_ collectArrays stmts
 
-collectArray :: Statement -> Collector ()
-collectArray (Assignment (VariableTarget name) (ArrayExp _)) = 
-    modify (\(funcs, arrays) -> (funcs, Set.insert name arrays))
-collectArray _ = return ()
+collectArgs :: FunctionArg -> Collector ()
+collectArgs arg = case arg of
+    (ArrayArg name _ ) ->
+        modify (\(funcs, arrays) -> (funcs, Set.insert name arrays))
+    _ -> return ()
+
+collectFunction :: Expression -> Collector ()
+collectFunction arg =
+    case arg of
+        (CallExp (FunctionCall name exps)) -> do
+            modify (\(funcs, arrays) -> (Set.insert name funcs, arrays))
+            mapM_ collectFunction exps
+        _ -> return ()
+
+collectArrays :: Statement -> Collector ()
+collectArrays stmt =
+    case stmt of
+        (Assignment (VariableTarget name) (ArrayExp _)) ->
+            modify (\(funcs, arrays) -> (funcs, Set.insert name arrays))
+        (Assignment (VariableTarget _) expr) ->
+            collectFunction expr
+        (CallStmt (FunctionCall name _)) ->
+            modify (\(funcs, arrays) -> (Set.insert name funcs, arrays))
+        _ -> return ()
 
 extractEnv :: Program -> ([String], [String])
 extractEnv program =

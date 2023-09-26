@@ -114,16 +114,21 @@ writeElse (Else stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 
+getFuncArgs :: [FunctionArg] -> [String]
+getFuncArgs = map getArgName
+    where
+        getArgName (ArrayArg name _) = name
+        getArgName (IntArg name _) = name
 
 writeFunc :: Function -> GourmetWriter ()
 writeFunc (Function funcname args stmts) = do
     tell $ "func " ++ funcname ++ "("
     case length args of
         0 -> tell ") {\n"
-        1 -> tell $ head args ++ ") {\n"
+        1 -> tell $ head (getFuncArgs args) ++ ") {\n"
         _ -> do
-            mapM_ (\a -> (tell $ a ++ ", ")) (init args)
-            tell $ last args ++ ") {\n"
+            mapM_ (\a -> (tell $ a ++ ", ")) (init (getFuncArgs args))
+            tell $ last (getFuncArgs args) ++ ") {\n"
     mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
     tell "}"
 

@@ -16,7 +16,7 @@ addIndents n = replicate n '\t'
 
 writeExp :: Expression -> LatexWriter ()
 writeExp (Constant n) = tell $ show n
-writeExp (VariableExp var) = tell $ "\\var{" ++ var ++ "}"
+writeExp (VariableExp var) = tell var
 writeExp (BinaryExp op exp1 exp2) = do
     writeExp exp1 >> transpileOp op >> writeExp exp2
 writeExp (Boolean val) = case val of
@@ -44,39 +44,59 @@ writeArray (Array entries) = do
             mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
             (writeExp $ last entries) >> tell "]"
 
+-- Function related
+
+arrayVariableNotation :: Expression -> [String] -> Expression
+arrayVariableNotation expr arrays =
+    case expr of
+        (VariableExp x) -> if elem x arrays then (VariableExp ("\\" ++ x)) else (VariableExp x)
+        _ -> expr
+
 writeFunctionCall :: FunctionCall -> LatexWriter ()
-writeFunctionCall (FunctionCall funcname args) =
+writeFunctionCall (FunctionCall funcname args) = do
+    arrays <- asks snd
     case funcname of
         "length" -> do
             tell "\\abs{"
-            writeExp $ head args
+            writeExp $ arrayVariableNotation (head args) arrays
             tell "}"
         "ceil" -> do
             tell "\\lceil "
-            writeExp $ head args
+            writeExp $ arrayVariableNotation (head args) arrays
             tell "\\rceil"
         "floor" -> do
             tell "\\lfloor "
-            writeExp $ head args
+            writeExp $ arrayVariableNotation (head args) arrays
             tell "\\rfloor"
         "contains" -> do
             writeExp $ last args
             tell $ " \\in "
-            writeExp $ head args
+            writeExp $ arrayVariableNotation (head args) arrays
         _ -> do
             tell $ "\\" ++ funcname ++ "("
             case length args of
                 0 -> tell ")"
-                1 -> (writeExp $ head args) >> tell ")"
+                1 -> (writeExp $ arrayVariableNotation (head args) arrays) >> tell ")"
                 _ -> do
-                    mapM_ (\arg -> (writeExp arg) >> tell ", ") (init args)
-                    (writeExp $ last args) >> tell ")"
+                    mapM_ (\arg -> (writeExp $ arrayVariableNotation arg arrays) >> tell ", ") (init args)
+                    (writeExp $ arrayVariableNotation (last args) arrays) >> tell ")"
 
-writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
-writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
-writeAssignmentTarget (ArrayIndexTarget var expr) = do
-    tell $ "$\\" ++ var ++ "{"
-    writeExp expr
+getFuncArgs :: [FunctionArg] -> [String]
+getFuncArgs = map getArgName
+    where
+        getArgName (ArrayArg name _) = "\\" ++ name
+        getArgName (IntArg name _) = name
+
+writeFunc :: Function -> LatexWriter ()
+writeFunc (Function funcname args stmts) = do
+    tell $ "\\proc{$\\" ++ funcname ++ "("
+    case length args of
+        0 -> tell ")$}{\n"
+        1 -> tell $ head (getFuncArgs args) ++ ")$}{\n"
+        _ -> do
+            mapM_ (\a -> (tell $ a ++ ", ")) (init $ getFuncArgs args)
+            tell $ last (getFuncArgs args) ++ ")$}{\n"
+    mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
     tell "}"
 
 -- Statements
@@ -124,6 +144,13 @@ writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
     tell " \\;"
 
+writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
+writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
+writeAssignmentTarget (ArrayIndexTarget var expr) = do
+    tell $ "$\\" ++ var ++ "{"
+    writeExp expr
+    tell "}"
+
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
     tell $ "\n" ++ (addIndents indent)
@@ -139,17 +166,8 @@ writeElse (Else stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 
-writeFunc :: Function -> LatexWriter ()
-writeFunc (Function funcname args stmts) = do
-    tell $ "\\proc{$\\" ++ funcname ++ "("
-    case length args of
-        0 -> tell ")$}{\n"
-        1 -> tell $ head args ++ ")$}{\n"
-        _ -> do
-            mapM_ (\a -> (tell $ a ++ ", ")) (init args)
-            tell $ last args ++ ")$}{\n"
-    mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
-    tell "}"
+
+-- Operators
 
 transpileOp :: Operator -> LatexWriter () -- the outer expression should ALWAYS be wrapped in $
 transpileOp op = tell $ case op of

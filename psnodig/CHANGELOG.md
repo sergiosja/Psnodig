@@ -80,10 +80,15 @@ and this project adheres to the
 
 ## 0.1.0.7 - 26-09-2023
 
-- Used monad to traverse AST and store environment of functions and arrays
+- Used State monad to traverse AST and store environment of functions and arrays
 - Changed Writer monad to ReaderT Environment (Writer String), to use the environment in the code
+- Spent a lot of time getting the State monad functions right
 
 ## TODO:
+
+- Implement # code
+- Implement @ code
+- Allow explicit parentheses
 
 interpreter notes:
 if from > to, we increment index in each step.
