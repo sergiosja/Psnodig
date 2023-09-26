@@ -1,36 +1,27 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module LaTeX.LatexEnv (extractEnv) where
 
--- import Control.Monad.State
--- import Data.Map.Strict (Map)
--- import qualified Data.Map.Strict as Map
--- import Data.Maybe (fromMaybe)
--- import Syntax
+import Control.Monad.State
+import Data.Set (Set)
+import qualified Data.Set as Set
+import Syntax
 
-extractEnv :: Int
-extractEnv = 1
+type Collector = State (Set String, Set String)
 
--- type Env = Map String [String]
+collectNames :: Program -> Collector ()
+collectNames (Program funcs _) =
+    mapM_ collectFunc funcs
 
--- initialEnv :: Env
--- initialEnv = Map.fromList [("arrays", []), ("funcs", [])]
+collectFunc :: Function -> Collector ()
+collectFunc (Function name _ stmts) = do
+    modify (\(funcs, arrays) -> (Set.insert name funcs, arrays))
+    mapM_ collectArray stmts
 
--- modifyEnv :: String -> String -> Env -> Env
--- modifyEnv key value env =
---     Map.adjust (value :) key env
+collectArray :: Statement -> Collector ()
+collectArray (Assignment (VariableTarget name) (ArrayExp _)) = 
+    modify (\(funcs, arrays) -> (funcs, Set.insert name arrays))
+collectArray _ = return ()
 
--- traverseAST :: Program -> State Env ()
--- traverseAST (Program funcs _) =
---     mapM_ processFunc funcs
---     where
---         processFunc (Function name _ stmts) = do
---             modify $ modifyEnv "funcs" name
---             mapM_ processStmt stmts
---         processStmt (Assignment name (Array _)) =
---             modify $ modifyEnv "arrays" name
---         processStmt _ = return ()
-
--- extractEnv :: Program -> Env
--- extractEnv program =
---     execState (traverseAST program) initialEnv
+extractEnv :: Program -> ([String], [String])
+extractEnv program =
+    let (funcs, arrays) = execState (collectNames program) (Set.empty, Set.empty)
+    in (Set.toList funcs, Set.toList arrays)

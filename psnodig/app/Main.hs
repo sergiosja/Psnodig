@@ -13,7 +13,7 @@ import Gourmet.GourmetParser (parseGourmet)
 
 -- LaTeX
 import LaTeX.LatexWriter (writeLatex)
--- import LaTeX.LatexEnv (extractEnv)
+import LaTeX.LatexEnv (extractEnv)
 
 -- External imports
 import System.Environment (getArgs)
@@ -21,9 +21,8 @@ import System.Process (callCommand)
 import System.Exit (die)
 import Text.Parsec
 import Text.Parsec.String
+import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer
-
-type Transpiler = Program -> Writer String ()
 
 gourmet2tex :: String -> String
 gourmet2tex s = take (length s - 2) s ++ "tex"
@@ -34,15 +33,16 @@ main = do
     case args of
         [file] -> do
             p <- readFile file
-            transpile p file parseGourmet writeLatex
+            transpile p file parseGourmet
         _ -> die "Usage:\n stack run -- <fromLang> <toLang> <file>"
 
-transpile :: String -> String -> Parser Program -> Transpiler -> IO ()
-transpile program file fromLang toLang = do
+transpile :: String -> String -> Parser Program -> IO ()
+transpile program file fromLang = do
     let parsed = parse fromLang "" program
     case parsed of
         (Right p) -> do
-            let transpiled = execWriter $ toLang p
+            let env = extractEnv p
+            let transpiled = execWriter $ runReaderT (writeLatex p) env
             let texfile = gourmet2tex file
             writeFile texfile transpiled
             callCommand $ "pdflatex " ++ texfile

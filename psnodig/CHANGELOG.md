@@ -78,9 +78,12 @@ and this project adheres to the
 - EDIT: The "pdflatex" command is only ran when the file does not already exist (because the pdf is re-rendered anway if the .tex-file is changed) [edit: reverted it as it didn't seem to work after all]
 - Added possibility to call functions as statements. Divided into CallExp and CallStmt, which are basically identical
 
-## TODO:
+## 0.1.0.7 - 26-09-2023
 
-- Use a reader monad to traverse the AST and store relevant metadata for binary search, e.g. functions and arrays
+- Used monad to traverse AST and store environment of functions and arrays
+- Changed Writer monad to ReaderT Environment (Writer String), to use the environment in the code
+
+## TODO:
 
 interpreter notes:
 if from > to, we increment index in each step.

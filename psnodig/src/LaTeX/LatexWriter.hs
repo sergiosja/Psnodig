@@ -1,23 +1,16 @@
 module LaTeX.LatexWriter (writeLatex) where
 
+import Control.Monad.Reader
 import Control.Monad.Writer
 import Syntax
 
-type LatexWriter = Writer String
+type Environment = ([String], [String])
+type LatexWriter = ReaderT Environment (Writer String)
 
 -- Helper funcs
 
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
-
--- type Env = Map String [String]
-
--- initialEnv :: Env
--- initialEnv = Map.fromList [("arrays", []), ("funcs", [])]
-
--- modifyEnv :: String -> String -> Env -> Env
--- modifyEnv key value env =
---     Map.adjust (value :) key env
 
 -- Expressions
 
@@ -33,10 +26,10 @@ writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
 writeExp (ArrayExp array) =
     writeArray array
-writeExp (ArrayIndex name index) = do -- fix this later when reader monad stores arrays
-    tell $ "\\var{" ++ name ++ "}["
+writeExp (ArrayIndex name index) = do
+    tell $ "\\" ++ name ++ "{"
     writeExp index
-    tell "]"
+    tell "}"
 writeExp (Not expr) = do
     tell "\\KwNot "
     writeExp expr
@@ -50,8 +43,6 @@ writeArray (Array entries) = do
         _ -> do
             mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
             (writeExp $ last entries) >> tell "]"
-
--- length(array), ceil(expr), floor(expr), contains(array, expr)
 
 writeFunctionCall :: FunctionCall -> LatexWriter ()
 writeFunctionCall (FunctionCall funcname args) =
@@ -73,7 +64,7 @@ writeFunctionCall (FunctionCall funcname args) =
             tell $ " \\in "
             writeExp $ head args
         _ -> do
-            tell $ funcname ++ "(" -- her vil funcname mappe til \FuncName eller noe, så må vi hente det. prefix \\
+            tell $ "\\" ++ funcname ++ "("
             case length args of
                 0 -> tell ")"
                 1 -> (writeExp $ head args) >> tell ")"
@@ -83,10 +74,10 @@ writeFunctionCall (FunctionCall funcname args) =
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
 writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
-writeAssignmentTarget (ArrayIndexTarget var expr) = do -- fix this when we collect arrays globally
-    tell $ "$\\var{" ++ var ++ "}["
+writeAssignmentTarget (ArrayIndexTarget var expr) = do
+    tell $ "$\\" ++ var ++ "{"
     writeExp expr
-    tell "]"
+    tell "}"
 
 -- Statements
 
@@ -103,7 +94,7 @@ writeStmt (Loop expr stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (ForEach item array stmts) indent = do
-    tell $ "\\For{$" ++ item ++ "$ \\forin $" ++ array ++ "$}{\n"
+    tell $ "\\For{$" ++ item ++ "$ \\forin $\\" ++ array ++ "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (For item from to stmts) indent = do
@@ -148,10 +139,9 @@ writeElse (Else stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 
--- \proc{$\BinarySearch(\A, x)$}{}
 writeFunc :: Function -> LatexWriter ()
 writeFunc (Function funcname args stmts) = do
-    tell $ "\\proc{$" ++ funcname ++ "(" -- when we save functions, add \\ prefix to funcname
+    tell $ "\\proc{$\\" ++ funcname ++ "("
     case length args of
         0 -> tell ")$}{\n"
         1 -> tell $ head args ++ ")$}{\n"
@@ -179,10 +169,22 @@ transpileOp op = tell $ case op of
 
 -- Static stuff
 
+writeStaticFunctions :: LatexWriter ()
+writeStaticFunctions = do
+    funcs <- asks fst
+    mapM_ (\f -> tell $ "\\SetKwFunction{" ++ f ++ "}{" ++ f ++ "}\n") funcs
+
+writeStaticArrays :: LatexWriter ()
+writeStaticArrays = do
+    arrays <- asks snd
+    mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") arrays
+
 constantConfig :: LatexWriter ()
-constantConfig =
-    tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwPrint}{print}\n\\SetKw{KwTo}{to}\n\\SetKw{forin}{in}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n" -- kan fjerne KwPrint når jeg har hentet alle funksjoner globalt
-    -- bare inkluder feks. "to" hvis det er en for-løkke i programmet og sånt
+constantConfig = do
+    tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
+    writeStaticFunctions
+    writeStaticArrays
+    tell "\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\SetKw{forin}{in}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
 
 funcStart :: LatexWriter ()
 funcStart =
