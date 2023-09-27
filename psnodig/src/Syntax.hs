@@ -12,7 +12,9 @@ data Program = Program [Function] FunctionCall
 data Function = Function String [FunctionArg] [Statement]
     deriving (Eq, Show, Read)
 
-data FunctionArg = IntArg String String | ArrayArg String String
+data FunctionArg =
+      IntArg String String
+    | ArrayArg String String
     deriving (Eq, Show, Read)
 
 data FunctionCall = FunctionCall String [Expression]
@@ -29,19 +31,22 @@ data Statement =
       Assignment AssignmentTarget Expression
     | Loop Expression [Statement]
     | If Expression [Statement] (Maybe Else)
-    | ForEach String String [Statement] -- (Either String Array) can also work in the future. must study more code
-    | For String Expression Expression [Statement] -- if I need to add step: (Maybe Expression).
+    | ForEach String String [Statement]
+    | For String Expression Expression [Statement]
     | CallStmt FunctionCall
     | Return Expression
     | HashStmt Statement
     | AnnotationStmt String [Statement]
-    | Pass -- maybe reduntant since we do scoping with { and }
     deriving (Eq, Show, Read)
 
-data AssignmentTarget = VariableTarget String | ArrayIndexTarget String Expression
+data AssignmentTarget =
+      VariableTarget String
+    | ArrayIndexTarget String Expression
     deriving (Eq, Show, Read)
 
-data Else = ElseIf Expression [Statement] (Maybe Else) | Else [Statement]
+data Else =
+      ElseIf Expression [Statement] (Maybe Else)
+    | Else [Statement]
     deriving (Eq, Show, Read)
 
 data Expression =
@@ -49,11 +54,7 @@ data Expression =
     | VariableExp String
     | BinaryExp Operator Expression Expression
     | ArrayExp Array
-    | ArrayIndex String Expression -- technically VariableExp and not String
-    -- TODO:
-    -- f()[4] should be valid valid if f -> Array.
-    -- Should also be able to do k[1][2][3]etc. Suggestion: String Expression (Maybe [Expression])
-    -- although, when is f()[4] ever necessary when writing algorithms? must study more algorithms!!
+    | ArrayIndex String Expression
     | Boolean Bool
     | CallExp FunctionCall
     | Not Expression

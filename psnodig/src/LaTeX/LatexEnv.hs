@@ -53,7 +53,8 @@ collectStmts stmt =
             collectExpr expr
             mapM_ collectStmts stmts
             collectElse maybeElse
-        (ForEach _ _ stmts) ->
+        (ForEach _ arr stmts) -> do
+            modify (\(funcs, arrays) -> (funcs, Set.insert arr arrays))
             mapM_ collectStmts stmts
         (For _ expr1 expr2 stmts) -> do
             collectExpr expr1

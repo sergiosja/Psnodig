@@ -85,41 +85,35 @@ parseExpr = buildExpressionParser table term
                         parseFalse = Boolean False <$ reservedOp "false"
 
 parseArray :: Parser Array
-parseArray = do
-    reservedOp "["
-    entries <- parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
-    reservedOp "]"
-    return $ Array entries
+parseArray =
+    Array <$> (reservedOp "[" *> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)) <* reservedOp "]"
 
 -- Parse functions
 
 parseFunctionArg :: Parser FunctionArg
 parseFunctionArg = try parseArrayArg <|> parseStringArg
-    where
-        parseArrayArg =
-            ArrayArg <$> identifier <* (whiteSpace >> char ':' >> whiteSpace) <*> string "A"
-        parseStringArg =
-            IntArg <$> identifier <* (whiteSpace >> char ':' >> whiteSpace) <*> string "I"
+    where parseArrayArg =
+            ArrayArg
+                <$> identifier <* (whiteSpace >> char ':' >> whiteSpace)
+                <*> string "A"
+          parseStringArg =
+            IntArg
+                <$> identifier <* (whiteSpace >> char ':' >> whiteSpace)
+                <*> string "I"
 
 parseFunction :: Parser Function
-parseFunction = do
-    reservedOp "func"
-    funcname <- identifier
-    reservedOp "("
-    args <- parseFunctionArg `sepBy` (whiteSpace >> char ',' >> whiteSpace)
-    reservedOp ")"
-    reservedOp "{"
-    stmts <- parseStmt `endBy` whiteSpace
-    reservedOp "}"
-    return $ Function funcname args stmts
+parseFunction =
+    Function
+        <$> (reservedOp "func" *> identifier) <* reservedOp "("
+        <*> parseFunctionArg `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+        <* reservedOp ")" <* reservedOp "{"
+        <*> parseStmt `endBy` whiteSpace <* reservedOp "}"
 
 parseFunctionCall :: Parser FunctionCall
-parseFunctionCall = do
-    funcname <- identifier
-    reservedOp "("
-    args <- parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
-    reservedOp ")"
-    return (FunctionCall funcname args)
+parseFunctionCall =
+    FunctionCall
+        <$> identifier <* reservedOp "("
+        <*> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace) <* reservedOp ")"
 
 parseAssignmentTarget :: Parser AssignmentTarget
 parseAssignmentTarget = try parseArrayIndexTarget <|> parseVariableTarget
@@ -158,7 +152,7 @@ parseStmt = choice
         whileStmt =
             Loop
                 <$> (reservedOp "while" *> parseExpr) <* reservedOp "{"
-                <*> many1 parseStmt <* reservedOp "}"
+                <*> many parseStmt <* reservedOp "}"
         forEachStmt =
             ForEach
                 <$> (reservedOp "for" *> identifier) <* reservedOp ":="
@@ -194,6 +188,6 @@ parseElse = (try parseElseIf) <|> parsePlainElse
 parseGourmet :: Parser Program
 parseGourmet = do
     whiteSpace
-    funcs <- many1 {- - -} parseFunction -- <* whiteSpace)
+    funcs <- many1 parseFunction
     functioncall <- parseFunctionCall
     return $ Program funcs functioncall

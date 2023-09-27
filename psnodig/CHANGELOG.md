@@ -97,25 +97,32 @@ and this project adheres to the
 
 - Implemented #-statements: Code that is interpreted, but ignored by writer. Basically a way of describing macros within a procedure
 - Implemented @-statements: Code that comes with a description, so that the interpreter runs the code, while the writer ignores the code and writes the description only. Especially useful when the implementation is messy and unsignificant
+- Refactored more of the parser to use applicative style
 
-# Gourmet Parser & Latex Writer
+## Gourmet Parser & Latex Writer
 
-## FIXME:
+### FIXME:
+
+- ArrayIndex String Expression: `String` should actually be `VariableExp`
+- Should be possible to do nested indexing, e.g. `array[1][2][3]`
+- ` f()[exp]` should be valid in case `f -> Array`
+  - Check if this has ever happened in an algorithm before implementing, intuitively a rare case
+- ForEach String String [Statement]: Last `String` could be `(Either String Array)`
+  - Again, when is it necessary to traverse a hardcoded array?
+
+### TODO:
 
 - Allow explicit parentheses
 - Allow user to describe input, output and name of algorithm
-
-## TODO:
-
 - Implement Class/struct?
 - Implement Graphs?
 - Implement Trees?
 
-# Gourmet Interpreter
+## Gourmet Interpreter
 
-## FIXME:
+### FIXME:
 
-## TODO:
+### TODO:
 
 - Start
 - for i := a, b
@@ -125,17 +132,27 @@ and this project adheres to the
 
 - Allow input from stdin
 
-# Testing
+## Testing
 
 - Get at least 1 property based test working
-- Do user testing, try on many different people (students not done 2010 yet, students taking/just taken 2010, phds (Magnus), people from other schools (Sophie? mtp UiB), people at Blank etc)
+- Do user testing, try on many different people
+  - Students in 1st year of CS
+  - Students in 2nd year of CS
+  - Students in 3rd year of CS
+  - Master students
+  - PhD students (Magnus, Joachim etc.)
+  - People who have not taken IN2010?
+  - People from other unis
+    - Sophie? due to UiB
+    - NTNU friends at Blank
+  - Other people at Blank
 
-# Other
+## Other
 
 - Try more algorithms
 - Study more algorithms in the books I've listed
-- Should clear up some of the code "language". I write exp, exps, expr, exp1, exp2 etc many places, it can become confusing, I should have some sort of dictionary, and also be more consistent, example:
-  expr -> single expression
-  exprs -> list of expressions
-  expr1 -> first of N expressions in collection, where N is a constant
+- Should clear up some of the code "language". I write exp, exps, expr, exp1, exp2 etc many places, it can become confusing, I should have some sort of dictionary, and also be more consistent, example: \
+  expr -> single expression \
+  exprs -> list of expressions \
+  expr1 -> first of N expressions in \ collection, where N is a constant \
   expr2 -> second of N expressions =||=
