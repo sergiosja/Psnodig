@@ -33,7 +33,9 @@ data Statement =
     | For String Expression Expression [Statement] -- if I need to add step: (Maybe Expression).
     | CallStmt FunctionCall
     | Return Expression
-    | Pass
+    -- | HastStmt Statement     -- # n = length(A)
+    -- | AtStmt [Statement]     -- @{Don't transpile this bit, just write this text instead}{n := length(A)}
+    | Pass -- maybe reduntant since we do scoping with { and }
     deriving (Eq, Show, Read)
 
 data AssignmentTarget = VariableTarget String | ArrayIndexTarget String Expression

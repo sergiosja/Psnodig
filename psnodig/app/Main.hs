@@ -24,26 +24,36 @@ import Text.Parsec.String
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer
 
-gourmet2tex :: String -> String
-gourmet2tex s = take (length s - 2) s ++ "tex"
-
 main :: IO ()
 main = do
     args <- getArgs
     case args of
-        [file] -> do
+        [filename] -> do
+            p <- readFile filename
+            transpile p filename
+        ["p", file] -> do
             p <- readFile file
-            transpile p file parseGourmet
-        _ -> die "Usage:\n stack run -- <fromLang> <toLang> <file>"
+            getAST p
+        _ -> die "Usage:\n stack run -- <file>"
 
-transpile :: String -> String -> Parser Program -> IO ()
-transpile program file fromLang = do
-    let parsed = parse fromLang "" program
+transpile :: String -> String -> IO ()
+transpile program filename = do
+    let parsed = parse parseGourmet "" program
     case parsed of
         (Right p) -> do
             let env = extractEnv p
             let transpiled = execWriter $ runReaderT (writeLatex p) env
-            let texfile = gourmet2tex file
+            let texfile = gourmet2tex filename
             writeFile texfile transpiled
             callCommand $ "pdflatex " ++ texfile
+        (Left err) -> putStrLn $ show err
+    where
+        gourmet2tex :: String -> String
+        gourmet2tex s = take (length s - 2) s ++ "tex"
+
+getAST :: String -> IO ()
+getAST program = do
+    let parsed = parse parseGourmet "" program
+    case parsed of
+        (Right p) -> print p
         (Left err) -> putStrLn $ show err

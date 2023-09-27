@@ -18,10 +18,15 @@ writeExp :: Expression -> LatexWriter ()
 writeExp (Constant n) = tell $ show n
 writeExp (VariableExp var) = tell var
 writeExp (BinaryExp op exp1 exp2) = do
-    writeExp exp1 >> transpileOp op >> writeExp exp2
+    case op of
+        Division -> do
+            tell "\\frac{"
+            writeExp exp1 >> tell "}{"
+            writeExp exp2 >> tell "}"
+        _ -> writeExp exp1 >> transpileOp op >> writeExp exp2
 writeExp (Boolean val) = case val of
-    True -> tell "\\KwTrue"
-    False -> tell "\\KwFalse"
+    True -> tell "\\KwTrue" -- change to Top?
+    False -> tell "\\KwFalse" -- change to Bottom?
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
 writeExp (ArrayExp array) =

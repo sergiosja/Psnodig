@@ -84,6 +84,13 @@ and this project adheres to the
 - Changed Writer monad to ReaderT Environment (Writer String), to use the environment in the code
 - Spent a lot of time getting the State monad functions right
 
+## 0.1.0.8 - 27-09-2023
+
+- Latex writer now writes fractal symbol during division expressions
+- Added all statements and expressions to Env
+- Simplified methods in Main.hs since I'm only focusing on Gourmet and Latex now
+- Added function to print AST, to analyse the intermediate code when needed
+
 ## TODO:
 
 - Implement # code
@@ -122,3 +129,9 @@ Dette tolkes som AnnotationStatement eller noe, så interpreten vil kjøre koden
 - Write an interpreter for Gourmet
 
 - Get at least 1 test actually working
+
+- Should clear up some of the code "language". I write exp, exps, expr, exp1, exp2 etc many places, it can become confusing, I should have some sort of dictionary, and also be more consistent, example:
+  expr -> single expression
+  exprs -> list of expressions
+  expr1 -> first of N expressions in collection, where N is a constant
+  expr2 -> second of N expressions =||=
