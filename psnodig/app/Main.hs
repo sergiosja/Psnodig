@@ -9,7 +9,7 @@ import Syntax
 
 -- Gourmet lang
 import Gourmet.GourmetParser (parseGourmet)
--- import Gourmet.GourmetWriter (writeGourmet)
+import Gourmet.GourmetWriter (writeGourmet)
 
 -- LaTeX
 import LaTeX.LatexWriter (writeLatex)
@@ -20,7 +20,7 @@ import System.Environment (getArgs)
 import System.Process (callCommand)
 import System.Exit (die)
 import Text.Parsec
-import Text.Parsec.String
+-- import Text.Parsec.String
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer
 
@@ -34,6 +34,9 @@ main = do
         ["p", file] -> do
             p <- readFile file
             getAST p
+        ["g2g", file] -> do
+            p <- readFile file
+            g2g p
         _ -> die "Usage:\n stack run -- <file>"
 
 transpile :: String -> String -> IO ()
@@ -50,6 +53,15 @@ transpile program filename = do
     where
         gourmet2tex :: String -> String
         gourmet2tex s = take (length s - 2) s ++ "tex"
+
+g2g :: String -> IO ()
+g2g program = do
+    let parsed = parse parseGourmet "" program
+    case parsed of
+        (Right p) ->
+            let transpiled = execWriter $ writeGourmet p
+            in writeFile "algo.gt" transpiled
+        (Left err) -> putStrLn $ show err
 
 getAST :: String -> IO ()
 getAST program = do

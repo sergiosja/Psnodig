@@ -100,6 +100,15 @@ writeStmt (Return expr) _ = do
     writeExp expr
 writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
+writeStmt (HashStmt stmt) indent = do
+    tell "# "
+    writeStmt stmt indent
+writeStmt (AnnotationStmt description stmts) indent = do
+    tell $ "@{" ++ description ++ "}{\n"
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell $ (addIndents indent) ++ "}"
+
+
 
 writeElse :: Else -> Int -> GourmetWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do

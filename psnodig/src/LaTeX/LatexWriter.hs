@@ -148,6 +148,9 @@ writeStmt (Return expr) _ = do
 writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
     tell " \\;"
+writeStmt (HashStmt _) _ = return ()
+writeStmt (AnnotationStmt description _) _ =
+    tell $ "\\text{" ++ description ++ "} \\;"
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
 writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
@@ -213,12 +216,12 @@ funcStart :: LatexWriter ()
 funcStart =
     tell "\\begin{algorithm}[H]\n\\KwIn{Input}\n\\KwOut{Output}\n"
 
-funcEnd :: LatexWriter ()
-funcEnd =
-    tell "\\caption{Hva heter algoritmen?}\n\\end{algorithm}\n\n"
+funcEnd :: Function -> LatexWriter ()
+funcEnd (Function name _ _) =
+    tell $ "\\caption{" ++ name ++ "}\n\\end{algorithm}\n\n"
 
 writeLatex :: Program -> LatexWriter ()
 writeLatex (Program funcs _) = do
     constantConfig
-    mapM_ (\f -> (funcStart >> (writeFunc f) >> funcEnd)) funcs
+    mapM_ (\f -> (funcStart >> writeFunc f >> funcEnd f)) funcs
     tell "\\end{document}"

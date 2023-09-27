@@ -17,7 +17,7 @@ lexer = Token.makeTokenParser emptyDef {
             , "func", "(", ")", ">=", "<=", "true"
             , "false", "return", "[", "]", "else", "&&"
             , "||", "!", "for", ",", "contains", "length"
-            , "ceil", "floor", ":"
+            , "ceil", "floor", ":", "#", "@"
             ]
        }
 
@@ -37,6 +37,8 @@ parens :: Parser Expression -> Parser Expression
 parens = Token.parens lexer
 
 {- Parsing -}
+
+-- Parse expressions
 
 parseExpr :: Parser Expression
 parseExpr = buildExpressionParser table term
@@ -81,11 +83,6 @@ parseExpr = buildExpressionParser table term
                     where
                         parseTrue = Boolean True <$ reservedOp "true"
                         parseFalse = Boolean False <$ reservedOp "false"
-{-
-<$> betyr: bruk det som kommer nå som args
-a1 >> a2 betyr: les a1 og a2 men discard res av a1
-<* betyr: les men discard resultat
--}
 
 parseArray :: Parser Array
 parseArray = do
@@ -93,6 +90,8 @@ parseArray = do
     entries <- parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
     reservedOp "]"
     return $ Array entries
+
+-- Parse functions
 
 parseFunctionArg :: Parser FunctionArg
 parseFunctionArg = try parseArrayArg <|> parseStringArg
@@ -128,9 +127,13 @@ parseAssignmentTarget = try parseArrayIndexTarget <|> parseVariableTarget
         parseArrayIndexTarget = ArrayIndexTarget <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
         parseVariableTarget = VariableTarget <$> identifier
 
+-- Parse statements
+
 parseStmt :: Parser Statement
 parseStmt = choice
-    [ try parseAssignment
+    [ try parseAnnotationStmt
+    , try parseHashStmt
+    , try parseAssignment
     , try whileStmt
     , try forEachStmt
     , try forStmt
@@ -140,70 +143,53 @@ parseStmt = choice
     , try parseFunctionCallStmt
     ]
     where
+        parseAnnotationStmt =
+            AnnotationStmt
+                <$> (reservedOp "@" *> reservedOp "{" *> manyTill anyChar (try (reservedOp "}")))
+                <*> (reservedOp "{" *> many parseStmt <* reservedOp "}")
+        parseHashStmt =
+            HashStmt <$> (reservedOp "#" *> parseStmt)
         parseFunctionCallStmt =
             CallStmt <$> parseFunctionCall
         parseAssignment =
-            Assignment <$> parseAssignmentTarget <* reservedOp ":=" <*> parseExpr
-        whileStmt = do
-            reservedOp "while"
-            cond <- parseExpr
-            reservedOp "{"
-            statements <- many1 parseStmt
-            reservedOp "}"
-            return (Loop cond statements)
--- for <var> := <collection> {}
-        forEachStmt = do
-            reservedOp "for"
-            var <- identifier
-            reservedOp ":="
-            array <- identifier
-            reservedOp "{"
-            statements <- many parseStmt
-            reservedOp "}"
-            return $ ForEach var array statements
--- for <var> := <from>, <to> [, <step>] {}
-        forStmt = do
-            reservedOp "for"
-            var <- identifier
-            reservedOp ":="
-            from <- parseExpr
-            reservedOp ","
-            to <- parseExpr
-            reservedOp "{"
-            statements <- many parseStmt
-            reservedOp "}"
-            return $ For var from to statements
-        ifStmt = do
-            reservedOp "if"
-            cond <- parseExpr
-            reservedOp "{"
-            statements <- many parseStmt
-            reservedOp "}"
-            elsePart <- optionMaybe parseElse
-            return (If cond statements elsePart)
+            Assignment
+                <$> parseAssignmentTarget <* reservedOp ":="
+                <*> parseExpr
+        whileStmt =
+            Loop
+                <$> (reservedOp "while" *> parseExpr) <* reservedOp "{"
+                <*> many1 parseStmt <* reservedOp "}"
+        forEachStmt =
+            ForEach
+                <$> (reservedOp "for" *> identifier) <* reservedOp ":="
+                <*> identifier <* reservedOp "{"
+                <*> many parseStmt <* reservedOp "}"
+        forStmt =
+            For
+                <$> (reservedOp "for" *> identifier) <* reservedOp ":="
+                <*> parseExpr <* reservedOp ","
+                <*> parseExpr <* reservedOp "{"
+                <*> many parseStmt <* reservedOp "}"
+        ifStmt =
+            If
+                <$> (reservedOp "if" *> parseExpr) <* reservedOp "{"
+                <*> many parseStmt <* reservedOp "}"
+                <*> optionMaybe parseElse
         passStmt =
             reservedOp "pass" *> pure Pass
-        returnStmt = do
+        returnStmt =
             Return <$> (reservedOp "return" *> parseExpr)
 
 parseElse :: Parser Else
 parseElse = (try parseElseIf) <|> parsePlainElse
     where
-        parseElseIf = do
-            reservedOp "else"
-            reservedOp "if"
-            expr <- parseExpr
-            reservedOp "{"
-            stmts <- many parseStmt
-            reservedOp "}"
-            elsePart <- optionMaybe parseElse
-            return $ ElseIf expr stmts elsePart
-        parsePlainElse = do
-            reservedOp "else"
-            reservedOp "{"
-            stmts <- many parseStmt
-            reservedOp "}"
-            return $ Else stmts
+        parseElseIf =
+            ElseIf
+                <$> (reservedOp "else" *> reservedOp "if" *> parseExpr) <* reservedOp "{"
+                <*> many parseStmt <* reservedOp "}"
+                <*> optionMaybe parseElse
+        parsePlainElse =
+            Else <$> (reservedOp "else" *> reservedOp "{" *> many parseStmt) <* reservedOp "}"
 
 parseGourmet :: Parser Program
 parseGourmet = do

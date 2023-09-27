@@ -91,45 +91,49 @@ and this project adheres to the
 - Simplified methods in Main.hs since I'm only focusing on Gourmet and Latex now
 - Added function to print AST, to analyse the intermediate code when needed
 
+- **Discovered pretty crucial limitation: Proc names can't have numbers (or any other symbols) in them, due to the way the \KwSetFunction-command in Latex works.**
+
+  - On the other hand, very few (if any) "serious" algorithms need non-letter characters. The Gourmet interpreter will still be able to handle them, they just have to be rewritten when transpiled to Latex
+
+- Implemented #-statements: Code that is interpreted, but ignored by writer. Basically a way of describing macros within a procedure
+- Implemented @-statements: Code that comes with a description, so that the interpreter runs the code, while the writer ignores the code and writes the description only. Especially useful when the implementation is messy and unsignificant
+
+# Gourmet Parser & Latex Writer
+
+## FIXME:
+
+- Allow explicit parentheses
+- Allow user to describe input, output and name of algorithm
+
 ## TODO:
 
-- Implement # code
-- Implement @ code
-- Allow explicit parentheses
+- Implement Class/struct?
+- Implement Graphs?
+- Implement Trees?
 
-interpreter notes:
-if from > to, we increment index in each step.
-else we decrement index
+# Gourmet Interpreter
 
-- Make it possible to take stdin/args to the function from the cmd line
-  ^ e.g. in bs: I have hardcoded list. Should be posible to read list from a different file or something
+## FIXME:
 
-- Add classes
-- ^have common data structures like tree and graph built-in?
+## TODO:
 
-- Idé! Se på dette https://github.uio.no/IN2010/algoritmene/blob/main/sort/pseudo/bubble_sort.svg
+- Start
+- for i := a, b
 
-Kan bruke "#" for å definere kode som skal leses av interpreten, men ikke writeren! Så feks
-func BubbleSort(A) { # n = length(A)
-for i := 0, n-2 { ... }
-...
-}
+  - if a < b = increment i
+  - if a > b = decrement i
 
-slik at man ikke får kjøretidsfeil på "n-2", men vi skriver det ikke! gøøøy <3:)
+- Allow input from stdin
 
-også trenger jeg en sånn til writeren: "ikke prøv å oversett dette, bare skriv det nøyaktig som det er". Kunne feks annotations?
+# Testing
 
-@ Finn og returner det minste elementet i lista
-{for i := array { if i == min { return i }}}
+- Get at least 1 property based test working
+- Do user testing, try on many different people (students not done 2010 yet, students taking/just taken 2010, phds (Magnus), people from other schools (Sophie? mtp UiB), people at Blank etc)
 
-Dette tolkes som AnnotationStatement eller noe, så interpreten vil kjøre koden og behandle teksten etter krøllalfaet som en kommentar, mens writeren vil gjøre det motsatte! Den vil skrive det som står etter krøllalfaet, også ignorere resten av statementet!
+# Other
 
 - Try more algorithms
-
-- Write an interpreter for Gourmet
-
-- Get at least 1 test actually working
-
+- Study more algorithms in the books I've listed
 - Should clear up some of the code "language". I write exp, exps, expr, exp1, exp2 etc many places, it can become confusing, I should have some sort of dictionary, and also be more consistent, example:
   expr -> single expression
   exprs -> list of expressions

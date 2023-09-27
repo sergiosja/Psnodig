@@ -33,8 +33,8 @@ data Statement =
     | For String Expression Expression [Statement] -- if I need to add step: (Maybe Expression).
     | CallStmt FunctionCall
     | Return Expression
-    -- | HastStmt Statement     -- # n = length(A)
-    -- | AtStmt [Statement]     -- @{Don't transpile this bit, just write this text instead}{n := length(A)}
+    | HashStmt Statement
+    | AnnotationStmt String [Statement]
     | Pass -- maybe reduntant since we do scoping with { and }
     deriving (Eq, Show, Read)
 
@@ -49,9 +49,9 @@ data Expression =
     | VariableExp String
     | BinaryExp Operator Expression Expression
     | ArrayExp Array
-    | ArrayIndex String Expression
+    | ArrayIndex String Expression -- technically VariableExp and not String
     -- TODO:
-    -- f()[4] should be valid valid if f -> Array. Suggestion: Make Array it's own data type. Consequence: Refactor assignments
+    -- f()[4] should be valid valid if f -> Array.
     -- Should also be able to do k[1][2][3]etc. Suggestion: String Expression (Maybe [Expression])
     -- although, when is f()[4] ever necessary when writing algorithms? must study more algorithms!!
     | Boolean Bool
