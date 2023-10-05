@@ -20,7 +20,6 @@ import System.Environment (getArgs)
 import System.Process (callCommand)
 import System.Exit (die)
 import Text.Parsec
--- import Text.Parsec.String
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer
 
@@ -31,6 +30,7 @@ main = do
         [filename] -> do
             p <- readFile filename
             transpile p filename
+            callCommand "C:\\Users\\47480\\OneDrive\\Dokumenter\\Master\\Master\\psnodig\\src\\Programs\\cleanup.sh"
         ["p", file] -> do
             p <- readFile file
             getAST p

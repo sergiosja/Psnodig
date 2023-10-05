@@ -13,11 +13,12 @@ lexer = Token.makeTokenParser emptyDef {
            Token.identLetter = alphaNum <|> char '\'',
            Token.reservedOpNames =
             [ ":=", "+", "-", "*", "/", "<", ">", "=="
-            , "!=", "while", "{", "}", "if", "pass"
-            , "func", "(", ")", ">=", "<=", "true"
-            , "false", "return", "[", "]", "else", "&&"
-            , "||", "!", "for", ",", "contains", "length"
-            , "ceil", "floor", ":", "#", "@"
+            , "!=", "while", "{", "}", "if", "func", "("
+            , ")", ">=", "<=", "true", "false", "return"
+            , "[", "]", "else", "&&", "||", "!", "for"
+            , ",", "contains", "length", "ceil", "floor"
+            , ":", "#", "@", "break", "continue", "struct"
+            , "not"
             ]
        }
 
@@ -37,6 +38,25 @@ parens :: Parser Expression -> Parser Expression
 parens = Token.parens lexer
 
 {- Parsing -}
+
+-- Parse structs
+
+parseStruct :: Parser Struct
+parseStruct =
+    Struct <$> (reservedOp "struct" *> identifier) <* reservedOp "{"
+           <*> parseArgument `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+           <* reservedOp "}"
+
+parseStructField :: Parser StructField
+parseStructField =
+    StructField <$> identifier <* char '.' <*> identifier
+
+-- would much prefer () over {}, but with (), this is identical to function call
+parseStructAssignment :: Parser StructAssignment
+parseStructAssignment =
+    StructAssignment <$> identifier <* reservedOp "{"
+                     <*> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+                     <* reservedOp "}"
 
 -- Parse expressions
 
@@ -58,6 +78,7 @@ parseExpr = buildExpressionParser table term
                 ]
         term = choice
             [ try parseNotExp
+            , try parseStructFieldExp
             , try parseArrayExp
             , try parseArrayIndexExp
             , try parseFunctionCallExp
@@ -68,7 +89,9 @@ parseExpr = buildExpressionParser table term
             ]
             where
                 parseNotExp =
-                    Not <$> (reservedOp "!" *> parseExpr)
+                    Not <$> (reservedOp "not" *> parseExpr)
+                parseStructFieldExp =
+                    StructFieldExp <$> parseStructField
                 parseArrayExp =
                     ArrayExp <$> parseArray
                 parseArrayIndexExp =
@@ -90,22 +113,16 @@ parseArray =
 
 -- Parse functions
 
-parseFunctionArg :: Parser FunctionArg
-parseFunctionArg = try parseArrayArg <|> parseStringArg
-    where parseArrayArg =
-            ArrayArg
-                <$> identifier <* (whiteSpace >> char ':' >> whiteSpace)
-                <*> string "A"
-          parseStringArg =
-            IntArg
-                <$> identifier <* (whiteSpace >> char ':' >> whiteSpace)
-                <*> string "I"
+parseArgument :: Parser Argument
+parseArgument = try parseArrayArg <|> parseStringArg
+    where parseArrayArg = ArrayArg <$> identifier <*> identifier <* (whiteSpace >> char '*' >> whiteSpace)
+          parseStringArg = SingleArg <$> identifier <*> identifier
 
 parseFunction :: Parser Function
 parseFunction =
     Function
         <$> (reservedOp "func" *> identifier) <* reservedOp "("
-        <*> parseFunctionArg `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+        <*> parseArgument `sepBy` (whiteSpace >> char ',' >> whiteSpace)
         <* reservedOp ")" <* reservedOp "{"
         <*> parseStmt `endBy` whiteSpace <* reservedOp "}"
 
@@ -116,27 +133,43 @@ parseFunctionCall =
         <*> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace) <* reservedOp ")"
 
 parseAssignmentTarget :: Parser AssignmentTarget
-parseAssignmentTarget = try parseArrayIndexTarget <|> parseVariableTarget
+parseAssignmentTarget = choice
+    [ try parseStructFieldTarget
+    , try parseArrayIndexTarget
+    , parseVariableTarget
+    ]
     where
+        parseStructFieldTarget = StructFieldTarget <$> parseStructField
         parseArrayIndexTarget = ArrayIndexTarget <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
         parseVariableTarget = VariableTarget <$> identifier
+
+parseAssignmentValue :: Parser AssignmentValue
+parseAssignmentValue = try parseStructValue <|> parseExpressionValue
+    where
+        parseStructValue = StructValue <$> parseStructAssignment
+        parseExpressionValue = ExpressionValue <$> parseExpr
 
 -- Parse statements
 
 parseStmt :: Parser Statement
 parseStmt = choice
-    [ try parseAnnotationStmt
+    [ try parseBreakStmt
+    , try parseContinueStmt
+    , try parseAnnotationStmt
     , try parseHashStmt
     , try parseAssignment
     , try whileStmt
     , try forEachStmt
     , try forStmt
     , try ifStmt
-    , try passStmt
     , try returnStmt
     , try parseFunctionCallStmt
-    ]
+    ] <?> "Expected statement!"
     where
+        parseBreakStmt = 
+            reservedOp "break" *> pure Break
+        parseContinueStmt =
+            reservedOp "continue" *> pure Continue
         parseAnnotationStmt =
             AnnotationStmt
                 <$> (reservedOp "@" *> reservedOp "{" *> manyTill anyChar (try (reservedOp "}")))
@@ -148,7 +181,7 @@ parseStmt = choice
         parseAssignment =
             Assignment
                 <$> parseAssignmentTarget <* reservedOp ":="
-                <*> parseExpr
+                <*> parseAssignmentValue
         whileStmt =
             Loop
                 <$> (reservedOp "while" *> parseExpr) <* reservedOp "{"
@@ -169,8 +202,6 @@ parseStmt = choice
                 <$> (reservedOp "if" *> parseExpr) <* reservedOp "{"
                 <*> many parseStmt <* reservedOp "}"
                 <*> optionMaybe parseElse
-        passStmt =
-            reservedOp "pass" *> pure Pass
         returnStmt =
             Return <$> (reservedOp "return" *> parseExpr)
 
@@ -188,6 +219,7 @@ parseElse = (try parseElseIf) <|> parsePlainElse
 parseGourmet :: Parser Program
 parseGourmet = do
     whiteSpace
+    structs <- many parseStruct
     funcs <- many1 parseFunction
     functioncall <- parseFunctionCall
-    return $ Program funcs functioncall
+    return $ Program structs funcs functioncall

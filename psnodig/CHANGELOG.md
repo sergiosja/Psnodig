@@ -96,15 +96,24 @@ and this project adheres to the
   - On the other hand, very few (if any) "serious" algorithms need non-letter characters. The Gourmet interpreter will still be able to handle them, they just have to be rewritten when transpiled to Latex
 
 - Implemented #-statements: Code that is interpreted, but ignored by writer. Basically a way of describing macros within a procedure
-- Implemented @-statements: Code that comes with a description, so that the interpreter runs the code, while the writer ignores the code and writes the description only. Especially useful when the implementation is messy and unsignificant
+- Implemented @-statements: Code that comes with a description, so that the interpreter runs the code, while the writer ignores the code and writes the description only. Especially useful when the implementation is messy and/or unsignificant
 - Refactored more of the parser to use applicative style
+- Removed "pass" statements, since we're using block scoping with {}-brackets
+- Added math symbol "in" for loops like "for i := array {}"
+
+## 0.1.0.9 - 02-10-2023
+
+- Added break and continue statements
+- Refactored types
+- Added structs and field access
 
 ## Gourmet Parser & Latex Writer
 
 ### FIXME:
 
+- Replace true and false with Top- and Bottom symbols in Latex Writer
 - ArrayIndex String Expression: `String` should actually be `VariableExp`
-- Should be possible to do nested indexing, e.g. `array[1][2][3]`
+- Should be possible to do nested indexing, e.g. `array[1][2][3]`. Possible change is from `ArrayIndex String Expression` to `ArrayIndex String [Expression]`
 - ` f()[exp]` should be valid in case `f -> Array`
   - Check if this has ever happened in an algorithm before implementing, intuitively a rare case
 - ForEach String String [Statement]: Last `String` could be `(Either String Array)`
@@ -112,11 +121,20 @@ and this project adheres to the
 
 ### TODO:
 
+- Add unwrapping? e.g. `for (s, f) := SetOfTuples {}` or `(E, V) := Graph`
 - Allow explicit parentheses
 - Allow user to describe input, output and name of algorithm
-- Implement Class/struct?
-- Implement Graphs?
-- Implement Trees?
+- Implement Class/struct/objects?
+  - Will have to refactor types if this is the case!
+  - Maybe a global state of types also, will have to try out stuff
+- Implement Graphs and Trees as separate things?
+- Implement Maps?
+- Add things like stack, queue, PQ etc?
+- if we have class, we can do this ourselves
+
+- Add annotationExpression too? or probably redundant
+
+- For graphs and trees, can use tikZ library to visualise them!! e.g. how do the trees look at the end of the run? can just use latex writer, and add functions. and add config stuff to accomodate for it.
 
 ## Gourmet Interpreter
 
@@ -131,11 +149,13 @@ and this project adheres to the
   - if a > b = decrement i
 
 - Allow input from stdin
+- Implement stuff like add/append etc. to lists
 
 ## Testing
 
 - Get at least 1 property based test working
 - Do user testing, try on many different people
+
   - Students in 1st year of CS
   - Students in 2nd year of CS
   - Students in 3rd year of CS
@@ -146,6 +166,9 @@ and this project adheres to the
     - Sophie? due to UiB
     - NTNU friends at Blank
   - Other people at Blank
+
+- What exactly do I want to test??
+- Get help from Eivind and Eirik
 
 ## Other
 

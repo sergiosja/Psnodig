@@ -1,16 +1,45 @@
 module LaTeX.LatexWriter (writeLatex) where
 
+import Prelude hiding (fst, snd)
 import Control.Monad.Reader
 import Control.Monad.Writer
 import Syntax
 
-type Environment = ([String], [String])
+type Environment = ([String], [String], [String])
 type LatexWriter = ReaderT Environment (Writer String)
 
 -- Helper funcs
 
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
+
+fst :: (a, b, c) -> a
+fst (x, _, _) = x
+
+snd :: (a, b, c) -> b
+snd (_, y, _) = y
+
+thrd :: (a, b, c) -> c
+thrd (_, _, z) = z
+
+-- Structs
+
+writeStructField :: StructField -> LatexWriter ()
+writeStructField (StructField struct field) =
+    tell $ struct ++ "." ++ field
+
+writeStructAssignment :: StructAssignment -> LatexWriter ()
+writeStructAssignment (StructAssignment struct args) = do
+    tell $ "\\" ++ struct ++ "("
+    case length args of
+        0 -> tell ")"
+        1 -> do
+            writeExp (head args)
+            tell ")"
+        _ -> do
+            mapM_ (\a -> (writeExp a) >> tell ", ") (init args)
+            writeExp (last args)
+            tell ")"
 
 -- Expressions
 
@@ -36,8 +65,11 @@ writeExp (ArrayIndex name index) = do
     writeExp index
     tell "}"
 writeExp (Not expr) = do
-    tell "\\KwNot "
+    tell "\\KwNot \\: "
     writeExp expr
+    -- if expr == contains, add the math symbol for "not in" (see Lars' graph algos)
+writeExp (StructFieldExp struct) =
+    writeStructField struct
 
 writeArray :: Array -> LatexWriter ()
 writeArray (Array entries) = do
@@ -86,31 +118,37 @@ writeFunctionCall (FunctionCall funcname args) = do
                     mapM_ (\arg -> (writeExp $ arrayVariableNotation arg arrays) >> tell ", ") (init args)
                     (writeExp $ arrayVariableNotation (last args) arrays) >> tell ")"
 
-getFuncArgs :: [FunctionArg] -> [String]
-getFuncArgs = map getArgName
+getArgumentNames :: [String] -> [Argument] -> [String]
+getArgumentNames structs arg = map getArgName arg
     where
         getArgName (ArrayArg name _) = "\\" ++ name
-        getArgName (IntArg name _) = name
+        getArgName (SingleArg name _) = do
+            case elem name structs of
+                True -> "\\" ++ name
+                False -> name
 
 writeFunc :: Function -> LatexWriter ()
 writeFunc (Function funcname args stmts) = do
     tell $ "\\proc{$\\" ++ funcname ++ "("
     case length args of
         0 -> tell ")$}{\n"
-        1 -> tell $ head (getFuncArgs args) ++ ")$}{\n"
+        1 -> do
+            structs <- asks fst
+            tell $ head (getArgumentNames structs args) ++ ")$}{\n"
         _ -> do
-            mapM_ (\a -> (tell $ a ++ ", ")) (init $ getFuncArgs args)
-            tell $ last (getFuncArgs args) ++ ")$}{\n"
+            structs <- asks fst
+            mapM_ (\a -> (tell $ a ++ ", ")) (init $ getArgumentNames structs args)
+            tell $ last (getArgumentNames structs args) ++ ")$}{\n"
     mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
     tell "}"
 
 -- Statements
 
 writeStmt :: Statement -> Int -> LatexWriter ()
-writeStmt (Assignment target expr) _ = do
+writeStmt (Assignment target value) _ = do
     writeAssignmentTarget target
     tell "\\gets "
-    writeExp expr
+    writeAssignmentValue value
     tell "$ \\;"
 writeStmt (Loop expr stmts) indent = do
     tell "\\While{$"
@@ -119,7 +157,7 @@ writeStmt (Loop expr stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (ForEach item array stmts) indent = do
-    tell $ "\\For{$" ++ item ++ "$ \\forin $\\" ++ array ++ "$}{\n"
+    tell $ "\\For{$" ++ item ++ " \\in \\" ++ array ++ "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (For item from to stmts) indent = do
@@ -139,18 +177,20 @@ writeStmt (If expr stmts maybeElse) indent = do
     case maybeElse of
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
-writeStmt Pass _ = do
-    tell "$\\var{pass}$ \\;"
 writeStmt (Return expr) _ = do
     tell "\\Return $"
     writeExp expr
-    tell "$"
+    tell "$ \\;"
 writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
     tell " \\;"
 writeStmt (HashStmt _) _ = return ()
 writeStmt (AnnotationStmt description _) _ =
     tell $ "\\text{" ++ description ++ "} \\;"
+writeStmt Break _ =
+    tell "\\KwBreak \\;"
+writeStmt Continue _ =
+    tell "\\KwContinue \\;"
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
 writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
@@ -158,6 +198,13 @@ writeAssignmentTarget (ArrayIndexTarget var expr) = do
     tell $ "$\\" ++ var ++ "{"
     writeExp expr
     tell "}"
+writeAssignmentTarget (StructFieldTarget struct) = do
+    tell "$"
+    writeStructField struct
+
+writeAssignmentValue :: AssignmentValue -> LatexWriter ()
+writeAssignmentValue (ExpressionValue expr) = writeExp expr
+writeAssignmentValue (StructValue struct) = writeStructAssignment struct
 
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
@@ -197,12 +244,14 @@ transpileOp op = tell $ case op of
 
 writeStaticFunctions :: LatexWriter ()
 writeStaticFunctions = do
-    funcs <- asks fst
+    funcs <- asks snd
     mapM_ (\f -> tell $ "\\SetKwFunction{" ++ f ++ "}{" ++ f ++ "}\n") funcs
+    structs <- asks fst
+    mapM_ (\s -> tell $ "\\SetKwFunction{" ++ s ++ "}{" ++ s ++ "}\n") structs
 
 writeStaticArrays :: LatexWriter ()
 writeStaticArrays = do
-    arrays <- asks snd
+    arrays <- asks thrd
     mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") arrays
 
 constantConfig :: LatexWriter ()
@@ -210,7 +259,7 @@ constantConfig = do
     tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
     writeStaticFunctions
     writeStaticArrays
-    tell "\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\SetKw{forin}{in}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
+    tell "\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
 
 funcStart :: LatexWriter ()
 funcStart =
@@ -221,7 +270,7 @@ funcEnd (Function name _ _) =
     tell $ "\\caption{" ++ name ++ "}\n\\end{algorithm}\n\n"
 
 writeLatex :: Program -> LatexWriter ()
-writeLatex (Program funcs _) = do
+writeLatex (Program _ funcs _) = do
     constantConfig
     mapM_ (\f -> (funcStart >> writeFunc f >> funcEnd f)) funcs
     tell "\\end{document}"

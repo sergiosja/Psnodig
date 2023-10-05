@@ -12,6 +12,33 @@ addIndents n = replicate n '\t'
 
 -- Writer
 
+writeStruct :: Struct -> GourmetWriter ()
+writeStruct (Struct name args) = do
+    tell $ "struct " ++ name ++ " {"
+    case length args of
+        0 -> tell "}"
+        1 -> tell $ "\n\t" ++ head (getArguments args) ++ "\n}"
+        _ -> do
+            tell "\n"
+            mapM_ (\a -> (tell $ "\t" ++ a ++ ",\n")) (init (getArguments args))
+            tell $ "\t" ++ last (getArguments args) ++ "\n}"
+
+writeStructField :: StructField -> GourmetWriter ()
+writeStructField (StructField struct field) =
+    tell $ struct ++ "." ++ field
+
+writeStructAssignment :: StructAssignment -> GourmetWriter ()
+writeStructAssignment (StructAssignment struct args) = do
+    tell $ struct ++ "("
+    case length args of
+        0 -> tell ")"
+        1 -> do
+            writeExp $ head args
+            tell ")"
+        _ -> do
+            mapM_ (\a -> (writeExp a) >> tell ", ") (init args)
+            (writeExp (last args)) >> tell ")"
+
 writeExp :: Expression -> GourmetWriter ()
 writeExp (Constant n) = tell $ show n
 writeExp (VariableExp var) = tell var
@@ -31,8 +58,10 @@ writeExp (ArrayIndex name index) = do
     writeExp index
     tell "]"
 writeExp (Not expr) = do
-    tell $ "!"
+    tell $ "not "
     writeExp expr
+writeExp (StructFieldExp struct) =
+    writeStructField struct
 
 writeArray :: Array -> GourmetWriter ()
 writeArray (Array entries) = do
@@ -56,16 +85,22 @@ writeFunctionCall (FunctionCall funcname args) = do
 
 writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
 writeAssignmentTarget (VariableTarget var) = tell var
-writeAssignmentTarget (ArrayIndexTarget var expr) = do -- fix this when we collect arrays globally
+writeAssignmentTarget (ArrayIndexTarget var expr) = do
     tell $ var ++ "["
     writeExp expr
     tell "]"
+writeAssignmentTarget (StructFieldTarget struct) =
+    writeStructField struct
+
+writeAssignmentValue :: AssignmentValue -> GourmetWriter ()
+writeAssignmentValue (ExpressionValue expr) = writeExp expr
+writeAssignmentValue (StructValue struct) = writeStructAssignment struct
 
 writeStmt :: Statement -> Int -> GourmetWriter ()
-writeStmt (Assignment target expr) _ = do
+writeStmt (Assignment target value) _ = do
     writeAssignmentTarget target
     tell " := "
-    writeExp expr
+    writeAssignmentValue value
 writeStmt (Loop expr stmts) indent = do
     tell "while "
     writeExp expr
@@ -93,8 +128,6 @@ writeStmt (If expr stmts maybeElse) indent = do
     case maybeElse of
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
-writeStmt Pass _ = do
-    tell "pass"
 writeStmt (Return expr) _ = do
     tell "return "
     writeExp expr
@@ -107,8 +140,10 @@ writeStmt (AnnotationStmt description stmts) indent = do
     tell $ "@{" ++ description ++ "}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
-
-
+writeStmt Break _ =
+    tell "break"
+writeStmt Continue _ =
+    tell "continue"
 
 writeElse :: Else -> Int -> GourmetWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
@@ -123,21 +158,21 @@ writeElse (Else stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 
-getFuncArgs :: [FunctionArg] -> [String]
-getFuncArgs = map getArgName
+getArguments :: [Argument] -> [String]
+getArguments = map writeArg
     where
-        getArgName (ArrayArg name _) = name
-        getArgName (IntArg name _) = name
+        writeArg (ArrayArg name t) = name ++ " " ++ t ++ "*"
+        writeArg (SingleArg name t) = name ++ " " ++ t
 
 writeFunc :: Function -> GourmetWriter ()
 writeFunc (Function funcname args stmts) = do
     tell $ "func " ++ funcname ++ "("
     case length args of
         0 -> tell ") {\n"
-        1 -> tell $ head (getFuncArgs args) ++ ") {\n"
+        1 -> tell $ head (getArguments args) ++ ") {\n"
         _ -> do
-            mapM_ (\a -> (tell $ a ++ ", ")) (init (getFuncArgs args))
-            tell $ last (getFuncArgs args) ++ ") {\n"
+            mapM_ (\a -> (tell $ a ++ ", ")) (init (getArguments args))
+            tell $ last (getArguments args) ++ ") {\n"
     mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
     tell "}"
 
@@ -156,6 +191,7 @@ writeOp And = tell " and "
 writeOp Or = tell " or "
 
 writeGourmet :: Program -> GourmetWriter ()
-writeGourmet (Program funcs funcCall) = do
+writeGourmet (Program structs funcs funcCall) = do
+    mapM_ (\s -> (writeStruct s) >> tell "\n\n") structs
     mapM_ (\f -> (writeFunc f) >> tell "\n\n") funcs
     writeFunctionCall funcCall
