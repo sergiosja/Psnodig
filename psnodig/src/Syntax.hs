@@ -42,7 +42,7 @@ data Statement =
       Assignment AssignmentTarget AssignmentValue
     | Loop Expression [Statement]
     | If Expression [Statement] (Maybe Else)
-    | ForEach String String [Statement] -- what about "for node := graph.vertices { ... }" ??
+    | ForEach String Expression [Statement]
     | For String Expression Expression [Statement]
     | CallStmt FunctionCall
     | Return Expression
@@ -95,4 +95,5 @@ data Operator =
     | NotEqual
     | And
     | Or
+    | Modulo
     deriving (Eq, Show, Read)

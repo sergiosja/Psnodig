@@ -3,6 +3,7 @@ module LaTeX.LatexEnv (extractEnv) where
 import Control.Monad.State
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.List (isPrefixOf)
 import Syntax
 
 type Collector = State (Set String, Set String, Set String)
@@ -49,6 +50,14 @@ collectStmts stmt =
         (Assignment (VariableTarget name) (ExpressionValue (ArrayExp (Array entries)))) -> do
             modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
             mapM_ collectExpr entries
+        (Assignment (VariableTarget varname) (ExpressionValue (CallExp (FunctionCall funcname exps)))) -> do
+            modify (\(structs, funcs, arrays) -> (structs, Set.insert funcname funcs, arrays))
+            if isPrefixOf "array" funcname then
+                modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert varname arrays))
+            else if isPrefixOf "set" funcname then
+                modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert varname arrays))
+            else return ()
+            mapM_ collectExpr exps
         (Assignment (VariableTarget _) (ExpressionValue expr)) ->
             collectExpr expr
         (Loop expr stmts) -> do
@@ -58,8 +67,8 @@ collectStmts stmt =
             collectExpr expr
             mapM_ collectStmts stmts
             collectElse maybeElse
-        (ForEach _ arr stmts) -> do
-            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert arr arrays))
+        (ForEach _ expr stmts) -> do
+            collectExpr expr
             mapM_ collectStmts stmts
         (For _ expr1 expr2 stmts) -> do
             collectExpr expr1
@@ -69,6 +78,10 @@ collectStmts stmt =
             modify (\(structs, funcs, arrays) -> (structs, Set.insert name funcs, arrays))
         (Return expr) ->
             collectExpr expr
+        (HashStmt stmnt) ->
+            collectStmts stmnt
+        (AnnotationStmt _ stmts) ->
+            mapM_ collectStmts stmts
         _ -> return ()
 
 collectElse :: Maybe Else -> Collector ()

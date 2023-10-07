@@ -1,0 +1,37 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{SelectionSort}{SelectionSort}
+\SetKwArray{A}{A}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\SelectionSort(\A)$}{
+	
+	\For{$i \gets 0$ \KwTo $n - 1$}{
+		$\var{k} \gets i$ \;
+		\For{$j \gets j + 1$ \KwTo $n - 1$}{
+			\uIf{$\A{j} < \A{k}$}{
+				$\var{k} \gets j$ \;
+			}
+		}
+		\uIf{$i \neq k$}{
+			\text{swap(A[i], A[k])} \;
+		}
+	}
+}\caption{SelectionSort}
+\end{algorithm}
+
+\end{document}

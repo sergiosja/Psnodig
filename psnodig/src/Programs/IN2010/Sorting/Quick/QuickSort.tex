@@ -1,0 +1,58 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Partition}{Partition}
+\SetKwFunction{QuickSort}{QuickSort}
+\SetKwArray{A}{A}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\Partition(\A, low, high)$}{
+	\text{p := ChoosePivot(A, low, high)} \;
+	\text{swap A[p] with A[high]} \;
+	$\var{pivot} \gets \A{high}$ \;
+	$\var{left} \gets low$ \;
+	$\var{right} \gets high - 1$ \;
+	\While{$left \leq right$}{
+		\While{$left \leq right \land \A{left} \leq pivot$}{
+			$\var{left} \gets left + 1$ \;
+		}
+		\While{$right \geq left \land \A{right} \geq pivot$}{
+			$\var{right} \gets right - 1$ \;
+		}
+		\uIf{$left < right$}{
+			\text{swap A[left] and A[right]} \;
+		}
+	}
+	\text{swap A[left] and A[high]} \;
+	\Return $left$ \;
+}\caption{Partition}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\QuickSort(\A, low, high)$}{
+	\uIf{$low \geq high$}{
+		\Return $A$ \;
+	}
+	$\var{p} \gets \Partition(A, low, high)$ \;
+	\QuickSort(A, low, p - 1) \;
+	\QuickSort(A, p + 1, high) \;
+	\Return $\A$ \;
+}\caption{QuickSort}
+\end{algorithm}
+
+\end{document}

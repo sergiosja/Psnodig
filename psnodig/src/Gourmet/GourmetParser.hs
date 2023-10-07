@@ -9,18 +9,18 @@ import qualified Text.Parsec.Token as Token
 
 lexer :: Token.TokenParser ()
 lexer = Token.makeTokenParser emptyDef {
-           Token.identStart = letter,
-           Token.identLetter = alphaNum <|> char '\'',
-           Token.reservedOpNames =
-            [ ":=", "+", "-", "*", "/", "<", ">", "=="
-            , "!=", "while", "{", "}", "if", "func", "("
-            , ")", ">=", "<=", "true", "false", "return"
-            , "[", "]", "else", "&&", "||", "!", "for"
-            , ",", "contains", "length", "ceil", "floor"
-            , ":", "#", "@", "break", "continue", "struct"
-            , "not"
-            ]
-       }
+    Token.identStart = letter,
+    Token.identLetter = alphaNum <|> char '\'',
+    Token.reservedOpNames =
+        [ ":=", "+", "-", "*", "/", "<", ">", "=="
+        , "!=", "while", "{", "}", "if", "func", "("
+        , ")", ">=", "<=", "true", "false", "return"
+        , "[", "]", "else", "&&", "||", "!", "for"
+        , ",", "contains", "length", "ceil", "floor"
+        , ":", "#", "@", "break", "continue", "struct"
+        , "not", "%"
+        ]
+}
 
 identifier :: Parser String
 identifier = Token.identifier lexer
@@ -64,17 +64,18 @@ parseExpr :: Parser Expression
 parseExpr = buildExpressionParser table term
     where
         table = [ [ Infix (BinaryExp Times <$ reservedOp "*") AssocLeft
-                    , Infix (BinaryExp Division <$ reservedOp "/") AssocLeft]
+                    , Infix (BinaryExp Division <$ reservedOp "/") AssocLeft
+                    , Infix (BinaryExp Modulo <$ reservedOp "%") AssocLeft ]
                 , [ Infix (BinaryExp Plus <$ reservedOp "+") AssocLeft
-                    , Infix (BinaryExp Minus <$ reservedOp "-") AssocLeft]
-                , [ Infix (BinaryExp And <$ reservedOp "&&") AssocLeft
-                    , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
-                , [ Infix (BinaryExp Equal <$ reservedOp "==") AssocNone
-                    , Infix (BinaryExp NotEqual <$ reservedOp "!=") AssocNone
-                    , Infix (BinaryExp LessThan <$ reservedOp "<") AssocNone
+                    , Infix (BinaryExp Minus <$ reservedOp "-") AssocLeft ]
+                , [ Infix (BinaryExp LessThan <$ reservedOp "<") AssocNone
                     , Infix (BinaryExp LessThanEqual <$ reservedOp "<=") AssocNone
                     , Infix (BinaryExp GreaterThan <$ reservedOp ">") AssocNone
-                    , Infix (BinaryExp GreaterThanEqual <$ reservedOp ">=") AssocNone]
+                    , Infix (BinaryExp GreaterThanEqual <$ reservedOp ">=") AssocNone ]
+                , [ Infix (BinaryExp Equal <$ reservedOp "==") AssocNone
+                    , Infix (BinaryExp NotEqual <$ reservedOp "!=") AssocNone ]
+                , [ Infix (BinaryExp And <$ reservedOp "&&") AssocLeft
+                    , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
                 ]
         term = choice
             [ try parseNotExp
@@ -189,7 +190,7 @@ parseStmt = choice
         forEachStmt =
             ForEach
                 <$> (reservedOp "for" *> identifier) <* reservedOp ":="
-                <*> identifier <* reservedOp "{"
+                <*> parseExpr <* reservedOp "{"
                 <*> many parseStmt <* reservedOp "}"
         forStmt =
             For

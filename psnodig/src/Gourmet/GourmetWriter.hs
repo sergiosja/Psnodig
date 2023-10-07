@@ -107,8 +107,10 @@ writeStmt (Loop expr stmts) indent = do
     tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
-writeStmt (ForEach item array stmts) indent = do
-    tell $ "for " ++ item ++ " := " ++ array ++ " {\n"
+writeStmt (ForEach item expr stmts) indent = do
+    tell $ "for " ++ item ++ " := "
+    writeExp expr
+    tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (For item from to stmts) indent = do
@@ -189,6 +191,7 @@ writeOp Equal = tell " == "
 writeOp NotEqual = tell " != "
 writeOp And = tell " and "
 writeOp Or = tell " or "
+writeOp Modulo = tell " % "
 
 writeGourmet :: Program -> GourmetWriter ()
 writeGourmet (Program structs funcs funcCall) = do

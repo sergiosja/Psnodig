@@ -26,7 +26,7 @@ thrd (_, _, z) = z
 
 writeStructField :: StructField -> LatexWriter ()
 writeStructField (StructField struct field) =
-    tell $ struct ++ "." ++ field
+    tell $ struct ++ "_{" ++ field ++ "}"
 
 writeStructAssignment :: StructAssignment -> LatexWriter ()
 writeStructAssignment (StructAssignment struct args) = do
@@ -109,6 +109,16 @@ writeFunctionCall (FunctionCall funcname args) = do
             writeExp $ last args
             tell $ " \\in "
             writeExp $ arrayVariableNotation (head args) arrays
+        "append" -> do
+            tell "append "
+            writeExp $ args !! 1
+            tell " to "
+            writeExp $ args !! 0
+        "add" -> do
+            tell "add "
+            writeExp $ args !! 1
+            tell " to "
+            writeExp $ args !! 0
         _ -> do
             tell $ "\\" ++ funcname ++ "("
             case length args of
@@ -156,8 +166,10 @@ writeStmt (Loop expr stmts) indent = do
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
-writeStmt (ForEach item array stmts) indent = do
-    tell $ "\\For{$" ++ item ++ " \\in \\" ++ array ++ "$}{\n"
+writeStmt (ForEach item expr stmts) indent = do
+    tell $ "\\For{$" ++ item ++ " \\in "
+    writeExp expr
+    tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (For item from to stmts) indent = do
@@ -238,6 +250,7 @@ transpileOp op = tell $ case op of
     NotEqual         -> " \\neq "
     And              -> " \\land "
     Or               -> " \\lor "
+    Modulo           -> " % "
 
 
 -- Static stuff

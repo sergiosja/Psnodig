@@ -107,6 +107,49 @@ and this project adheres to the
 - Refactored types
 - Added structs and field access
 
+## 0.1.0.10 - 06-10-2023
+
+- Added modulo operator
+- Changed precedence of operators to match C-style langs (https://stackoverflow.com/questions/3114107/modulo-in-order-of-operation)
+- Changed forEach loops from `ForEach String String [Statement]` to `ForEach String Expression [Statement]`
+- Made custom text in Writer for add and append functions
+
+#### Search
+
+[x] Naïve
+[x] Binary search
+
+#### Sorting
+
+[x] Bubble sort
+[x] Selection sort
+[x] Insertion sort
+[x] Heap sort
+[x] Merge sort
+[x] Quicksort
+[x] Bucket sort (?)
+[ ] Radix sort (https://www.tutorialspoint.com/golang-program-to-implement-radix-sort-using-bucket-sort-as-a-subroutine)
+
+## 0.1.0.11 -
+
+#### Tree
+
+[] Depth
+[] Height
+[] FindMin
+[] FindMax
+[] Lookup
+
+[] BST Insert
+[] BST Remove
+
+[] LeftRotate
+[] RightRotate
+[] Balance + BalanceFactor
+
+[] AVL Insert
+[] AVL Remove
+
 ## Gourmet Parser & Latex Writer
 
 ### FIXME:
@@ -150,6 +193,13 @@ and this project adheres to the
 
 - Allow input from stdin
 - Implement stuff like add/append etc. to lists
+- Implement print, min, max, swap etc.
+
+- to declare empty stuff do this:
+  - array(N)
+  - list(N)
+  - set()
+    the function will return either empty set or array with N spots
 
 ## Testing
 

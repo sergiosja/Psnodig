@@ -1,0 +1,42 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{BinarySearch}{BinarySearch}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKwArray{A}{A}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\BinarySearch(\A, x)$}{
+	$\var{low} \gets 0$ \;
+	$\var{high} \gets \abs{A} - 1$ \;
+	\While{$low \leq high$}{
+		$\var{i} \gets \lfloor \frac{low + high}{2}\rfloor$ \;
+		\uIf{$\A{i} = x$}{
+			\Return $\KwTrue$ \;
+		}
+		\uElseIf{$\A{i} > x$}{
+			$\var{high} \gets i - 1$ \;
+		}
+		\uElse{
+			$\var{low} \gets i + 1$ \;
+		}
+	}
+	\Return $\KwFalse$ \;
+}\caption{BinarySearch}
+\end{algorithm}
+
+\end{document}

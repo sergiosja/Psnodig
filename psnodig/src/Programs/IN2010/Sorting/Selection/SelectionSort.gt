@@ -1,0 +1,21 @@
+func SelectionSort(A int*) {
+    # n := length(A)
+    for i := 0, n-1 {
+        k := i
+        for j := j+1, n-1 {
+            if A[j] < A[k] {
+                k := j
+            }
+        }
+        if i != k {
+            @{swap(A[i], A[k])}{
+                tmp := A[i]
+                A[i] := A[k]
+                A[k] := tmp
+            }
+        }
+    }
+}
+
+
+SelectionSort([64, 34, 25, 12, 22, 11, 90])

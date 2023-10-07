@@ -1,0 +1,33 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{InsertionSort}{InsertionSort}
+\SetKwArray{A}{A}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\InsertionSort(\A)$}{
+	
+	\For{$i \gets 1$ \KwTo $n - 1$}{
+		$\var{j} \gets i$ \;
+		\While{$j > 0 \land \A{j - 1} > \A{j}$}{
+			\text{swap(A[j], A[j-1])} \;
+			$\var{j} \gets j - 1$ \;
+		}
+	}
+}\caption{InsertionSort}
+\end{algorithm}
+
+\end{document}

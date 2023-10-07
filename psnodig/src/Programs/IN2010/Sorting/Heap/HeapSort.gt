@@ -1,0 +1,52 @@
+func BubbleDown(A int*, i int, n int) {
+    largest := i
+    left := 2 * i + 1
+    right := 2 * i + 2
+
+    if (left < n) && (A[largest] < A[left]) {
+        @{swap A[largest] and A[left]}{
+            tmp := A[largest]
+            A[largest] := A[left]
+            A[left] := tmp
+        }
+    }
+
+    if (right < n) && (A[largest] < A[right]) {
+        @{swap A[largest] and A[right]}{
+            tmp := A[largest]
+            A[largest] := A[right]
+            A[right] := tmp
+        }
+    }
+
+    if i != largest {
+        @{swap A[largest] and A[i]}{
+            tmp := A[largest]
+            A[largest] := A[i]
+            A[i] := tmp
+        }
+        BubbleDown(A, largest, n)
+    }
+}
+
+func BuildMaxHeap(A int*) {
+    # n := largest(A)
+    for i := floor(n/2), 0 {
+        BubbleDown(A, i, n)
+    }
+}
+
+func HeapSort(A int*) {
+    # n := length(A)
+    BuildMaxHeap(A, n)
+    for i := n - 1, 0 {
+        @{swap A[0] and A[i]}{
+            tmp := A[0]
+            A[0] := A[i]
+            A[i] := tmp
+        }
+        BubbleDown(A, 0, i)
+    }
+}
+
+HeapSort([64, 34, 25, 12, 22, 11, 90])
