@@ -12,6 +12,13 @@ data Argument =
     | ArrayArg String String
     deriving (Eq, Show, Read)
 
+-- data Value =
+--       Nil
+--     | Boolean Bool
+--     | Number Integer
+--     | Text String
+--     | List [Value]
+
 -- Struct related
 
 data Struct = Struct String [Argument]
@@ -31,9 +38,22 @@ data Function = Function String [Argument] [Statement]
 data FunctionCall = FunctionCall String [Expression]
     deriving (Eq, Show, Read)
 
--- Array
+-- Collections
 
-data Array = Array [Expression]
+data Array =
+      FullArray [Expression]
+    | EmptyArray ArrayDecl
+    deriving (Eq, Show, Read)
+
+data ArrayDecl =
+      BaseType String
+    | ArrayType Expression ArrayDecl
+    deriving (Eq, Show, Read)
+
+data HashMap = HashMap String String
+    deriving (Eq, Show, Read)
+
+data HashSet = HashSet String
     deriving (Eq, Show, Read)
 
 -- Statements and expressions
@@ -61,6 +81,8 @@ data AssignmentTarget =
 data AssignmentValue =
       ExpressionValue Expression
     | StructValue StructAssignment
+    | HashMapValue HashMap
+    | HashSetValue HashSet
     deriving (Eq, Show, Read)
 
 data Else =

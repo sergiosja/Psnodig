@@ -64,7 +64,8 @@ writeExp (StructFieldExp struct) =
     writeStructField struct
 
 writeArray :: Array -> GourmetWriter ()
-writeArray (Array entries) = do
+writeArray (EmptyArray arr) = writeArrayDecl arr
+writeArray (FullArray entries) = do
     tell "["
     case length entries of
         0 -> tell "]"
@@ -72,6 +73,22 @@ writeArray (Array entries) = do
         _ -> do
             mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
             (writeExp $ last entries) >> tell "]"
+
+writeArrayDecl :: ArrayDecl -> GourmetWriter ()
+writeArrayDecl (BaseType t) = tell t
+writeArrayDecl (ArrayType expr t) = do
+    tell "["
+    writeExp expr
+    tell "]"
+    writeArrayDecl t
+
+writeMap :: HashMap -> GourmetWriter ()
+writeMap (HashMap t1 t2) =
+    tell $ "map[" ++ t1 ++ "]" ++ t2
+
+writeSet :: HashSet -> GourmetWriter ()
+writeSet (HashSet t) =
+    tell $ "set[" ++ t ++ "]"
 
 writeFunctionCall :: FunctionCall -> GourmetWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
@@ -95,6 +112,8 @@ writeAssignmentTarget (StructFieldTarget struct) =
 writeAssignmentValue :: AssignmentValue -> GourmetWriter ()
 writeAssignmentValue (ExpressionValue expr) = writeExp expr
 writeAssignmentValue (StructValue struct) = writeStructAssignment struct
+writeAssignmentValue (HashMapValue hmap) = writeMap hmap
+writeAssignmentValue (HashSetValue set) = writeSet set
 
 writeStmt :: Statement -> Int -> GourmetWriter ()
 writeStmt (Assignment target value) _ = do

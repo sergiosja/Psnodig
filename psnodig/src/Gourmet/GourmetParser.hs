@@ -18,7 +18,7 @@ lexer = Token.makeTokenParser emptyDef {
         , "[", "]", "else", "&&", "||", "!", "for"
         , ",", "contains", "length", "ceil", "floor"
         , ":", "#", "@", "break", "continue", "struct"
-        , "not", "%"
+        , "not", "%", "map", "set"
         ]
 }
 
@@ -109,8 +109,30 @@ parseExpr = buildExpressionParser table term
                         parseFalse = Boolean False <$ reservedOp "false"
 
 parseArray :: Parser Array
-parseArray =
-    Array <$> (reservedOp "[" *> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)) <* reservedOp "]"
+parseArray = try parseEmptyArray <|> parseFullArray
+    where
+        parseEmptyArray =
+            EmptyArray <$> parseArrayDecl
+        parseFullArray =
+            FullArray <$> (reservedOp "[" *> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace))
+                      <* reservedOp "]"
+
+parseArrayDecl :: Parser ArrayDecl
+parseArrayDecl = try parseArrayType <|> parseBaseType
+    where
+        parseArrayType =
+            ArrayType <$> (reservedOp "[" *> parseExpr <* reservedOp "]")
+                      <*> parseArrayDecl
+        parseBaseType = BaseType <$> identifier
+
+parseMap :: Parser HashMap
+parseMap =
+    HashMap <$> (reservedOp "map" *> reservedOp "[" *> identifier)
+            <*> (reservedOp "]" *> identifier)
+
+parseSet :: Parser HashSet
+parseSet =
+    HashSet <$> (reservedOp "set" *> reservedOp "[" *> identifier) <* reservedOp "]"
 
 -- Parse functions
 
@@ -145,10 +167,18 @@ parseAssignmentTarget = choice
         parseVariableTarget = VariableTarget <$> identifier
 
 parseAssignmentValue :: Parser AssignmentValue
-parseAssignmentValue = try parseStructValue <|> parseExpressionValue
+parseAssignmentValue = choice
+    [ try parseMapValue
+    , try parseSetValue
+    , try parseStructValue
+    , try parseExpressionValue
+    ]
     where
+        parseMapValue = HashMapValue <$> parseMap
+        parseSetValue = HashSetValue <$> parseSet
         parseStructValue = StructValue <$> parseStructAssignment
         parseExpressionValue = ExpressionValue <$> parseExpr
+
 
 -- Parse statements
 

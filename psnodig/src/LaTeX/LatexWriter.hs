@@ -67,12 +67,13 @@ writeExp (ArrayIndex name index) = do
 writeExp (Not expr) = do
     tell "\\KwNot \\: "
     writeExp expr
-    -- if expr == contains, add the math symbol for "not in" (see Lars' graph algos)
+    -- if expr == callExp contains, add the math symbol for "not in" (see Lars' graph algos)
 writeExp (StructFieldExp struct) =
     writeStructField struct
 
 writeArray :: Array -> LatexWriter ()
-writeArray (Array entries) = do
+writeArray (EmptyArray arr) = writeArrayDecl arr 0
+writeArray (FullArray entries) = do
     tell "["
     case length entries of
         0 -> tell "]"
@@ -80,6 +81,20 @@ writeArray (Array entries) = do
         _ -> do
             mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
             (writeExp $ last entries) >> tell "]"
+
+
+writeArrayDecl :: ArrayDecl -> Int -> LatexWriter ()
+writeArrayDecl (BaseType t) n = tell $ (show n) ++ "D array of " ++ t ++ "s"
+writeArrayDecl (ArrayType _ t) n = do
+    writeArrayDecl t (n+1)
+
+writeMap :: HashMap -> LatexWriter ()
+writeMap (HashMap t1 t2) =
+    tell $ "\\text{empty map from " ++ t1 ++ " to " ++ t2 ++ "}"
+
+writeSet :: HashSet -> LatexWriter ()
+writeSet (HashSet t) =
+    tell $ "\\text{empty set of " ++ t ++ "s}"
 
 -- Function related
 
@@ -217,6 +232,8 @@ writeAssignmentTarget (StructFieldTarget struct) = do
 writeAssignmentValue :: AssignmentValue -> LatexWriter ()
 writeAssignmentValue (ExpressionValue expr) = writeExp expr
 writeAssignmentValue (StructValue struct) = writeStructAssignment struct
+writeAssignmentValue (HashMapValue hmap) = writeMap hmap
+writeAssignmentValue (HashSetValue set) = writeSet set
 
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do

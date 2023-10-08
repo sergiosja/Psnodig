@@ -47,17 +47,15 @@ collectExpr arg =
 collectStmts :: Statement -> Collector ()
 collectStmts stmt =
     case stmt of
-        (Assignment (VariableTarget name) (ExpressionValue (ArrayExp (Array entries)))) -> do
+        (Assignment (VariableTarget name) (ExpressionValue (ArrayExp (FullArray entries)))) -> do
             modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
             mapM_ collectExpr entries
-        (Assignment (VariableTarget varname) (ExpressionValue (CallExp (FunctionCall funcname exps)))) -> do
-            modify (\(structs, funcs, arrays) -> (structs, Set.insert funcname funcs, arrays))
-            if isPrefixOf "array" funcname then
-                modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert varname arrays))
-            else if isPrefixOf "set" funcname then
-                modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert varname arrays))
-            else return ()
-            mapM_ collectExpr exps
+        (Assignment (VariableTarget name) (ExpressionValue (ArrayExp (EmptyArray _)))) -> do
+            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
+        (Assignment (VariableTarget name) (HashMapValue _)) -> do
+            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
+        (Assignment (VariableTarget name) (HashSetValue _)) -> do
+            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
         (Assignment (VariableTarget _) (ExpressionValue expr)) ->
             collectExpr expr
         (Loop expr stmts) -> do
