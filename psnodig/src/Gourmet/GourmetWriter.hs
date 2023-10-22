@@ -1,5 +1,10 @@
 module Gourmet.GourmetWriter (writeGourmet) where
 
+-- writeGourmet :: Int
+-- writeGourmet = 1
+
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Control.Monad.Writer
 import Syntax
 
@@ -12,8 +17,8 @@ addIndents n = replicate n '\t'
 
 -- Writer
 
-writeStruct :: Struct -> GourmetWriter ()
-writeStruct (Struct name args) = do
+writeStructDecl :: StructDecl -> GourmetWriter ()
+writeStructDecl (StructDecl name args) = do
     tell $ "struct " ++ name ++ " {"
     case length args of
         0 -> tell "}"
@@ -27,33 +32,68 @@ writeStructField :: StructField -> GourmetWriter ()
 writeStructField (StructField struct field) =
     tell $ struct ++ "." ++ field
 
-writeStructAssignment :: StructAssignment -> GourmetWriter ()
-writeStructAssignment (StructAssignment struct args) = do
-    tell $ struct ++ "("
+writeStruct :: Struct -> GourmetWriter ()
+writeStruct (Struct name args) = do
+    tell $ "struct " ++ name ++ "("
     case length args of
         0 -> tell ")"
         1 -> do
             writeExp $ head args
             tell ")"
         _ -> do
-            mapM_ (\a -> (writeExp a) >> tell ", ") (init args)
+            mapM_ (\a -> (writeExp a) >> tell ", " ) (init args)
             (writeExp (last args)) >> tell ")"
 
+-- Values
+
+writeValue :: Value -> GourmetWriter ()
+writeValue (Nil) = tell "nil"
+writeValue (Boolean bool) =
+    tell $ if bool == True then "true" else "false" -- kanskje $ ikke nødvendig
+writeValue (Number n) = tell $ show n
+writeValue (Text str) = tell str
+writeValue (List exprs) = do
+    tell "["
+    case length exprs of
+        0 -> tell "]"
+        1 -> (writeExp $ head exprs) >> tell "]"
+        _ -> do
+            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init exprs)
+            (writeExp $ last exprs) >> tell "]"
+writeValue (HashSet exprs) = do
+    tell "set{"
+    let set = Set.toList exprs
+    case length exprs of
+        0 -> tell "}"
+        1 -> (writeExp $ head set) >> tell "}"
+        _ -> do
+            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init set)
+            (writeExp $ last set) >> tell "}"
+writeValue (HashMap hmap) = do
+    tell "map{"
+    let pairs = Map.toList hmap
+    case length pairs of
+        0 -> tell "}"
+        1 -> (writePair $ head pairs) >> tell "}"
+        _ -> do
+            mapM_ (\p -> (writePair p) >> tell ", ") (init pairs)
+            (writePair $ last pairs) >> tell "}"
+
+writePair :: (Expression, Expression) -> GourmetWriter ()
+writePair (x, y) = writeExp x >> tell ": " >> writeExp y
+
+-- Expressions
+
 writeExp :: Expression -> GourmetWriter ()
-writeExp (Constant n) = tell $ show n
+writeExp (Constant v) = writeValue v
 writeExp (VariableExp var) = tell var
-writeExp (Boolean val) = case val of
-    True -> tell "true"
-    False -> tell "false"
 writeExp (BinaryExp op exp1 exp2) = do
     writeExp exp1
     writeOp op
     writeExp exp2
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (ArrayExp array) =
-    writeArray array
-writeExp (ArrayIndex name index) = do
+writeExp (ListIndex name index) = do
     tell $ name ++ "["
     writeExp index
     tell "]"
@@ -62,33 +102,6 @@ writeExp (Not expr) = do
     writeExp expr
 writeExp (StructFieldExp struct) =
     writeStructField struct
-
-writeArray :: Array -> GourmetWriter ()
-writeArray (EmptyArray arr) = writeArrayDecl arr
-writeArray (FullArray entries) = do
-    tell "["
-    case length entries of
-        0 -> tell "]"
-        1 -> (writeExp $ head entries) >> tell "]"
-        _ -> do
-            mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
-            (writeExp $ last entries) >> tell "]"
-
-writeArrayDecl :: ArrayDecl -> GourmetWriter ()
-writeArrayDecl (BaseType t) = tell t
-writeArrayDecl (ArrayType expr t) = do
-    tell "["
-    writeExp expr
-    tell "]"
-    writeArrayDecl t
-
-writeMap :: HashMap -> GourmetWriter ()
-writeMap (HashMap t1 t2) =
-    tell $ "map[" ++ t1 ++ "]" ++ t2
-
-writeSet :: HashSet -> GourmetWriter ()
-writeSet (HashSet t) =
-    tell $ "set[" ++ t ++ "]"
 
 writeFunctionCall :: FunctionCall -> GourmetWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
@@ -102,7 +115,7 @@ writeFunctionCall (FunctionCall funcname args) = do
 
 writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
 writeAssignmentTarget (VariableTarget var) = tell var
-writeAssignmentTarget (ArrayIndexTarget var expr) = do
+writeAssignmentTarget (ListIndexTarget var expr) = do
     tell $ var ++ "["
     writeExp expr
     tell "]"
@@ -111,9 +124,7 @@ writeAssignmentTarget (StructFieldTarget struct) =
 
 writeAssignmentValue :: AssignmentValue -> GourmetWriter ()
 writeAssignmentValue (ExpressionValue expr) = writeExp expr
-writeAssignmentValue (StructValue struct) = writeStructAssignment struct
-writeAssignmentValue (HashMapValue hmap) = writeMap hmap
-writeAssignmentValue (HashSetValue set) = writeSet set
+writeAssignmentValue (StructValue struct) = writeStruct struct
 
 writeStmt :: Statement -> Int -> GourmetWriter ()
 writeStmt (Assignment target value) _ = do
@@ -180,10 +191,7 @@ writeElse (Else stmts) indent = do
     tell $ (addIndents indent) ++ "}"
 
 getArguments :: [Argument] -> [String]
-getArguments = map writeArg
-    where
-        writeArg (ArrayArg name t) = name ++ " " ++ t ++ "*"
-        writeArg (SingleArg name t) = name ++ " " ++ t
+getArguments = map (\(Argument name t) -> name ++ " " ++ t)
 
 writeFunc :: Function -> GourmetWriter ()
 writeFunc (Function funcname args stmts) = do
@@ -214,6 +222,6 @@ writeOp Modulo = tell " % "
 
 writeGourmet :: Program -> GourmetWriter ()
 writeGourmet (Program structs funcs funcCall) = do
-    mapM_ (\s -> (writeStruct s) >> tell "\n\n") structs
+    mapM_ (\s -> (writeStructDecl s) >> tell "\n\n") structs
     mapM_ (\f -> (writeFunc f) >> tell "\n\n") funcs
     writeFunctionCall funcCall

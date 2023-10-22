@@ -3,7 +3,7 @@ module LaTeX.LatexEnv (extractEnv) where
 import Control.Monad.State
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.List (isPrefixOf)
+import qualified Data.Map as Map
 import Syntax
 
 type Collector = State (Set String, Set String, Set String)
@@ -13,49 +13,38 @@ collectNames (Program structs funcs _) = do
     mapM_ collectStructDeclarations structs
     mapM_ collectFuncDeclarations funcs
 
-collectStructDeclarations :: Struct -> Collector ()
-collectStructDeclarations (Struct name _) = do
-    modify(\(structs, funcs, arrays) -> (Set.insert name structs, funcs, arrays))
+collectStructDeclarations :: StructDecl -> Collector ()
+collectStructDeclarations (StructDecl name _) = do
+    modify(\(structs, funcs, lists) -> (Set.insert name structs, funcs, lists))
 
 collectFuncDeclarations :: Function -> Collector ()
 collectFuncDeclarations (Function name args stmts) = do
-    modify (\(structs, funcs, arrays) -> (structs, Set.insert name funcs, arrays))
+    modify (\(structs, funcs, lists) -> (structs, Set.insert name funcs, lists))
     mapM_ collectArgs args
     mapM_ collectStmts stmts
 
 collectArgs :: Argument -> Collector ()
-collectArgs arg = case arg of
-    (ArrayArg name _ ) ->
-        modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
-    _ -> return ()
-
-collectExpr :: Expression -> Collector ()
-collectExpr arg =
-    case arg of
-        (BinaryExp _ exp1 exp2) -> do
-            collectExpr exp1
-            collectExpr exp2
-        (ArrayIndex _ expr) ->
-            collectExpr expr
-        (CallExp (FunctionCall name exps)) -> do
-            modify (\(structs, funcs, arrays) -> (structs, Set.insert name funcs, arrays))
-            mapM_ collectExpr exps
-        (Not expr) ->
-            collectExpr expr
-        _ -> return ()
+collectArgs (Argument n t) = case t of
+    "bool" -> return ()
+    "int" -> return ()
+    "string" -> return ()
+    _ ->
+        modify (\(structs, funcs, lists) -> (structs, funcs, Set.insert n lists))
 
 collectStmts :: Statement -> Collector ()
 collectStmts stmt =
     case stmt of
-        (Assignment (VariableTarget name) (ExpressionValue (ArrayExp (FullArray entries)))) -> do
-            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
-            mapM_ collectExpr entries
-        (Assignment (VariableTarget name) (ExpressionValue (ArrayExp (EmptyArray _)))) -> do
-            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
-        (Assignment (VariableTarget name) (HashMapValue _)) -> do
-            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
-        (Assignment (VariableTarget name) (HashSetValue _)) -> do
-            modify (\(structs, funcs, arrays) -> (structs, funcs, Set.insert name arrays))
+        (Assignment (VariableTarget name) (ExpressionValue (Constant value))) -> do
+            modify (\(structs, funcs, lists) -> (structs, funcs, Set.insert name lists))
+            case value of
+                (List exprs) -> mapM_ collectExpr exprs
+                (HashSet set) ->
+                    let exprs = Set.toList set
+                    in mapM_ collectExpr exprs
+                (HashMap hmap) ->
+                    let pairs = Map.toList hmap
+                    in mapM_ collectPair pairs
+                _ -> return ()
         (Assignment (VariableTarget _) (ExpressionValue expr)) ->
             collectExpr expr
         (Loop expr stmts) -> do
@@ -73,13 +62,29 @@ collectStmts stmt =
             collectExpr expr2
             mapM_ collectStmts stmts
         (CallStmt (FunctionCall name _)) ->
-            modify (\(structs, funcs, arrays) -> (structs, Set.insert name funcs, arrays))
+            modify (\(structs, funcs, lists) -> (structs, Set.insert name funcs, lists))
         (Return expr) ->
             collectExpr expr
         (HashStmt stmnt) ->
             collectStmts stmnt
         (AnnotationStmt _ stmts) ->
             mapM_ collectStmts stmts
+        _ -> return ()
+
+collectExpr :: Expression -> Collector ()
+collectExpr arg =
+    case arg of
+        (BinaryExp _ exp1 exp2) -> do
+            collectExpr exp1
+            collectExpr exp2
+        (ListIndex list expr) -> do
+            modify (\(structs, funcs, lists) -> (structs, funcs, Set.insert list lists))
+            collectExpr expr
+        (CallExp (FunctionCall name exps)) -> do -- if f = contains(A, x), add A to lists
+            modify (\(structs, funcs, lists) -> (structs, Set.insert name funcs, lists))
+            mapM_ collectExpr exps
+        (Not expr) ->
+            collectExpr expr
         _ -> return ()
 
 collectElse :: Maybe Else -> Collector ()
@@ -93,7 +98,12 @@ collectElse elsePart =
             mapM_ collectStmts stmts
         Nothing -> return ()
 
+collectPair :: (Expression, Expression) -> Collector ()
+collectPair (x, y) = do
+    collectExpr x
+    collectExpr y
+
 extractEnv :: Program -> ([String], [String], [String])
 extractEnv program =
-    let (structs, funcs, arrays) = execState (collectNames program) (Set.empty, Set.empty, Set.empty)
-    in (Set.toList structs, Set.toList funcs, Set.toList arrays)
+    let (structs, funcs, lists) = execState (collectNames program) (Set.empty, Set.empty, Set.empty)
+    in (Set.toList structs, Set.toList funcs, Set.toList lists)

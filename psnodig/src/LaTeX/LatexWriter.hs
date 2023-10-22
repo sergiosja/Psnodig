@@ -1,5 +1,7 @@
 module LaTeX.LatexWriter (writeLatex) where
 
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Prelude hiding (fst, snd)
 import Control.Monad.Reader
 import Control.Monad.Writer
@@ -28,23 +30,60 @@ writeStructField :: StructField -> LatexWriter ()
 writeStructField (StructField struct field) =
     tell $ struct ++ "_{" ++ field ++ "}"
 
-writeStructAssignment :: StructAssignment -> LatexWriter ()
-writeStructAssignment (StructAssignment struct args) = do
-    tell $ "\\" ++ struct ++ "("
+writeStruct :: Struct -> LatexWriter ()
+writeStruct (Struct name args) = do
+    tell $ "\\" ++ name ++ "("
     case length args of
         0 -> tell ")"
         1 -> do
-            writeExp (head args)
+            writeExp $ head args
             tell ")"
         _ -> do
             mapM_ (\a -> (writeExp a) >> tell ", ") (init args)
-            writeExp (last args)
-            tell ")"
+            (writeExp $ last args) >> tell ")"
+
+-- Values
+
+writeValue :: Value -> LatexWriter ()
+writeValue (Nil) = tell "\\KwNil"
+writeValue (Boolean bool) =
+    tell $ if bool == True then "\\top" else "\\bot" -- kanskje $ ikke nødvendig -- alt \\KwTrue \\KwFalse
+writeValue (Number n) = tell $ show n
+writeValue (Text str) = tell str
+writeValue (List exprs) = do
+    tell "["
+    case length exprs of
+        0 -> tell "]"
+        1 -> (writeExp $ head exprs) >> tell "]"
+        _ -> do
+            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init exprs)
+            (writeExp $ last exprs) >> tell "]"
+writeValue (HashSet exprs) = do
+    tell "\\{"
+    let set = Set.toList exprs
+    case length exprs of
+        0 -> tell "\\}"
+        1 -> (writeExp $ head set) >> tell "\\}"
+        _ -> do
+            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init set)
+            (writeExp $ last set) >> tell "\\}"
+writeValue (HashMap hmap) = do
+    tell "\\{"
+    let pairs = Map.toList hmap
+    case length pairs of
+        0 -> tell "\\}"
+        1 -> (writePair $ head pairs) >> tell "\\}"
+        _ -> do
+            mapM_ (\p -> (writePair p) >> tell ", ") (init pairs)
+            (writePair $ last pairs) >> tell "\\}"
+
+writePair :: (Expression, Expression) -> LatexWriter ()
+writePair (x, y) = writeExp x >> tell ": " >> writeExp y
 
 -- Expressions
 
 writeExp :: Expression -> LatexWriter ()
-writeExp (Constant n) = tell $ show n
+writeExp (Constant v) = writeValue v
 writeExp (VariableExp var) = tell var
 writeExp (BinaryExp op exp1 exp2) = do
     case op of
@@ -53,77 +92,53 @@ writeExp (BinaryExp op exp1 exp2) = do
             writeExp exp1 >> tell "}{"
             writeExp exp2 >> tell "}"
         _ -> writeExp exp1 >> transpileOp op >> writeExp exp2
-writeExp (Boolean val) = case val of
-    True -> tell "\\KwTrue" -- change to Top?
-    False -> tell "\\KwFalse" -- change to Bottom?
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (ArrayExp array) =
-    writeArray array
-writeExp (ArrayIndex name index) = do
+writeExp (ListIndex name index) = do
     tell $ "\\" ++ name ++ "{"
     writeExp index
     tell "}"
 writeExp (Not expr) = do
-    tell "\\KwNot \\: "
-    writeExp expr
-    -- if expr == callExp contains, add the math symbol for "not in" (see Lars' graph algos)
+    case expr of
+        (CallExp (FunctionCall "contains" args)) -> do
+            lists <- asks thrd -- check fst & snd too?
+            writeExp $ last args
+            tell $ " \\notin "
+            writeExp $ collectionVariableNotation (head args) lists
+        _ -> do
+            tell "\\KwNot \\: "
+            writeExp expr
 writeExp (StructFieldExp struct) =
     writeStructField struct
 
-writeArray :: Array -> LatexWriter ()
-writeArray (EmptyArray arr) = writeArrayDecl arr 0
-writeArray (FullArray entries) = do
-    tell "["
-    case length entries of
-        0 -> tell "]"
-        1 -> (writeExp $ head entries) >> tell "]"
-        _ -> do
-            mapM_ (\x -> (writeExp x) >> tell ", ") (init entries)
-            (writeExp $ last entries) >> tell "]"
-
-
-writeArrayDecl :: ArrayDecl -> Int -> LatexWriter ()
-writeArrayDecl (BaseType t) n = tell $ (show n) ++ "D array of " ++ t ++ "s"
-writeArrayDecl (ArrayType _ t) n = do
-    writeArrayDecl t (n+1)
-
-writeMap :: HashMap -> LatexWriter ()
-writeMap (HashMap t1 t2) =
-    tell $ "\\text{empty map from " ++ t1 ++ " to " ++ t2 ++ "}"
-
-writeSet :: HashSet -> LatexWriter ()
-writeSet (HashSet t) =
-    tell $ "\\text{empty set of " ++ t ++ "s}"
-
 -- Function related
 
-arrayVariableNotation :: Expression -> [String] -> Expression
-arrayVariableNotation expr arrays =
+collectionVariableNotation :: Expression -> [String] -> Expression
+collectionVariableNotation expr collection =
     case expr of
-        (VariableExp x) -> if elem x arrays then (VariableExp ("\\" ++ x)) else (VariableExp x)
+        (VariableExp x) -> if elem x collection then (VariableExp ("\\" ++ x)) else (VariableExp x)
         _ -> expr
 
 writeFunctionCall :: FunctionCall -> LatexWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
-    arrays <- asks snd
+    lists <- asks thrd -- check fst & snd too?
     case funcname of
         "length" -> do
             tell "\\abs{"
-            writeExp $ arrayVariableNotation (head args) arrays
+            writeExp $ collectionVariableNotation (head args) lists
             tell "}"
         "ceil" -> do
             tell "\\lceil "
-            writeExp $ arrayVariableNotation (head args) arrays
+            writeExp $ collectionVariableNotation (head args) lists
             tell "\\rceil"
         "floor" -> do
             tell "\\lfloor "
-            writeExp $ arrayVariableNotation (head args) arrays
+            writeExp $ collectionVariableNotation (head args) lists
             tell "\\rfloor"
         "contains" -> do
             writeExp $ last args
             tell $ " \\in "
-            writeExp $ arrayVariableNotation (head args) arrays
+            writeExp $ collectionVariableNotation (head args) lists
         "append" -> do
             tell "append "
             writeExp $ args !! 1
@@ -138,19 +153,19 @@ writeFunctionCall (FunctionCall funcname args) = do
             tell $ "\\" ++ funcname ++ "("
             case length args of
                 0 -> tell ")"
-                1 -> (writeExp $ arrayVariableNotation (head args) arrays) >> tell ")"
+                1 -> (writeExp $ collectionVariableNotation (head args) lists) >> tell ")"
                 _ -> do
-                    mapM_ (\arg -> (writeExp $ arrayVariableNotation arg arrays) >> tell ", ") (init args)
-                    (writeExp $ arrayVariableNotation (last args) arrays) >> tell ")"
+                    mapM_ (\arg -> (writeExp $ collectionVariableNotation arg lists) >> tell ", ") (init args)
+                    (writeExp $ collectionVariableNotation (last args) lists) >> tell ")"
 
-getArgumentNames :: [String] -> [Argument] -> [String]
-getArgumentNames structs arg = map getArgName arg
+getArgumentNames ::  [Argument] -> [String]
+getArgumentNames args = map getArgName args
     where
-        getArgName (ArrayArg name _) = "\\" ++ name
-        getArgName (SingleArg name _) = do
-            case elem name structs of
-                True -> "\\" ++ name
-                False -> name
+        getArgName (Argument name t) = case t of
+            "bool" -> name
+            "int" -> name
+            "string" -> name
+            _ -> "\\" ++ name
 
 writeFunc :: Function -> LatexWriter ()
 writeFunc (Function funcname args stmts) = do
@@ -158,12 +173,10 @@ writeFunc (Function funcname args stmts) = do
     case length args of
         0 -> tell ")$}{\n"
         1 -> do
-            structs <- asks fst
-            tell $ head (getArgumentNames structs args) ++ ")$}{\n"
+            tell $ head (getArgumentNames args) ++ ")$}{\n"
         _ -> do
-            structs <- asks fst
-            mapM_ (\a -> (tell $ a ++ ", ")) (init $ getArgumentNames structs args)
-            tell $ last (getArgumentNames structs args) ++ ")$}{\n"
+            mapM_ (\a -> (tell $ a ++ ", ")) (init $ getArgumentNames args)
+            tell $ last (getArgumentNames args) ++ ")$}{\n"
     mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
     tell "}"
 
@@ -221,7 +234,7 @@ writeStmt Continue _ =
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
 writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
-writeAssignmentTarget (ArrayIndexTarget var expr) = do
+writeAssignmentTarget (ListIndexTarget var expr) = do
     tell $ "$\\" ++ var ++ "{"
     writeExp expr
     tell "}"
@@ -231,9 +244,7 @@ writeAssignmentTarget (StructFieldTarget struct) = do
 
 writeAssignmentValue :: AssignmentValue -> LatexWriter ()
 writeAssignmentValue (ExpressionValue expr) = writeExp expr
-writeAssignmentValue (StructValue struct) = writeStructAssignment struct
-writeAssignmentValue (HashMapValue hmap) = writeMap hmap
-writeAssignmentValue (HashSetValue set) = writeSet set
+writeAssignmentValue (StructValue struct) = writeStruct struct
 
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
@@ -257,7 +268,7 @@ transpileOp :: Operator -> LatexWriter () -- the outer expression should ALWAYS 
 transpileOp op = tell $ case op of
     Plus             -> " + "
     Minus            -> " - "
-    Times            -> " * "
+    Times            -> " \\cdot "
     Division         -> " / "
     LessThan         -> " < "
     LessThanEqual    -> " \\leq "
@@ -279,17 +290,17 @@ writeStaticFunctions = do
     structs <- asks fst
     mapM_ (\s -> tell $ "\\SetKwFunction{" ++ s ++ "}{" ++ s ++ "}\n") structs
 
-writeStaticArrays :: LatexWriter ()
-writeStaticArrays = do
-    arrays <- asks thrd
-    mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") arrays
+writeStaticLists :: LatexWriter ()
+writeStaticLists = do
+    lists <- asks thrd
+    mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") lists
 
 constantConfig :: LatexWriter ()
 constantConfig = do
     tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
     writeStaticFunctions
-    writeStaticArrays
-    tell "\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
+    writeStaticLists
+    tell "\\SetKw{KwNil}{Nil}\n\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
 
 funcStart :: LatexWriter ()
 funcStart =

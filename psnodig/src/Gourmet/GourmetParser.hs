@@ -6,6 +6,8 @@ import Text.Parsec.String
 import Text.Parsec.Language
 import Text.Parsec.Expr (buildExpressionParser, Assoc(..), Operator(..))
 import qualified Text.Parsec.Token as Token
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 lexer :: Token.TokenParser ()
 lexer = Token.makeTokenParser emptyDef {
@@ -18,7 +20,7 @@ lexer = Token.makeTokenParser emptyDef {
         , "[", "]", "else", "&&", "||", "!", "for"
         , ",", "contains", "length", "ceil", "floor"
         , ":", "#", "@", "break", "continue", "struct"
-        , "not", "%", "map", "set"
+        , "not", "%", "map", "set", "int", "str", "bool"
         ]
 }
 
@@ -34,29 +36,66 @@ whiteSpace = Token.whiteSpace lexer
 integer :: Parser Integer
 integer = Token.integer lexer
 
+stringLiteral :: Parser String
+stringLiteral = Token.stringLiteral lexer
+
 parens :: Parser Expression -> Parser Expression
 parens = Token.parens lexer
+
+comma :: Parser ()
+comma = whiteSpace >> char ',' >> whiteSpace
+
+colon :: Parser ()
+colon = whiteSpace >> char ':' >> whiteSpace
 
 {- Parsing -}
 
 -- Parse structs
 
-parseStruct :: Parser Struct
-parseStruct =
-    Struct <$> (reservedOp "struct" *> identifier) <* reservedOp "{"
-           <*> parseArgument `sepBy` (whiteSpace >> char ',' >> whiteSpace)
-           <* reservedOp "}"
+parseStructDecl :: Parser StructDecl
+parseStructDecl =
+    StructDecl <$> (reservedOp "struct" *> identifier) <* reservedOp "{"
+           <*> parseArgument `sepBy` comma <* reservedOp "}"
 
 parseStructField :: Parser StructField
 parseStructField =
     StructField <$> identifier <* char '.' <*> identifier
 
--- would much prefer () over {}, but with (), this is identical to function call
-parseStructAssignment :: Parser StructAssignment
-parseStructAssignment =
-    StructAssignment <$> identifier <* reservedOp "{"
-                     <*> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace)
-                     <* reservedOp "}"
+parseStruct :: Parser Struct
+parseStruct =
+    Struct <$> (reservedOp "struct" *> identifier)
+           <*> (reservedOp "(" *> parseExpr `sepBy` comma <* reservedOp ")")
+
+-- Values
+
+parseValue :: Parser Value
+parseValue = choice
+    [ try parseHashMap
+    , try parseHashSet
+    , try parseNil
+    , try parseBool
+    , try parseNumber
+    , try parseText
+    , try parseList
+    ]
+    where
+        parseNil = reservedOp "nil" *> pure Nil
+        parseBool =
+            Boolean <$> (reservedOp "true" *> pure True
+                    <|> reservedOp "false" *> pure False)
+        parseNumber = Number <$> integer
+        parseText = Text <$> stringLiteral
+        parseList =
+            List <$> (reservedOp "[" *> parseExpr `sepBy` comma <* reservedOp "]")
+        parseHashMap =
+            HashMap . Map.fromList
+                <$> (reservedOp "map" *> reservedOp "{" *> parsePair `sepBy` comma <* reservedOp "}")
+        parseHashSet =
+            HashSet . Set.fromList
+                <$> (reservedOp "set" *> reservedOp "{" *> parseExpr `sepBy` comma <* reservedOp "}")
+
+parsePair :: Parser (Expression, Expression)
+parsePair = (,) <$> parseExpr <* colon <*> parseExpr
 
 -- Parse expressions
 
@@ -79,13 +118,11 @@ parseExpr = buildExpressionParser table term
                 ]
         term = choice
             [ try parseNotExp
-            , try parseStructFieldExp
-            , try parseArrayExp
-            , try parseArrayIndexExp
-            , try parseFunctionCallExp
-            , try parseBool
-            , try parseVariableExp
             , try parseConstant
+            , try parseStructFieldExp
+            , try parseListIndexExp
+            , try parseFunctionCallExp
+            , try parseVariableExp
             , try $ parens parseExpr
             ]
             where
@@ -93,59 +130,26 @@ parseExpr = buildExpressionParser table term
                     Not <$> (reservedOp "not" *> parseExpr)
                 parseStructFieldExp =
                     StructFieldExp <$> parseStructField
-                parseArrayExp =
-                    ArrayExp <$> parseArray
-                parseArrayIndexExp =
-                    ArrayIndex <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
+                parseListIndexExp =
+                    ListIndex <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
                 parseFunctionCallExp =
                     CallExp <$> parseFunctionCall
                 parseVariableExp =
                     VariableExp <$> identifier
                 parseConstant =
-                    Constant .fromIntegral <$> integer
-                parseBool = parseTrue <|> parseFalse
-                    where
-                        parseTrue = Boolean True <$ reservedOp "true"
-                        parseFalse = Boolean False <$ reservedOp "false"
-
-parseArray :: Parser Array
-parseArray = try parseEmptyArray <|> parseFullArray
-    where
-        parseEmptyArray =
-            EmptyArray <$> parseArrayDecl
-        parseFullArray =
-            FullArray <$> (reservedOp "[" *> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace))
-                      <* reservedOp "]"
-
-parseArrayDecl :: Parser ArrayDecl
-parseArrayDecl = try parseArrayType <|> parseBaseType
-    where
-        parseArrayType =
-            ArrayType <$> (reservedOp "[" *> parseExpr <* reservedOp "]")
-                      <*> parseArrayDecl
-        parseBaseType = BaseType <$> identifier
-
-parseMap :: Parser HashMap
-parseMap =
-    HashMap <$> (reservedOp "map" *> reservedOp "[" *> identifier)
-            <*> (reservedOp "]" *> identifier)
-
-parseSet :: Parser HashSet
-parseSet =
-    HashSet <$> (reservedOp "set" *> reservedOp "[" *> identifier) <* reservedOp "]"
+                    Constant <$> parseValue
 
 -- Parse functions
 
 parseArgument :: Parser Argument
-parseArgument = try parseArrayArg <|> parseStringArg
-    where parseArrayArg = ArrayArg <$> identifier <*> identifier <* (whiteSpace >> char '*' >> whiteSpace)
-          parseStringArg = SingleArg <$> identifier <*> identifier
+parseArgument =
+    Argument <$> identifier <*> identifier
 
 parseFunction :: Parser Function
 parseFunction =
     Function
         <$> (reservedOp "func" *> identifier) <* reservedOp "("
-        <*> parseArgument `sepBy` (whiteSpace >> char ',' >> whiteSpace)
+        <*> parseArgument `sepBy` comma
         <* reservedOp ")" <* reservedOp "{"
         <*> parseStmt `endBy` whiteSpace <* reservedOp "}"
 
@@ -153,30 +157,23 @@ parseFunctionCall :: Parser FunctionCall
 parseFunctionCall =
     FunctionCall
         <$> identifier <* reservedOp "("
-        <*> parseExpr `sepBy` (whiteSpace >> char ',' >> whiteSpace) <* reservedOp ")"
+        <*> parseExpr `sepBy` comma <* reservedOp ")"
 
 parseAssignmentTarget :: Parser AssignmentTarget
 parseAssignmentTarget = choice
     [ try parseStructFieldTarget
-    , try parseArrayIndexTarget
+    , try parseListIndexTarget
     , parseVariableTarget
     ]
     where
         parseStructFieldTarget = StructFieldTarget <$> parseStructField
-        parseArrayIndexTarget = ArrayIndexTarget <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
+        parseListIndexTarget = ListIndexTarget <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
         parseVariableTarget = VariableTarget <$> identifier
 
 parseAssignmentValue :: Parser AssignmentValue
-parseAssignmentValue = choice
-    [ try parseMapValue
-    , try parseSetValue
-    , try parseStructValue
-    , try parseExpressionValue
-    ]
+parseAssignmentValue = try parseStructValue <|> parseExpressionValue
     where
-        parseMapValue = HashMapValue <$> parseMap
-        parseSetValue = HashSetValue <$> parseSet
-        parseStructValue = StructValue <$> parseStructAssignment
+        parseStructValue = StructValue <$> parseStruct
         parseExpressionValue = ExpressionValue <$> parseExpr
 
 
@@ -250,7 +247,7 @@ parseElse = (try parseElseIf) <|> parsePlainElse
 parseGourmet :: Parser Program
 parseGourmet = do
     whiteSpace
-    structs <- many parseStruct
+    structs <- many parseStructDecl
     funcs <- many1 parseFunction
     functioncall <- parseFunctionCall
     return $ Program structs funcs functioncall

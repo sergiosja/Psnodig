@@ -2,59 +2,45 @@
 
 module Syntax where
 
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+
 -- Program
 
-data Program = Program [Struct] [Function] FunctionCall
-    deriving (Eq, Show, Read)
+data Program = Program [StructDecl] [Function] FunctionCall
+    deriving (Eq, Show, Read, Ord)
 
-data Argument =
-      SingleArg String String
-    | ArrayArg String String
-    deriving (Eq, Show, Read)
+data Argument = Argument String String
+    deriving (Eq, Show, Read, Ord)
 
--- data Value =
---       Nil
---     | Boolean Bool
---     | Number Integer
---     | Text String
---     | List [Value]
+data Value = 
+      Nil
+    | Boolean Bool 
+    | Number Integer 
+    | Text String 
+    | List [Expression]
+    | HashSet (Set.Set Expression)
+    | HashMap (Map.Map Expression Expression)
+    deriving (Eq, Show, Read, Ord)
 
 -- Struct related
 
-data Struct = Struct String [Argument]
-    deriving (Eq, Show, Read)
+data StructDecl = StructDecl String [Argument]
+    deriving (Eq, Show, Read, Ord)
 
 data StructField = StructField String String
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
 
-data StructAssignment = StructAssignment String [Expression]
-    deriving (Eq, Show, Read)
+data Struct = Struct String [Expression]
+    deriving (Eq, Show, Read, Ord)
 
 -- Function related
 
 data Function = Function String [Argument] [Statement]
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
 
 data FunctionCall = FunctionCall String [Expression]
-    deriving (Eq, Show, Read)
-
--- Collections
-
-data Array =
-      FullArray [Expression]
-    | EmptyArray ArrayDecl
-    deriving (Eq, Show, Read)
-
-data ArrayDecl =
-      BaseType String
-    | ArrayType Expression ArrayDecl
-    deriving (Eq, Show, Read)
-
-data HashMap = HashMap String String
-    deriving (Eq, Show, Read)
-
-data HashSet = HashSet String
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
 
 -- Statements and expressions
 
@@ -70,37 +56,33 @@ data Statement =
     | AnnotationStmt String [Statement]
     | Break
     | Continue
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
 
 data AssignmentTarget =
-      VariableTarget String
-    | ArrayIndexTarget String Expression
-    | StructFieldTarget StructField
-    deriving (Eq, Show, Read)
+      VariableTarget String             -- x =
+    | ListIndexTarget String Expression -- x[0] =
+    | StructFieldTarget StructField     -- x.left =
+    deriving (Eq, Show, Read, Ord)
 
 data AssignmentValue =
-      ExpressionValue Expression
-    | StructValue StructAssignment
-    | HashMapValue HashMap
-    | HashSetValue HashSet
-    deriving (Eq, Show, Read)
+      ExpressionValue Expression    -- = 5 + 5
+    | StructValue Struct  -- = struct Person
+    deriving (Eq, Show, Read, Ord)
 
 data Else =
       ElseIf Expression [Statement] (Maybe Else)
     | Else [Statement]
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
 
 data Expression =
-      Constant Int
+      Constant Value
     | VariableExp String
     | BinaryExp Operator Expression Expression
-    | ArrayExp Array
-    | ArrayIndex String Expression
-    | Boolean Bool
+    | ListIndex String Expression
     | CallExp FunctionCall
     | Not Expression
     | StructFieldExp StructField
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
 
 -- Operators
 
@@ -118,4 +100,4 @@ data Operator =
     | And
     | Or
     | Modulo
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Ord)
