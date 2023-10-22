@@ -1,0 +1,257 @@
+%% Identification part:
+
+\NeedsTeXFormat{LaTeX2e}[1994/12/01]
+
+\ProvidesClass{uiomasterfp}[2023/08/20 v1.8 UiO master's thesis front page class]
+
+%% Languages:
+
+\DeclareOption{american}{\def \uiomfp@lang {eng}}
+\DeclareOption{english}{\def \uiomfp@lang {eng}}
+\DeclareOption{UKenglish}{\def \uiomfp@lang {eng}}
+\DeclareOption{USenglish}{\def \uiomfp@lang {eng}}
+\DeclareOption{norsk}{\def \uiomfp@lang {bm}}
+\DeclareOption{nynorsk}{\def \uiomfp@lang {nn}}
+
+\newcommand{\uiomfp@fac@eng}{Faculty of Mathematics and Natural Sciences}
+\newcommand{\uiomfp@fac@bm}{Det matematisk-naturvitenskapelige fakultet}
+\newcommand{\uiomfp@fac@nn}{Det matematisk-naturvitenskaplege fakultet}
+
+\newcommand{\uiomfp@dept@eng}{Department of Informatics}
+\newcommand{\uiomfp@dept@bm}{Institutt for informatikk}
+\newcommand{\uiomfp@dept@nn}{Institutt for informatikk}
+
+\newcommand{\uiomfp@thesis@eng}{Master's thesis}
+\newcommand{\uiomfp@thesis@bm}{Masteroppgave}
+\newcommand{\uiomfp@thesis@nn}{Masteroppg\aa ve}
+
+\newcommand{\uiomfp@bachelor@eng}{Bachelor's thesis}
+\newcommand{\uiomfp@bachelor@bm}{Bacheloroppgave}
+\newcommand{\uiomfp@bachelor@nn}{Bacheloroppg\aa ve}
+
+\newcommand{\uiomfp@spname@eng}{ECTS study points}
+\newcommand{\uiomfp@spname@bm}{studiepoeng}
+\newcommand{\uiomfp@spname@nn}{studiepoeng}
+
+\newcommand{\uiomfp@supervisor@eng}{Supervisor}
+\newcommand{\uiomfp@supervisors@eng}{Supervisors}
+\newcommand{\uiomfp@supervisor@bm}{Veileder}
+\newcommand{\uiomfp@supervisors@bm}{Veiledere}
+\newcommand{\uiomfp@supervisor@nn}{Rettleiar}
+\newcommand{\uiomfp@supervisors@nn}{Rettleiarar}
+
+\newcommand{\uiomfp@std@size}{14}
+\newcommand{\uiomfp@big@size}{20}
+\newcommand{\uiomfp@head@size}{32}
+
+\ExecuteOptions{norsk}
+\ProcessOptions \relax
+
+\RequirePackage{color, eso-pic, graphicx, xifthen, keyval}
+\IfFileExists{type1cm.sty}{\RequirePackage{type1cm}}{}
+\IfFileExists{type1ec.sty}{\RequirePackage{type1ec}}{}
+
+%% Colours:
+
+\definecolor{uiomfp@blue}{rgb}{0.525, 0.642, 0.969}
+\definecolor{uiomfp@light@blue}{rgb}{0.902, 0.925, 1.000}
+\definecolor{uiomfp@orange}{rgb}{0.992, 0.796, 0.529}
+\definecolor{uiomfp@light@orange}{rgb}{1.000, 0.910, 0.831}
+\definecolor{uiomfp@pink}{rgb}{0.984, 0.400, 0.400}
+\definecolor{uiomfp@light@pink}{rgb}{0.996, 0.878, 0.878}
+\definecolor{uiomfp@green}{rgb}{0.484, 0.882, 0.671}
+\definecolor{uiomfp@light@green}{rgb}{0.808, 1.00, 0.875}
+\definecolor{uiomfp@gray}{gray}{0.700}
+\definecolor{uiomfp@grey}{gray}{0.700}
+\definecolor{uiomfp@light@gray}{gray}{0.912}
+\definecolor{uiomfp@light@grey}{gray}{0.912}
+
+%% The options:
+
+\newboolean{uiomfp@compact}
+
+\define@key{uiomfp@keys}{author}{\def \uiomfp@author {#1}}
+\define@key{uiomfp@keys}{bachelor}[0]{\def \uiomfp@sp {#1}%
+  \setboolean{uiomfp@compact}{true}%
+  \def \uiomfp@kind {\csname uiomfp@bachelor@\uiomfp@lang \endcsname}}
+\define@key{uiomfp@keys}{binding}[24]{\def \uiomfp@bind {#1}}
+\define@key{uiomfp@keys}{color}{\def \uiomfp@color {#1}}
+\define@key{uiomfp@keys}{colour}{\def \uiomfp@color {#1}}
+\define@key{uiomfp@keys}{compact}[true]{\setboolean{uiomfp@compact}{#1}}
+\define@key{uiomfp@keys}{date}{\def \uiomfp@date {#1}}
+\define@key{uiomfp@keys}{dept}{\def \uiomfp@dept {#1}}
+\define@key{uiomfp@keys}{fac}{\def \uiomfp@fac {#1}}
+\define@key{uiomfp@keys}{font}{\def \uiomfp@font {#1}}
+\define@key{uiomfp@keys}{image}{\def \uiomfp@image {#1}}
+\define@key{uiomfp@keys}{info}{\def \uiomfp@info {#1}}
+\define@key{uiomfp@keys}{kind}{\def \uiomfp@kind {#1}}
+\define@key{uiomfp@keys}{long}[60]{\def \uiomfp@sp {#1}}
+\define@key{uiomfp@keys}{master}[true]{}
+\define@key{uiomfp@keys}{nosp}[0]{\def \uiomfp@sp {#1}}
+\define@key{uiomfp@keys}{program}{\def \uiomfp@program{#1}}
+\define@key{uiomfp@keys}{short}[30]{\def \uiomfp@sp {#1}}
+\define@key{uiomfp@keys}{subtitle}{\def \uiomfp@subtitle {#1}}
+\define@key{uiomfp@keys}{supervisor}{\def \uiomfp@supervisor {#1}}
+\define@key{uiomfp@keys}{supervisors}{\def \uiomfp@supervisors {#1}}
+\define@key{uiomfp@keys}{title}{\def \uiomfp@title {#1}}
+
+% Default values:
+\def \uiomfp@author {\@author}
+\def \uiomfp@bind {0}
+\def \uiomfp@color {blue}
+\providecommand{\uiomfp@date}{\uiomfp@term~\uiomfp@year}
+\setboolean{uiomfp@compact}{false}
+\def \uiomfp@dept {\csname uiomfp@dept@\uiomfp@lang \endcsname}
+\def \uiomfp@fac {\csname uiomfp@fac@\uiomfp@lang \endcsname}
+\def \uiomfp@font {helvetica}
+\def \uiomfp@image {}
+\def \uiomfp@info {}
+\def \uiomfp@kind {\csname uiomfp@thesis@\uiomfp@lang \endcsname}
+\providecommand{\uiomfp@program}{}
+\def \uiomfp@sp {60}
+\def \uiomfp@supervisor {}
+\def \uiomfp@supervisors {}
+\def \uiomfp@title {\@title}
+
+\AtEndOfPackage{\ifthenelse{\equal{\uiomfp@font}{helvetica}}
+  {\RequirePackage[scaled]{helvet}}
+  {}}
+
+%% Determine the term (as in "Spring 2022"):
+
+\newcounter{uiomfp@cur@year}   \setcounter{uiomfp@cur@year}{\the\year}
+\newcounter{uiomfp@cur@month}  \setcounter{uiomfp@cur@month}{\the\month}
+
+\ifthenelse{\theuiomfp@cur@month<7}
+  {\newcommand{\uiomfp@term@eng}{Spring}%
+   \newcommand{\uiomfp@term@bm}{V\aa ren}%
+   \newcommand{\uiomfp@term@nn}{V\aa ren}}
+  {\newcommand{\uiomfp@term@eng}{Autumn}%
+   \newcommand{\uiomfp@term@bm}{H\o sten}%
+   \newcommand{\uiomfp@term@nn}{Hausten}}
+\newcommand{\uiomfp@term}{\csname uiomfp@term@\uiomfp@lang\endcsname}
+\newcommand{\uiomfp@year}{\arabic{uiomfp@cur@year}}
+
+%% The main command:
+
+\newcounter{uiomfp@bind@w}
+
+\newcommand{\uiomasterfp}[1][]{{%
+  \parindent = 0pt   \parskip = 0pt   \relax
+  \@ifundefined{hypersetup}{}{\hypersetup{pageanchor=false}}
+  \setkeys{uiomfp@keys}{#1}
+  \setcounter{uiomfp@bind@w}{28}  \addtocounter{uiomfp@bind@w}{\uiomfp@bind}
+  \fontfamily{phv}
+  \ifthenelse{\equal{\uiomfp@font}{arial}}{\fontfamily{ua1}}{}
+  \ifthenelse{\equal{\uiomfp@font}{verdana}}{\fontfamily{jvn}}{}
+  \fontencoding{T1}\fontsize{\uiomfp@std@size}{18pt}%
+  \fontseries{m}\fontshape{n}\selectfont 
+  \uiomfp@page@i
+  \if@twoside \uiomfp@blankpage \fi
+  \ifthenelse{\boolean{uiomfp@compact}}
+    {}
+    {\uiomfp@page@iii
+     \if@twoside \uiomfp@blankpage \fi
+    }
+  \setcounter{page}{1}
+  \@ifundefined{hypersetup}{}{\hypersetup{pageanchor=true}}
+}}
+ 
+\newcommand{\uiomfp@page@i}{%
+  \begin{titlepage}
+    \phantom{}  %% A zero size box so the page is not empty.
+      %% Thanks to Emil Christopher Gj\o st\o l Str\o msv\aa g
+      %% <ecstroms@ifi.uio.no> for the idea.
+    \setlength{\unitlength}{1bp}
+    % Background colours (or image):
+    \AddToShipoutPictureBG*{%
+      \put(0,0){\color{uiomfp@light@\uiomfp@color}%
+        \rule{21cm}{29.7cm}}
+      \ifthenelse{\equal{\uiomfp@image}{}}{%
+        \put(0,581){\color{uiomfp@\uiomfp@color}%
+          \rule{21cm}{9.27cm}}}{% else
+        \put(0,581){\includegraphics[width=21cm,height=9.27cm]{\uiomfp@image}}}}
+    % Add logo:
+    \AddToShipoutPictureFG*{%
+      \put(\value{uiomfp@bind@w},784){\includegraphics[height=12.8mm]%
+        {uio-fp-navn-\uiomfp@lang}}%
+      \setlength{\fboxsep}{3mm}%
+      \put(\value{uiomfp@bind@w},615){\raisebox{\fboxsep}{%
+          \colorbox{black}{\color{white}%
+          {\fontseries{b}\selectfont ~~\uiomfp@kind~~\strut}}}}%
+      \put(500,28){\includegraphics[width=23.7mm]{uio-fp-segl}}
+    % Add text
+      \put(\value{uiomfp@bind@w},28){\uiomfp@text}}
+    % Add date
+    \AddToShipoutPictureFG*{%
+      \put(\value{uiomfp@bind@w},28){\uiomfp@date}}
+  \end{titlepage}
+}
+
+%% The text:
+
+\newcommand{\uiomfp@text}{{%
+    \mbox{\vbox to 18.7cm{
+        \def \and {, }
+        \def \uiomfp@luft {\mbox{}\par}
+        \raggedright
+        {\fontsize{\uiomfp@head@size}{38pt}\selectfont \uiomfp@title\par}
+        \uiomfp@luft 
+        \ifthenelse{\equal{\uiomfp@subtitle}{}}
+          {}
+          {\uiomfp@subtitle \par}
+        \uiomfp@luft \uiomfp@luft \uiomfp@luft
+        {\fontseries{b}\selectfont \uiomfp@author}\par
+        \uiomfp@luft
+        \uiomfp@program\par
+        \ifthenelse{\uiomfp@sp>0}
+          {\uiomfp@sp~\csname uiomfp@spname@\uiomfp@lang\endcsname\par}
+          {}
+        \uiomfp@luft
+        \uiomfp@dept\par
+        \uiomfp@fac\par
+        \vfill
+}}}}
+
+%% The inner front page
+
+\newcommand{\uiomfp@page@iii}{{%
+  \addtolength{\oddsidemargin}{2cm}
+  \addtolength{\hsize}{-4cm}
+  \begin{titlepage}
+    \centering
+    \def \and {\\}%
+    \fontsize{\uiomfp@std@size}{18pt}\selectfont
+    \mbox{}\par\vfill
+    {\fontseries{b}\selectfont \uiomfp@author\par}%
+    \vspace{1cm}     
+    {\fontsize{\uiomfp@big@size}{25pt}\selectfont \uiomfp@title\par}%
+    \vspace{1cm}
+    \mbox{}\uiomfp@subtitle\par
+    \vspace{0cm plus 3fill}%
+    \ifthenelse{\equal{\uiomfp@supervisor}{}}{}{%
+      \csname uiomfp@supervisor@\uiomfp@lang\endcsname:\\
+      \mbox{}\uiomfp@supervisor\par
+      \vspace{1ex}}
+    \ifthenelse{\equal{\uiomfp@supervisors}{}}{}{%
+      \csname uiomfp@supervisors@\uiomfp@lang\endcsname:\\
+      \mbox{}\uiomfp@supervisors\par
+      \vspace{1ex}}
+    \mbox{}\uiomfp@info\par
+    \vfill
+  \end{titlepage}
+}}
+
+%% Additional commands:
+
+\providecommand{\subtitle}[1]{\def \uiomfp@subtitle{#1}}
+\providecommand{\uiomfp@subtitle}{}
+
+%% Other utilities:
+
+\newcommand{\uiomfp@blankpage}{%
+    \thispagestyle{empty}
+    \mbox{}
+    \newpage}
+
+\endinput
