@@ -2,8 +2,9 @@ module Main (main) where
 
 -- Psnodig syntax
 import Syntax
+import Interpreter (ExecutionState(..), runPsnodig)
 
--- Petite lang
+-- Pytite lang
 -- import Petite.PetiteParser (parsePetite)
 -- import Petite.PetiteTranspiler (transpilePetite)
 
@@ -23,6 +24,7 @@ import Text.Parsec
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer
 
+
 main :: IO ()
 main = do
     args <- getArgs
@@ -31,6 +33,9 @@ main = do
             p <- readFile filename
             transpile p filename
             callCommand "C:\\Users\\47480\\OneDrive\\Dokumenter\\Master\\Master\\psnodig\\src\\Programs\\cleanup.sh"
+        ["run", file] -> do
+            p <- readFile file
+            interpret p
         ["p", file] -> do
             p <- readFile file
             getAST p
@@ -68,4 +73,15 @@ getAST program = do
     let parsed = parse parseGourmet "" program
     case parsed of
         (Right p) -> print p
+        (Left err) -> putStrLn $ show err
+
+interpret :: String -> IO ()
+interpret program = do
+    let parsed = parse parseGourmet "" program
+    case parsed of
+        (Right p) -> do
+            res <- runPsnodig p
+            case res of
+                (Right finalState) -> forM_ (output finalState) print 
+                (Left err) -> print err
         (Left err) -> putStrLn $ show err

@@ -27,6 +27,7 @@ library
   exposed-modules:
       Gourmet.GourmetParser
       Gourmet.GourmetWriter
+      Interpreter
       LaTeX.LatexEnv
       LaTeX.LatexWriter
       Petite.PetiteParser

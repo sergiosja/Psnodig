@@ -13,11 +13,11 @@ data Program = Program [StructDecl] [Function] FunctionCall
 data Argument = Argument String String
     deriving (Eq, Show, Read, Ord)
 
-data Value = 
+data Value =
       Nil
-    | Boolean Bool 
-    | Number Integer 
-    | Text String 
+    | Boolean Bool
+    | Number Integer
+    | Text String
     | List [Expression]
     | HashSet (Set.Set Expression)
     | HashMap (Map.Map Expression Expression)
