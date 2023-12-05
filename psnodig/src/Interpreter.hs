@@ -4,9 +4,10 @@ import Syntax
 import Control.Monad.State
 import Control.Monad.Except
 import Control.Monad (void)
+import qualified Data.Map as Map
 
-type StructDecls = [(String, [String])] -- (Person, [age, dob])
-type StructEnv = [(String, [Struct])] -- (p, (Person, [1, 2]))
+type StructDecls = Map.Map String [String] -- Person -> [age, dob]
+type StructEnv = Map.Map String [(String, Value)] -- p -> (Person, [(age, 1), (dob, 2)])
 type FuncEnv = [(String, Function)]
 type Scope = [(String, Value)]
 type ScopeStack = [Scope]
@@ -22,6 +23,7 @@ data ExecutionState = ExecutionState {
 data RuntimeError =
       VariableNotFound String
     | FunctionNotFound String
+    | StructNotFound String
     | ArithmeticError String -- e.g. division by zero and stuff
     | BadArgument String -- e.g. array["index"]
     | WrongNumberOfArguments String
@@ -68,61 +70,45 @@ bindFunc name func = do
     currScope@(ExecutionState { funcEnv = env }) <- get
     put currScope { funcEnv = (name, func):env }
 
-lookupStructDecl :: String -> Psnodig (Maybe [Argument])
-lookupStructDecl struct = do
-    ExecutionState { structDecls = env } <- get
-    return $ lookup struct env
+-- Structs
 
+processStructDecls :: StructDecl -> Psnodig ()
+processStructDecls (StructDecl name args) = do
+    currentState <- get
+    let newStructDecls = Map.insert name (map fstArg args) (structDecls currentState)
+    put currentState { structDecls = newStructDecls }
 
+bindStruct :: String -> Struct -> Psnodig ()
+bindStruct name (Struct maybeStruct args) = do
+    scope@(ExecutionState { structDecls = decls, structEnv = env }) <- get
+    case Map.lookup maybeStruct decls of
+        Just args' -> do
+            if length args == length args' then do
+                values <- mapM evalExpr args
+                let newStructEnv = Map.insert name (zip args' values) env
+                put scope { structEnv = newStructEnv }
+            else
+                throwError $ WrongNumberOfArguments $ "Provided " ++ show (length args) ++ " to a struct with " ++ show (length args') ++ " args."
+        Nothing -> throwError $ StructNotFound $ "No struct \"" ++ maybeStruct ++ "\" previously defined."
 
+bindStructField :: StructField -> Expression -> Psnodig ()
+bindStructField (StructField struct field) expr = do
+    scope@(ExecutionState { structEnv = env }) <- get
+    case Map.lookup struct env of
+        Just args -> case lookup field args of
+            Just _ -> do
+                value <- evalExpr expr
+                let args' = map (\(x, y) -> if x == field then (x, value) else (x, y)) args
+                let env' = Map.insert struct args' env
+                put scope { structEnv = env' }
+            Nothing -> throwError $ BadArgument $ "No field \"" ++ field ++ "\" on struct " ++ struct
+        Nothing -> throwError $ StructNotFound $ "No struct \"" ++ struct ++ "\" previously defined."
 
-
--- Save (Person, [age, dob]) to structDecls
-saveStructDecls :: String -> [Argument] -> Psnodig ()
-saveStructDecls name args = do
-    currScope@(ExecutionState { structDecls = env }) <- get
-    put currScope { structDecls = (name, args) : env }
-
--- bruh bare tegn på tavla så finner du ut
-
--- -- (p, (Person, [1, 2]))
--- -- see if struct exists, if so, return whole mf
--- lookupStruct :: String -> Psnodig (Maybe Struct)
--- lookupStruct maybeStruct = do
---     ExecutionState { structEnv = scope } <- get
---     case lookup scope maybeStruct of
---         Just (Struct t args) -> Just (Struct struct args)
---         Nothing -> Nothing
-
-
--- -- on e.g. p := struct Person(1, 2)
-
--- -- bindStruct: Person (Struct p [1, 2])
--- bindStruct :: String -> Struct -> Either String Psnodig () -- (p, (Person, [1, 2]))
--- bindStruct maybeStruct s@(Struct name args) = do
---     ExecutionState { structDecls = scope } <- get
-
---     case lookup scope maybeStruct of
---         Just (StructDecl sname sArgs) -> do
---             currScope@(ExecutionState { structEnv = env }) <- get
---             if length args == length sArgs
---             then put currScope { structEnv = (name, s):env }
---             else Left "Struct must be initialised with same number of args!"
---         Nothing -> Left "Trying to initialise an undeclared struct!"
-
-
--- -- on e.g. p.age := 5
--- -- yields error if struct or field doesnt exist
--- bindStructField :: StructField -> Either String Psnodig ()
--- bindStructField (StructField name val) = do
---     ExecutionState { structDecls  }
-
-
-
-
-
-
-
+lookupStructField :: ExecutionState -> String -> String -> Maybe Value
+lookupStructField scope name field = do
+    case Map.lookup name (structEnv scope) of
+        Just fields -> lookup field fields
+        Nothing -> Nothing
 
 -- Expressions
 
@@ -152,15 +138,11 @@ evalExpr (ListIndex var expr) = do
         Nothing -> throwError $ VariableNotFound "Variable not found!"
 evalExpr (CallExp fcall) = callFunction fcall
 evalExpr (Not expr) = (Boolean . not . bval) <$> evalExpr expr
-
-evalStructField :: StructField -> Psnodig Value
-evalStructField (StructField name arg) = do
-    -- st <- exists?
-    -- exists ->
-        -- does field exist on st?
-        -- exists -> 
-        -- no gooda -> bad
-    -- no gooda -> bad
+evalExpr (StructFieldExp (StructField name field)) = do
+    scope <- get
+    case lookupStructField scope name field of
+        Just v -> return v
+        Nothing -> throwError $ BadArgument $ "Either struct with name \"" ++ name ++ "\" not declared, or no field \"" ++ field ++ "\" exists."
 
 
 operate :: Operator -> Value -> Value -> Either String Value
@@ -197,9 +179,75 @@ evalStmts (stmt:stmts) = do
 
 evalStmt :: Statement -> Psnodig (Either () Value)
 evalStmt (Return expr) = Right <$> evalExpr expr
-evalStmt _ = return (Left ())
 
--- Function
+-- evalStmt _ = return (Left ())
+-- fakk structs er string [expr]
+-- må legge inn en structexpr da?
+-- det må vel funke
+
+evalStmt (Assignment assTarget assValue) = do
+    case assValue of
+        (ExpressionValue expr) -> do
+            value <- evalExpr expr
+            case assTarget of
+                -- p := 5 + 5
+                (VariableTarget var) -> do
+                    bindVar var value
+                    return (Left ())
+                -- p[10] := 5 + 5
+                (ListIndexTarget listVar expr) -> ..
+                -- p.age := 5 + 5
+                (StructFieldTarget structField) -> do
+                    bindStructField structField expr
+                    return (Left ())
+        (StructValue struct) -> -- (Struct String [Expression])
+            case assTarget of
+                -- p := struct Person(1, 2, 3)
+                (VariableTarget var) -> do
+                    bindStruct var struct
+                    return (Left ())
+                -- p[10] := struct Person(1, 2, 3)
+                (ListIndexTarget listVar expr) -> ..
+                -- p.age := struct Person(1, 2, 3)
+                (StructFieldTarget (StructField struct field)) -> ..
+
+    -- case assTarget of
+        -- (VariableTarget var) ->
+        --     case assValue of
+        --         (ExpressionValue expr) -> do
+        --             value <- evalExpr expr
+        --             bindVar var value
+        --             return (Left ())
+        --         (StructValue struct) -> do
+        --             bindStruct var struct
+        --             return (Left ())
+        -- (ListIndexTarget listVar expr) -> do
+        --     index <- evalExpr expr
+        --     list <- lookupVar listVar
+        --     case assValue of
+        --         (ExpressionValue expr) -> do
+                    -- update list
+
+        --         (StructValue struct) -> do ..
+        -- (StructFieldTarget (StructField struct field)) ->
+        --     case assValue of
+        --         (ExpressionValue expr) -> do ..
+        --         (StructValue struct) -> do ..
+        -- _ -> return (Left ())
+
+
+-- evalAssTarget :: AssignmentTarget -> ??
+-- evalAssTarget (VariableTarget var) = undefined
+-- evalAssTarget (ListIndexTarget list index) = undefined
+-- evalAssTarget (StructFieldTarget (StructField struct field)) = undefined
+
+-- evalAssValue :: AssignmentValue -> Value
+-- evalAssValue (ExpressionValue expr) _ = evalExpr expr
+-- evalAssValue newstruct (StructValue struct) = bindStruct newstruct struct
+
+
+
+-- Functions
 
 callFunction :: FunctionCall -> Psnodig Value
 callFunction (FunctionCall name args) = do
@@ -221,18 +269,17 @@ applyFunction (Function _ args stmts) values = do
 -- Main functions for execution
 
 evalProgram :: Program -> Psnodig ()
-evalProgram (Program structDecls funDecls entryPoint) = do
-    mapM_ processDecl structDecls
-    mapM_ processFunDecl funDecls
+evalProgram (Program structs funcs entryPoint) = do
+    mapM_ processStructDecls structs
+    mapM_ processFunDecl funcs
     void $ callFunction entryPoint
   where
-    processDecl (StructDecl name args) = saveStructDecls name args
     processFunDecl f@(Function name _ _) = bindFunc name f
 
 initialState :: ExecutionState
 initialState = ExecutionState
-    { structDecls = []
-    , structEnv = []
+    { structDecls = Map.empty
+    , structEnv = Map.empty
     , funcEnv = []
     , scopeStack = []
     , output = []
@@ -255,22 +302,13 @@ bval (Text "") = False
 bval (List []) = False
 bval _ = True
 
-emit :: String -> Psnodig ()
-emit s = do
-    oldState <- get
-    put $ oldState { output = s : output oldState }
+-- emit :: String -> Psnodig ()
+-- emit s = do
+--     oldState <- get
+--     put $ oldState { output = s : output oldState }
 
 
--- data AssignmentTarget =
---       VariableTarget String             -- x =
---     | ListIndexTarget String Expression -- x[0] =
---     | StructFieldTarget StructField     -- x.left =
---     deriving (Eq, Show, Read, Ord)
 
--- data AssignmentValue =
---       ExpressionValue Expression    -- = 5 + 5
---     | StructValue Struct  -- = struct Person
---     deriving (Eq, Show, Read, Ord)
 
 
 
