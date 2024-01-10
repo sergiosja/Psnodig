@@ -2,7 +2,6 @@ module LaTeX.LatexWriter (writeLatex) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Prelude hiding (fst, snd)
 import Control.Monad.Reader
 import Control.Monad.Writer
 import Syntax
@@ -15,20 +14,20 @@ type LatexWriter = ReaderT Environment (Writer String)
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
 
-fst :: (a, b, c) -> a
-fst (x, _, _) = x
+fst' :: (a, b, c) -> a
+fst' (x, _, _) = x
 
-snd :: (a, b, c) -> b
-snd (_, y, _) = y
+snd' :: (a, b, c) -> b
+snd' (_, y, _) = y
 
-thrd :: (a, b, c) -> c
-thrd (_, _, z) = z
+thrd' :: (a, b, c) -> c
+thrd' (_, _, z) = z
 
 -- Structs
 
 writeStructField :: StructField -> LatexWriter ()
-writeStructField (StructField struct field) =
-    tell $ struct ++ "_{" ++ field ++ "}"
+writeStructField (StructField expr1 expr2) =
+    writeExp expr1 >> tell "_{" >> writeExp expr2 >> tell "} "
 
 writeStruct :: Struct -> LatexWriter ()
 writeStruct (Struct name args) = do
@@ -76,6 +75,8 @@ writeValue (HashMap hmap) = do
         _ -> do
             mapM_ (\p -> (writePair p) >> tell ", ") (init pairs)
             (writePair $ last pairs) >> tell "\\}"
+writeValue (StructVal struct) =
+    writeStruct struct
 
 writePair :: (Expression, Expression) -> LatexWriter ()
 writePair (x, y) = writeExp x >> tell ": " >> writeExp y
@@ -94,22 +95,23 @@ writeExp (BinaryExp op exp1 exp2) = do
         _ -> writeExp exp1 >> transpileOp op >> writeExp exp2
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (ListIndex name index) = do
-    tell $ "\\" ++ name ++ "{"
-    writeExp index
-    tell "}"
+writeExp (ListIndex name indexes) = do
+    tell $ "\\" ++ name
+    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes
 writeExp (Not expr) = do
     case expr of
         (CallExp (FunctionCall "contains" args)) -> do
-            lists <- asks thrd -- check fst & snd too?
+            lists <- asks thrd' -- check fst' & snd' too?
             writeExp $ last args
             tell $ " \\notin "
             writeExp $ collectionVariableNotation (head args) lists
         _ -> do
             tell "\\KwNot \\: "
             writeExp expr
-writeExp (StructFieldExp struct) =
-    writeStructField struct
+writeExp (StructExpr struct) =
+    writeStruct struct
+writeExp (StructFieldExp structField) =
+    writeStructField structField
 
 -- Function related
 
@@ -121,7 +123,7 @@ collectionVariableNotation expr collection =
 
 writeFunctionCall :: FunctionCall -> LatexWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
-    lists <- asks thrd -- check fst & snd too?
+    lists <- asks thrd' -- check fst' & snd' too?
     case funcname of
         "length" -> do
             tell "\\abs{"
@@ -234,10 +236,9 @@ writeStmt Continue _ =
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
 writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
-writeAssignmentTarget (ListIndexTarget var expr) = do
-    tell $ "$\\" ++ var ++ "{"
-    writeExp expr
-    tell "}"
+writeAssignmentTarget (ListIndexTarget var indexes) = do
+    tell $ "$\\" ++ var
+    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes >> tell " "
 writeAssignmentTarget (StructFieldTarget struct) = do
     tell "$"
     writeStructField struct
@@ -285,14 +286,14 @@ transpileOp op = tell $ case op of
 
 writeStaticFunctions :: LatexWriter ()
 writeStaticFunctions = do
-    funcs <- asks snd
+    funcs <- asks snd'
     mapM_ (\f -> tell $ "\\SetKwFunction{" ++ f ++ "}{" ++ f ++ "}\n") funcs
-    structs <- asks fst
+    structs <- asks fst'
     mapM_ (\s -> tell $ "\\SetKwFunction{" ++ s ++ "}{" ++ s ++ "}\n") structs
 
 writeStaticLists :: LatexWriter ()
 writeStaticLists = do
-    lists <- asks thrd
+    lists <- asks thrd'
     mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") lists
 
 constantConfig :: LatexWriter ()

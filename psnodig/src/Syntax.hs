@@ -21,6 +21,7 @@ data Value =
     | List [Expression]
     | HashSet (Set.Set Expression)
     | HashMap (Map.Map Expression Expression)
+    | StructVal Struct
     deriving (Eq, Show, Read, Ord)
 
 -- Struct related
@@ -28,7 +29,7 @@ data Value =
 data StructDecl = StructDecl String [Argument]
     deriving (Eq, Show, Read, Ord)
 
-data StructField = StructField String String
+data StructField = StructField Expression Expression
     deriving (Eq, Show, Read, Ord)
 
 data Struct = Struct String [Expression]
@@ -60,7 +61,7 @@ data Statement =
 
 data AssignmentTarget =
       VariableTarget String             -- x =
-    | ListIndexTarget String Expression -- x[0] =
+    | ListIndexTarget String [Expression] -- x[0] =
     | StructFieldTarget StructField     -- x.left =
     deriving (Eq, Show, Read, Ord)
 
@@ -78,9 +79,10 @@ data Expression =
       Constant Value
     | VariableExp String
     | BinaryExp Operator Expression Expression
-    | ListIndex String Expression
+    | ListIndex String [Expression]
     | CallExp FunctionCall
-    | Not Expression
+    | Not Expression -- fix this. "Not" should only be possible with boolean!! eller? meh, bare ha bval og gjør sjekker:)
+    | StructExpr Struct
     | StructFieldExp StructField
     deriving (Eq, Show, Read, Ord)
 

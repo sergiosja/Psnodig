@@ -57,16 +57,23 @@ parseStructDecl =
     StructDecl <$> (reservedOp "struct" *> identifier) <* reservedOp "{"
            <*> parseArgument `sepBy` comma <* reservedOp "}"
 
-parseStructField :: Parser StructField
-parseStructField =
-    StructField <$> identifier <* char '.' <*> identifier
-
 parseStruct :: Parser Struct
 parseStruct =
     Struct <$> (reservedOp "struct" *> identifier)
            <*> (reservedOp "(" *> parseExpr `sepBy` comma <* reservedOp ")")
 
--- Values
+parseStructField :: Parser StructField
+parseStructField =
+    StructField <$> parseExpr <* char '.' <*> parseFieldExpr
+
+parseFieldExpr :: Parser Expression
+parseFieldExpr = try parseStructFieldExpr <|> parseExpr
+
+parseStructFieldExpr :: Parser Expression
+parseStructFieldExpr = StructFieldExp <$> parseStructField
+
+
+-- Values -- hvis noe går galt: bytt fra reservedOp til char!!!
 
 parseValue :: Parser Value
 parseValue = choice
@@ -77,6 +84,7 @@ parseValue = choice
     , try parseNumber
     , try parseText
     , try parseList
+    -- , try parseStructVal
     ]
     where
         parseNil = reservedOp "nil" *> pure Nil
@@ -93,6 +101,8 @@ parseValue = choice
         parseHashSet =
             HashSet . Set.fromList
                 <$> (reservedOp "set" *> reservedOp "{" *> parseExpr `sepBy` comma <* reservedOp "}")
+        -- parseStructVal =
+            -- ...
 
 parsePair :: Parser (Expression, Expression)
 parsePair = (,) <$> parseExpr <* colon <*> parseExpr
@@ -118,8 +128,8 @@ parseExpr = buildExpressionParser table term
                 ]
         term = choice
             [ try parseNotExp
+            , try parseStructExpr
             , try parseConstant
-            , try parseStructFieldExp
             , try parseListIndexExp
             , try parseFunctionCallExp
             , try parseVariableExp
@@ -128,16 +138,16 @@ parseExpr = buildExpressionParser table term
             where
                 parseNotExp =
                     Not <$> (reservedOp "not" *> parseExpr)
-                parseStructFieldExp =
-                    StructFieldExp <$> parseStructField
                 parseListIndexExp =
-                    ListIndex <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
+                    ListIndex <$> identifier <*> many1 (whiteSpace *> char '[' *> parseExpr <* char ']' <* whiteSpace)
                 parseFunctionCallExp =
                     CallExp <$> parseFunctionCall
                 parseVariableExp =
                     VariableExp <$> identifier
                 parseConstant =
                     Constant <$> parseValue
+                parseStructExpr =
+                    StructExpr <$> parseStruct
 
 -- Parse functions
 
@@ -167,7 +177,7 @@ parseAssignmentTarget = choice
     ]
     where
         parseStructFieldTarget = StructFieldTarget <$> parseStructField
-        parseListIndexTarget = ListIndexTarget <$> identifier <* reservedOp "[" <*> parseExpr <* reservedOp "]"
+        parseListIndexTarget = ListIndexTarget <$> identifier <*> many1 (reservedOp "[" *> parseExpr <* reservedOp "]")
         parseVariableTarget = VariableTarget <$> identifier
 
 parseAssignmentValue :: Parser AssignmentValue
@@ -192,7 +202,7 @@ parseStmt = choice
     , try ifStmt
     , try returnStmt
     , try parseFunctionCallStmt
-    ] <?> "Expected statement!"
+    ] <?> "a statement."
     where
         parseBreakStmt = 
             reservedOp "break" *> pure Break

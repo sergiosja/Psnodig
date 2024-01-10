@@ -77,9 +77,9 @@ collectExpr arg =
         (BinaryExp _ exp1 exp2) -> do
             collectExpr exp1
             collectExpr exp2
-        (ListIndex list expr) -> do
+        (ListIndex list exprs) -> do
             modify (\(structs, funcs, lists) -> (structs, funcs, Set.insert list lists))
-            collectExpr expr
+            mapM_ collectExpr exprs
         (CallExp (FunctionCall name exps)) -> do -- if f = contains(A, x), add A to lists
             modify (\(structs, funcs, lists) -> (structs, Set.insert name funcs, lists))
             mapM_ collectExpr exps

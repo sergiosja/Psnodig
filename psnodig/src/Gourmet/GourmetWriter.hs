@@ -29,8 +29,8 @@ writeStructDecl (StructDecl name args) = do
             tell $ "\t" ++ last (getArguments args) ++ "\n}"
 
 writeStructField :: StructField -> GourmetWriter ()
-writeStructField (StructField struct field) =
-    tell $ struct ++ "." ++ field
+writeStructField (StructField expr1 expr2) =
+   writeExp expr1 >> tell "." >> writeExp expr2
 
 writeStruct :: Struct -> GourmetWriter ()
 writeStruct (Struct name args) = do
@@ -78,6 +78,8 @@ writeValue (HashMap hmap) = do
         _ -> do
             mapM_ (\p -> (writePair p) >> tell ", ") (init pairs)
             (writePair $ last pairs) >> tell "}"
+writeValue (StructVal struct) =
+    writeStruct struct
 
 writePair :: (Expression, Expression) -> GourmetWriter ()
 writePair (x, y) = writeExp x >> tell ": " >> writeExp y
@@ -93,15 +95,16 @@ writeExp (BinaryExp op exp1 exp2) = do
     writeExp exp2
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (ListIndex name index) = do
-    tell $ name ++ "["
-    writeExp index
-    tell "]"
+writeExp (ListIndex name indexes) = do
+    tell name
+    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes
 writeExp (Not expr) = do
     tell $ "not "
     writeExp expr
-writeExp (StructFieldExp struct) =
-    writeStructField struct
+writeExp (StructExpr struct) =
+    writeStruct struct
+writeExp (StructFieldExp structField) =
+    writeStructField structField
 
 writeFunctionCall :: FunctionCall -> GourmetWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
@@ -115,10 +118,9 @@ writeFunctionCall (FunctionCall funcname args) = do
 
 writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
 writeAssignmentTarget (VariableTarget var) = tell var
-writeAssignmentTarget (ListIndexTarget var expr) = do
-    tell $ var ++ "["
-    writeExp expr
-    tell "]"
+writeAssignmentTarget (ListIndexTarget var indexes) = do
+    tell var
+    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes >> tell " "
 writeAssignmentTarget (StructFieldTarget struct) =
     writeStructField struct
 
