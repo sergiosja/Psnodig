@@ -21,21 +21,21 @@ data Value =
     | List [Expression]
     | HashSet (Set.Set Expression)
     | HashMap (Map.Map Expression Expression)
-    | StructVal Struct
+    | StructVal [(String, Value)] -- bonus, kan omdøpe til LocalStructValue
     deriving (Eq, Show, Read, Ord)
 
--- Struct related
+-- Structs
 
 data StructDecl = StructDecl String [Argument]
-    deriving (Eq, Show, Read, Ord)
-
-data StructField = StructField Expression Expression
     deriving (Eq, Show, Read, Ord)
 
 data Struct = Struct String [Expression]
     deriving (Eq, Show, Read, Ord)
 
--- Function related
+data StructField = StructField Expression Expression
+    deriving (Eq, Show, Read, Ord)
+
+-- Functions
 
 data Function = Function String [Argument] [Statement]
     deriving (Eq, Show, Read, Ord)
@@ -43,7 +43,7 @@ data Function = Function String [Argument] [Statement]
 data FunctionCall = FunctionCall String [Expression]
     deriving (Eq, Show, Read, Ord)
 
--- Statements and expressions
+-- Statements
 
 data Statement =
       Assignment AssignmentTarget AssignmentValue
@@ -60,14 +60,14 @@ data Statement =
     deriving (Eq, Show, Read, Ord)
 
 data AssignmentTarget =
-      VariableTarget String             -- x =
-    | ListIndexTarget String [Expression] -- x[0] =
-    | StructFieldTarget StructField     -- x.left =
+      VariableTarget String
+    | ListIndexTarget String [Expression]
+    | StructFieldTarget StructField
     deriving (Eq, Show, Read, Ord)
 
 data AssignmentValue =
-      ExpressionValue Expression    -- = 5 + 5
-    | StructValue Struct  -- = struct Person
+      ExpressionValue Expression
+    | StructValue Struct
     deriving (Eq, Show, Read, Ord)
 
 data Else =
@@ -75,18 +75,20 @@ data Else =
     | Else [Statement]
     deriving (Eq, Show, Read, Ord)
 
+-- Expressions
+
 data Expression =
       Constant Value
     | VariableExp String
     | BinaryExp Operator Expression Expression
     | ListIndex String [Expression]
     | CallExp FunctionCall
-    | Not Expression -- fix this. "Not" should only be possible with boolean!! eller? meh, bare ha bval og gjør sjekker:)
+    | Not Expression
     | StructExpr Struct
     | StructFieldExp StructField
+    | LocalStructField [(String, Value)] -- for structs within lists, sets etc. shall not be parsed -- kan kanskje fjerne da?? siden vi har identisk Val
+    -- fjern etterpå!!:))
     deriving (Eq, Show, Read, Ord)
-
--- Operators
 
 data Operator =
       Plus

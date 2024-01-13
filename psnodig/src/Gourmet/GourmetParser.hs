@@ -21,6 +21,7 @@ lexer = Token.makeTokenParser emptyDef {
         , ",", "contains", "length", "ceil", "floor"
         , ":", "#", "@", "break", "continue", "struct"
         , "not", "%", "map", "set", "int", "str", "bool"
+        , "."
         ]
 }
 
@@ -50,12 +51,15 @@ colon = whiteSpace >> char ':' >> whiteSpace
 
 {- Parsing -}
 
+sWhiteSpace :: Char -> Parser ()
+sWhiteSpace c = whiteSpace >> char c >> whiteSpace
+
 -- Parse structs
 
 parseStructDecl :: Parser StructDecl
 parseStructDecl =
     StructDecl <$> (reservedOp "struct" *> identifier) <* reservedOp "{"
-           <*> parseArgument `sepBy` comma <* reservedOp "}"
+               <*> parseArgument `sepBy` comma <* reservedOp "}"
 
 parseStruct :: Parser Struct
 parseStruct =
@@ -64,13 +68,11 @@ parseStruct =
 
 parseStructField :: Parser StructField
 parseStructField =
-    StructField <$> parseExpr <* char '.' <*> parseFieldExpr
-
-parseFieldExpr :: Parser Expression
-parseFieldExpr = try parseStructFieldExpr <|> parseExpr
+    StructField <$> parseExpr <* sWhiteSpace '.'
+                <*> parseStructFieldExpr
 
 parseStructFieldExpr :: Parser Expression
-parseStructFieldExpr = StructFieldExp <$> parseStructField
+parseStructFieldExpr = try (StructFieldExp <$> parseStructField) <|> parseExpr
 
 
 -- Values -- hvis noe går galt: bytt fra reservedOp til char!!!
@@ -139,7 +141,7 @@ parseExpr = buildExpressionParser table term
                 parseNotExp =
                     Not <$> (reservedOp "not" *> parseExpr)
                 parseListIndexExp =
-                    ListIndex <$> identifier <*> many1 (whiteSpace *> char '[' *> parseExpr <* char ']' <* whiteSpace)
+                    ListIndex <$> identifier <*> many1 (sWhiteSpace '[' *> parseExpr <* sWhiteSpace ']')
                 parseFunctionCallExp =
                     CallExp <$> parseFunctionCall
                 parseVariableExp =
@@ -167,7 +169,7 @@ parseFunctionCall :: Parser FunctionCall
 parseFunctionCall =
     FunctionCall
         <$> identifier <* reservedOp "("
-        <*> parseExpr `sepBy` comma <* reservedOp ")"
+        <*> parseStructFieldExpr `sepBy` comma <* reservedOp ")"
 
 parseAssignmentTarget :: Parser AssignmentTarget
 parseAssignmentTarget = choice

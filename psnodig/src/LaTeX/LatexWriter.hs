@@ -75,8 +75,7 @@ writeValue (HashMap hmap) = do
         _ -> do
             mapM_ (\p -> (writePair p) >> tell ", ") (init pairs)
             (writePair $ last pairs) >> tell "\\}"
-writeValue (StructVal struct) =
-    writeStruct struct
+writeValue (StructVal _) = undefined -- these aren't parsed
 
 writePair :: (Expression, Expression) -> LatexWriter ()
 writePair (x, y) = writeExp x >> tell ": " >> writeExp y
@@ -112,6 +111,7 @@ writeExp (StructExpr struct) =
     writeStruct struct
 writeExp (StructFieldExp structField) =
     writeStructField structField
+writeExp (LocalStructField _) = undefined -- This can't happen since they aren't parsed
 
 -- Function related
 
