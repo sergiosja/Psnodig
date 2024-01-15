@@ -70,63 +70,45 @@ bindVar var value = do
     currScope@(ExecutionState { scopeStack = (top:rest) }) <- get
     put currScope { scopeStack = ((var, value):top) : rest }
 
--- Will likely have to fix something with LocalStructField for sets and maps!
--- updateListVar :: String -> Expression -> Value -> Psnodig ()
--- updateListVar listName indexExpr value = do
---     maybeList <- lookupVar listName
---     case maybeList of
---         Just (List list) -> do
---             indexValue <- evalExpr indexExpr
---             case indexValue of
---                 (Number index) ->
---                     case 0 <= index && (fromInteger index) < length list of
---                         True ->
---                             let updatedList = replaceValueAtIndex list (fromInteger index) value -- [(if n == index then (n, newVal) else (n,v)) | (n, v) <- fields] ???
---                             in findAndUpdateScope listName (List updatedList)
---                         False -> throwError $ Error $ "Index " ++ show index ++ " out of bounds of " ++ listName ++ "."
---                 _ -> throwError $ BadArgument $ "List index must be a number."
---         Just _ -> throwError $ BadArgument $ "\"" ++ listName ++ "\" is not a list."
---         Nothing -> throwError $ VariableNotFound $ "No list \"" ++ listName ++ "\" previously defined."
-
-
 updateListVar :: String -> [Expression] -> Value -> Psnodig ()
 updateListVar listName indexExprs value = do
     maybeList <- lookupVar listName
     case maybeList of
         Just (List list) -> do
-            list' <- updateNestedListIndex (List list) (tail indexExprs) value
+            list' <- updateNestedListVar (List list) (tail indexExprs) value
             findAndUpdateScope listName list'
         Just _ -> throwError $ BadArgument $ "\"" ++ listName ++ "\" is not a list."
         Nothing -> throwError $ VariableNotFound $ "No list \"" ++ listName ++ "\" previously defined."
 
-updateNestedListIndex :: Value -> [Expression] -> Value -> Psnodig Value -- list -> list of indexes -> updated list
-updateNestedListIndex (List list) (indexExpr : []) value = do
-    maybeIndex <- evalExpr indexExpr -- see whats behind expr
+updateNestedListVar :: Value -> [Expression] -> Value -> Psnodig Value
+updateNestedListVar (List list) (indexExpr : []) value = do
+    maybeIndex <- evalExpr indexExpr
     case maybeIndex of
-        Number index -> -- if its a number, we can use it as index
-            if 0 <= index && (fromInteger index) < length list -- unless its out of bounds
-            then return $ List $ replaceValueAtIndex list (fromInteger index) value -- replace current value with the new value. wrap in a List
+        Number index ->
+            if 0 <= index && (fromInteger index) < length list
+            then return $ List $ replaceValueAtIndex list (fromInteger index) value
             else throwError $ Error $ "Index " ++ show index ++ " out of bounds."
         _ -> throwError $ BadArgument $ "List index must evaluate to a number."
 
-updateNestedListIndex (List list) (indexExpr : rest) value = do -- List list, index list and value
-    maybeIndex <- evalExpr indexExpr -- see whats behind expr
+updateNestedListVar (List list) (indexExpr : rest) value = do
+    maybeIndex <- evalExpr indexExpr
     case maybeIndex of
-        Number index -> -- its a number
-            if 0 <= index && (fromInteger index) < length list -- not out of bounds eh?
+        Number index ->
+            if 0 <= index && (fromInteger index) < length list
             then do
                 innerList <- evalExpr $ list !! (fromInteger index)
-                (List list') <- updateNestedListIndex innerList rest value
+                (List list') <- updateNestedListVar innerList rest value
                 return $ List $ replaceValueAtIndex list (fromInteger index) (List list')                
             else throwError $ Error $ "Index " ++ show index ++ " out of bounds."
         _ -> throwError $ BadArgument $ "List index must evaluate to a number."
+updateNestedListVar _ _ _ = throwError $ BadArgument "Sorry blud doesnt work"
 
 findAndUpdateScope :: String -> Value -> Psnodig ()
 findAndUpdateScope listName newList = do
     currScope@(ExecutionState { scopeStack = scopes }) <- get
     case updateScopes scopes listName newList of
         Just newScopes -> put currScope { scopeStack = newScopes }
-        Nothing -> throwError $ VariableNotFound $ "List " ++ listName ++ " not found." -- should not be possible due to the check in updateListVar
+        Nothing -> throwError $ VariableNotFound $ "List " ++ listName ++ " not found."
 
 updateScopes :: [[(String, Value)]] -> String -> Value -> Maybe [[(String, Value)]]
 updateScopes [] _ _ = Nothing
@@ -167,7 +149,6 @@ lookupStruct var = do
     ExecutionState { structEnv = env } <- get
     case Map.lookup var env of
         Just fields -> return $ Just (StructVal fields)
-        -- Just v -> return $ Just (StructVal (Struct var (map (\p -> (Constant (snd p))) v)))
         Nothing -> return $ Nothing
 
 bindStruct :: String -> Struct -> Psnodig ()
@@ -177,14 +158,12 @@ bindStruct name (Struct maybeStruct args) = do
         Just args' -> do
             if length args == length args' then do
                 values <- mapM evalExpr args
-                let newStructEnv = Map.insert name (zip args' values) env -- se := struct P..    "se" -> [("age", 24), ("friends", 1)]
+                let newStructEnv = Map.insert name (zip args' values) env
                 put scope { structEnv = newStructEnv }
             else
                 throwError $ WrongNumberOfArguments $ "Provided " ++ show (length args) ++ " args to a struct that takes " ++ show (length args') ++ " args."
         Nothing -> throwError $ StructNotFound $ "No struct \"" ++ maybeStruct ++ "\" previously defined."
 
-
- -- skal bare kalles fra updateStructField, så skal være safe
 updateStruct :: String -> [(String, Value)] -> Psnodig ()
 updateStruct name fields = do
     scope@(ExecutionState { structEnv = env }) <- get
@@ -193,17 +172,6 @@ updateStruct name fields = do
             let env' = Map.insert name fields env
             put scope { structEnv = env' }
         Nothing -> throwError $ StructNotFound $ "No struct \"" ++ name ++ "\" previously defined."
-
-
-    -- | VariableExp String
-    -- | ListIndex String Expression -- skulle fikse denne også til | [Expression]
-    -- | StructFieldExp StructField
-
--- tree.left := 5           (StructField (VariableExp "tree") (VariableExp "left"))
--- arr[5].left := 5         (StructField (ListIndex "arr" (Constant (Number 5))) (VariableExp "left"))
--- tree.right.left := 5     (StructField (VariableExp "tree") (StructFieldExp (StructField (VariableExp "right") (VariableExp "leff"))))
-
-
 
 updateStructField :: StructField -> Expression -> Psnodig ()
 updateStructField (StructField structName fieldExpr) valueExpr = do
@@ -214,7 +182,7 @@ updateStructField (StructField structName fieldExpr) valueExpr = do
                 Just (StructVal fields) -> do
                     StructVal newEnv <- updateField fields fieldExpr valueExpr
                     updateStruct name newEnv
-                Nothing -> throwError $ BadArgument $ name ++ " is not a defined struct."
+                _ -> throwError $ BadArgument $ name ++ " is not a defined struct."
         listIndex@(ListIndex listName indexExprs) -> do
             maybeStruct <- evalExpr listIndex
             case maybeStruct of
@@ -224,79 +192,134 @@ updateStructField (StructField structName fieldExpr) valueExpr = do
                 _ -> throwError $ BadArgument $ listName ++ " does not contain a struct at given index."
         _ -> throwError $ BadArgument "Cannot update struct field(s) of first argument."
 
-
 updateField :: [(String, Value)] -> Expression -> Expression -> Psnodig Value
 updateField env fieldExpr valueExpr = do
     case fieldExpr of
         VariableExp name -> do -- tree.right := valueExpr. "right" skal finnes i env
             newVal <- evalExpr valueExpr -- Verdi
-            return $ StructVal [(if name == arg then (arg, newVal) else (arg, val)) | (arg, val) <- env] -- hvis vi finner "right", erstatt dens verdi med newVal
-        (ListIndex listName indexExpr) -> do -- p.friends[0] := valueExpr.
-            newVal <- evalExpr valueExpr -- Verdi
-            maybeIndex <- evalExpr indexExpr
-            case maybeIndex of
-                (Number n) -> if 0 <= n && (fromInteger n) < length env
-                              then return $ StructVal [(if listName == arg then (arg, List (replaceValueAtIndex (deref val) (fromInteger n) newVal)) else (arg, val)) | (arg, val) <- env]
-                              -- ("friends", List [expr]) skal finnes i env. kjør replaceValueAtIndex med indeksen og verdien
-                              else throwError $ BadArgument "List index out of range! updateFielddldldl"
-                _ -> throwError $ BadArgument "Must provide index!! > updateField"
+            updateListEntry env name newVal
+            -- return $ StructVal [(if name == arg then (arg, newVal) else (arg, val)) | (arg, val) <- env] -- hvis vi finner "right", erstatt dens verdi med newVal
+        (ListIndex listName indexExprs) -> -- p.friends[0] := valueExpr.
+            case lookup listName env of
+                Just list@(List _) -> do
+                    list' <- recListStuff list indexExprs valueExpr
+                    return $ StructVal [(if listName == arg then (arg, list') else (arg, val)) | (arg, val) <- env]
+                _ -> throwError $ BadArgument "Blud this aint even a lizt!"
         (StructFieldExp (StructField field fieldExpr')) -> -- first.second.third := 5
             case field of
                 VariableExp name -> do
                     case lookup name env of -- ("second", [(), .., ()]) skal finnes i env. kjør rekursivt med de fieldsene
                         Just (StructVal fields) -> do
                             fields' <- updateField fields fieldExpr' valueExpr
-                            return $ StructVal [(if name == arg then (arg, fields') else (arg, val)) | (arg, val) <- env]
-                        Nothing -> throwError $ BadArgument "Line 210 in Interpreter.hs! This aint fields! Maybe I should draw this or summin"
-                (ListIndex listName indexExpr) -> do -- first.second[0].third := 4
+                            updateListEntry env name fields'
+                            -- return $ StructVal [(if name == arg then (arg, fields') else (arg, val)) | (arg, val) <- env]
+                        _ -> throwError $ BadArgument "Line 210 in Interpreter.hs! This aint fields! Maybe I should draw this or summin"
+                (ListIndex listName indexExprs) -> do -- first.second[0].third := 4
                     case lookup listName env of
-                        Just (List list) -> do -- env = [('noe', noe), ('annet', annet), ("second", [1, 2, .., n])]
-                            maybeIndex <- evalExpr indexExpr
-                            case maybeIndex of
-                                Number n -> if 0 <= n && (fromInteger n) < length list
-                                            then do
-                                                StructVal fields <- evalExpr $ list !! (fromInteger n)
-                                                updatedList <- updateField fields fieldExpr' valueExpr
-                                                let newList = List (replaceValueAtIndex list (fromInteger n) updatedList)
-                                                return $ StructVal [(if listName == arg then (arg, newList) else (arg, val)) | (arg, val) <- env]
-                                            else throwError $ BadArgument "blah blah"
-                                _ -> throwError $ BadArgument "Sorry baby this is not a valid index"
-                        Nothing -> throwError $ BadArgument "something something updateField"
+                        Just list@(List _) -> do
+                            list' <- recListStuff123NEW list indexExprs fieldExpr' valueExpr
+                            updateListEntry env listName list'
+                        _ -> throwError $ BadArgument "Sorry blud doesnt work"
+                _ -> throwError $ BadArgument "Sorry blud doesnt work"
+                        
+        _ -> throwError $ BadArgument "Sorry blud doesnt work"
+
+                            -- send list and indexExprs to a function
+                            -- find the final list and that index, e.g. list [0][1][2] -> list'' 2
+                            -- the original case was "list''[2].something", list''[2] contains a list [("something", ..), .., ("else", ..)]
+                            -- run updateField env fieldExpr' valueExpr, with env being that list
+                            -- but, the new list must also be updated! so our function must actually call updateField
+                    -- case lookup listName env of
+                    --     Just (List list) -> do -- env = [('noe', noe), ('annet', annet), ("second", [1, 2, .., n])]
+                    --         maybeIndex <- evalExpr indexExpr
+                    --         case maybeIndex of
+                    --             Number n -> if 0 <= n && (fromInteger n) < length list
+                    --                         then do
+                    --                             StructVal fields <- evalExpr $ list !! (fromInteger n)
+                    --                             updatedList <- updateField fields fieldExpr' valueExpr
+                    --                             let newList = List (replaceValueAtIndex list (fromInteger n) updatedList)
+                    --                             updateListEntry env listName newList
+                    --                             -- return $ StructVal [(if listName == arg then (arg, newList) else (arg, val)) | (arg, val) <- env]
+                    --                         else throwError $ BadArgument "blah blah"
+                    --             _ -> throwError $ BadArgument "Sorry baby this is not a valid index"
+                    --     Nothing -> throwError $ BadArgument "something something updateField"
 
 
--- updateStructField :: StructField -> Expression -> Psnodig ()
--- updateStructField (StructField expr1 expr2) valueExpr = do
---     structName <- evalExpr expr1
---     field <- evalExpr expr2
---     scope@(ExecutionState { structEnv = env }) <- get
---     case Map.lookup structName env of
---         Just args -> case lookup field args of
---             Just _ -> do
---                 value <- evalExpr valueExpr
---                 let args' = map (\(x, y) -> if x == field then (x, value) else (x, y)) args
---                 let env' = Map.insert structName args' env
---                 put scope { structEnv = env' }
---             Nothing -> throwError $ BadArgument $ "No field \"" ++ field ++ "\" on struct " ++ structName
---         Nothing -> throwError $ StructNotFound $ "No struct \"" ++ structName ++ "\" previously defined."
+-- arr[0][1][2].noe := 3
+
+-- l@List [0, 0, 0] [0, 1, 2] 3
+-- l' = go into index 0 at l
+-- l'' = go into index 1 at l'
+-- set index2 at l'' to 3
+
+--           (List list) [(Constant (Number 0)), (Constant (Number 1)), (Constant (Number 2))] (Constant (Number 3))
+recListStuff :: Value -> [Expression] -> Expression -> Psnodig Value
+recListStuff (List list) (indexExpr : []) valueExpr = do
+    maybeIndex <- evalExpr indexExpr
+    value <- evalExpr valueExpr
+    case maybeIndex of
+        Number index ->
+            if 0 <= index && (fromInteger index) < length list
+            then return $ List (replaceValueAtIndex list (fromInteger index) value)
+            else throwError $ BadArgument "List index outtta boundz!"
+        _ -> throwError $ BadArgument "Bruh!"
+
+recListStuff (List list) (indexExpr : rest) valueExpr = do
+    maybeIndex <- evalExpr indexExpr
+    case maybeIndex of
+        Number index ->
+            if 0 <= index && (fromInteger index) < length list
+            then do
+                let listExpr = list !! (fromInteger index) -- tror dette vil være en expression av typen (Constant (List [..]))
+                list' <- evalExpr listExpr
+                list'' <- recListStuff list' rest valueExpr
+                return $ List (replaceValueAtIndex list (fromInteger index) list'')
+            else throwError $ BadArgument "List index outtta boundz!"
+        _ -> throwError $ BadArgument "Not int!"
+
+recListStuff _ _ _ = throwError $ BadArgument "Sorry blud doesnt work"
 
 
--- updateStructField (StructField struct field) expr = do
---     scope@(ExecutionState { structEnv = env }) <- get
---     case Map.lookup struct env of
---         Just args -> case lookup field args of
---             Just _ -> do
---                 value <- evalExpr expr
---                 let args' = map (\(x, y) -> if x == field then (x, value) else (x, y)) args
---                 let env' = Map.insert struct args' env
---                 put scope { structEnv = env' }
---             Nothing -> throwError $ BadArgument $ "No field \"" ++ field ++ "\" on struct " ++ struct
---         Nothing -> throwError $ StructNotFound $ "No struct \"" ++ struct ++ "\" previously defined."
+recListStuff123NEW :: Value -> [Expression] -> Expression -> Expression -> Psnodig Value
+recListStuff123NEW (List list) (indexExpr : []) fieldExpr valueExpr = do
+    maybeIndex <- evalExpr indexExpr
+    case maybeIndex of
+        Number index ->
+            if 0 <= index && (fromInteger index) < length list
+            then do
+                StructVal fields <- evalExpr $ list !! (fromInteger index)
+                list' <- updateField fields fieldExpr valueExpr
+                return $ List (replaceValueAtIndex list (fromInteger index) list')
+            else throwError $ BadArgument "List index outtta boundz!"
+        _ -> throwError $ BadArgument "Sorry blud doesnt work"
 
-lookupStructField :: ExecutionState -> String -> String -> Maybe Value
-lookupStructField scope name field = do
-    case Map.lookup name (structEnv scope) of
-        Just fields -> lookup field fields
-        Nothing -> Nothing
+recListStuff123NEW (List list) (indexExpr : rest) fieldExpr valueExpr = do
+    maybeIndex <- evalExpr indexExpr
+    case maybeIndex of
+        Number index ->
+            if 0 <= index && (fromInteger index) < length list
+            then do
+                let listExpr = list !! (fromInteger index)
+                list' <- evalExpr listExpr
+                list'' <- recListStuff123NEW list' rest fieldExpr valueExpr
+                return $ List (replaceValueAtIndex list (fromInteger index) list'')
+            else throwError $ BadArgument "List index outtta boundz!"
+        _ -> throwError $ BadArgument "Not int!"
+
+recListStuff123NEW _ _ _ _ = throwError $ BadArgument "Sorry blud doesnt work"
+
+
+-- the returned thing should be put in place of the original list
+
+
+updateListEntry :: [(String, Value)] -> String -> Value -> Psnodig Value
+updateListEntry env name newVal = return $ StructVal [(if name == arg then (arg, newVal) else (arg, val)) | (arg, val) <- env]
+
+-- lookupStructField :: ExecutionState -> String -> String -> Maybe Value
+-- lookupStructField scope name field = do
+--     case Map.lookup name (structEnv scope) of
+--         Just fields -> lookup field fields
+--         Nothing -> Nothing
 
 
 -- Expressions
@@ -336,6 +359,7 @@ evalExpr (StructExpr (Struct maybeStruct exprs)) = do
                 return (StructVal $ zip fields values)
             else throwError $ BadArgument $ "Incorrect number of arguments provided for struct " ++ maybeStruct ++ "."
         Nothing -> throwError $ BadArgument $ "Struct " ++ maybeStruct ++ " is not defined."
+evalExpr _ = throwError $ BadArgument "Sorry blud doesnt work"
 
 evalStructFieldExprMain :: StructField -> Psnodig Value
 evalStructFieldExprMain (StructField structName fieldExpr) =
@@ -344,7 +368,7 @@ evalStructFieldExprMain (StructField structName fieldExpr) =
             maybeStruct <- lookupStruct name
             case maybeStruct of
                 Just (StructVal fields) -> evalStructFieldExprRec fields fieldExpr
-                Nothing -> throwError $ BadArgument $ name ++ " is not a defined struct."
+                _ -> throwError $ BadArgument $ name ++ " is not a defined struct."
         listIndex@(ListIndex listName _) -> do
             maybeStruct <- evalExpr listIndex
             case maybeStruct of
@@ -362,19 +386,19 @@ evalStructFieldExprRec fields expr = do
         (ListIndex name indexExprs) ->
             case lookup name fields of
                 Just list@(List _) -> evalNestedIndex list indexExprs -- dobbelsjekk denne
-                Nothing -> throwError $ BadArgument "Invalid struct field."
+                _ -> throwError $ BadArgument "Invalid struct field."
         (StructFieldExp (StructField field expr')) ->
             case field of
                 VariableExp name -> do
                     case lookup name fields of
                         Just (StructVal fields') -> evalStructFieldExprRec fields' expr'
-                        Nothing -> throwError $ BadArgument $ "Tried calling " ++ name ++ " with invalid field."
+                        _ -> throwError $ BadArgument $ "Tried calling " ++ name ++ " with invalid field."
                 (ListIndex name indexExprs) ->
                     case lookup name fields of
                         Just list@(List _) -> do
                             StructVal fields' <- evalNestedIndex list indexExprs
                             evalStructFieldExprRec fields' expr'
-                        Nothing -> throwError $ BadArgument "Invalid struct field."
+                        _ -> throwError $ BadArgument "Invalid struct field."
                 _ -> throwError $ BadArgument "Tried to access field of non-struct identifier."
         _ -> throwError $ BadArgument "Tried to access field of non-struct identifier."
 
@@ -417,24 +441,24 @@ evalStmts (stmt:stmts) = do
 evalStmt :: Statement -> Psnodig (Either () Value)
 evalStmt (Assignment assTarget assValue) = do -- nødvendig med do her?
     case assValue of
-        (ExpressionValue expr) -> do -- ... := expression
+        (ExpressionValue expr) -> do
             value <- evalExpr expr
             case assTarget of
-                (VariableTarget var) -> -- k := 5
+                (VariableTarget var) ->
                     bindVar var value >> return (Left ())
-                (ListIndexTarget var indexExprs) -> -- k[1][2]? := [struct P(1, 2, 3)], her lagres vel (List [Constant (StructVal [(1, ),(2, .),3]), ..])
+                (ListIndexTarget var indexExprs) ->
                     updateListVar var indexExprs value >> return (Left ())
-                (StructFieldTarget structField) -> -- a.b.c := 1+1
+                (StructFieldTarget structField) ->
                     updateStructField structField expr >> return (Left ())
-        (StructValue struct) -> -- ... := struct P(..)
+        (StructValue struct) ->
             case assTarget of
-                (VariableTarget var) -> -- k := struct P(1, 2, 3)
-                    bindStruct var struct >> return (Left ()) -- lagrer k -> [(,), (,), (,)] i structEnv
-                (ListIndexTarget var indexExprs) -> do -- k[0] := struct P(1, 2, 3)
+                (VariableTarget var) ->
+                    bindStruct var struct >> return (Left ())
+                (ListIndexTarget var indexExprs) -> do
                     fields <- evalExpr (StructExpr struct)
                     updateListVar var indexExprs fields >> return (Left ())
-                (StructFieldTarget structField) -> -- a.b.c := struct P(1, 2, 3)
-                    updateStructField structField (StructExpr struct) >> return (Left ()) -- sjekk om jeg egt er keen på det her eller heller vil ha [(a, b)]
+                (StructFieldTarget structField) ->
+                    updateStructField structField (StructExpr struct) >> return (Left ())
 
 evalStmt (Loop expr stmts) = do
     val <- evalExpr expr
@@ -619,8 +643,8 @@ fromNumber :: Value -> Maybe Integer
 fromNumber (Number n) = Just n
 fromNumber _ = Nothing
 
-deref :: Value -> [Expression]
-deref (List xs) = xs
+-- deref :: Value -> [Expression]
+-- deref (List xs) = xs
 
 stringifyValue :: Value -> Bool -> Psnodig String
 stringifyValue v fromList = case v of
@@ -652,23 +676,6 @@ evalNestedIndex (List list) (indexExpr:indexExprs) = do
             else throwError $ BadArgument "List index out of range!"
         _ -> throwError $ BadArgument "Index must evaluate to a number"
 evalNestedIndex _ _ = throwError $ BadArgument "Expected a list for index operation"
-
--- replaceValueAtIndex :: [Expression] -> Int -> Value -> Psnodig (Maybe [Expression])
--- replaceValueAtIndex list index newVal =
---     case newVal of
---         (StructVal (Struct maybeStruct exprs)) -> do
---             maybeStructDecl <- lookupStructDecl maybeStruct
---             case maybeStructDecl of
---                 Just fields -> do
---                     values <- mapM evalExpr exprs
---                     valueToBeAdded = (Constant (StructVal $ zip fields values))
---                     if length list <= index then [valueToBeAdded]
---                     else let (before, _ : after) = splitAt index list
---                     in Just $ before ++ valueToBeAdded : after
---                 _ -> return $ Nothing
---         _ -> if length list <= index then [(Constant newVal)]
---              else let (before, _ : after) = splitAt index list
---              in Just $ before ++ (Constant newVal) : after
 
 -- denne er avhengig av at man VET at index er good fra før!
 replaceValueAtIndex :: [Expression] -> Int -> Value -> [Expression]
