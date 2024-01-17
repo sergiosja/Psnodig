@@ -2,7 +2,7 @@ module Main (main) where
 
 -- Psnodig syntax
 import Syntax
--- import Interpreter (ExecutionState(..), runPsnodig)
+import Interpreter (ExecutionState(..), runPsnodig)
 
 -- Pytite lang
 -- import Petite.PetiteParser (parsePetite)
@@ -33,9 +33,9 @@ main = do
             p <- readFile filename
             transpile p filename
             callCommand "/Users/sergey/Documents/Master/psnodig/src/Programs/cleanup.sh"
-        -- ["run", file] -> do
-        --     p <- readFile file
-        --     interpret p
+        ["run", file] -> do
+            p <- readFile file
+            interpret p
         ["p", file] -> do -- should be able to get this in its own file maybe?
             p <- readFile file
             getAST p
@@ -75,13 +75,13 @@ getAST program = do
         (Right p) -> print p
         (Left err) -> putStrLn $ show err
 
--- interpret :: String -> IO ()
--- interpret program = do
---     let parsed = parse parseGourmet "" program
---     case parsed of
---         (Right p) -> do
---             res <- runPsnodig p
---             case res of
---                 (Right finalState) -> forM_ (output finalState) putStrLn 
---                 (Left err) -> print err
---         (Left err) -> putStrLn $ show err
+interpret :: String -> IO ()
+interpret program = do
+    let parsed = parse parseGourmet "" program
+    case parsed of
+        (Right p) -> do
+            res <- runPsnodig p
+            case res of
+                (Right finalState) -> forM_ (output finalState) putStrLn 
+                (Left err) -> print err
+        (Left err) -> putStrLn $ show err

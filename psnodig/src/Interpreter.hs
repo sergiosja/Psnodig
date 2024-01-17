@@ -62,11 +62,41 @@ lookupVar var = do
             case lookup variable scope of
                 Just v -> Just v
                 Nothing -> searchScopes rest variable
+    -- if length scopes > 0
+    -- then return $ case lookup var (head scopes) of
+    --     Just v -> Just v
+    --     Nothing -> Nothing
+    -- else throwError $ BadArgument $ "Variable " ++ var ++ " not found!"
+
 
 bindVar :: String -> Value -> Psnodig ()
 bindVar var value = do
     currScope@(ExecutionState { scopeStack = (top:rest) }) <- get
     put currScope { scopeStack = ((var, value):top) : rest }
+
+-- bindVar :: String -> Value -> Psnodig ()
+-- bindVar var value = do
+--     currScope@ExecutionState{ scopeStack = scopes } <- get
+--     let updatedStack = updateVarInScopes scopes var value
+--     put currScope{ scopeStack = updatedStack }
+
+-- -- Update the first occurrence of a variable in the scope stack with a new value
+-- updateVarInScopes :: ScopeStack -> String -> Value -> [[(String, Value)]]
+-- updateVarInScopes [] _ _ = []
+-- updateVarInScopes (scope:rest) var value =
+--     case lookup var scope of
+--         Just _ -> updateVarInScope scope var value : rest -- Variable found; update value
+--         Nothing -> scope : updateVarInScopes rest var value -- Keep looking in the outer scope
+
+-- -- Update a variable in a single scope, assuming the variable is guaranteed to exist
+-- updateVarInScope :: [(String, Value)] -> String -> Value -> [(String, Value)]
+-- updateVarInScope scope var value = map updateBinding scope
+--     where
+--         updateBinding (v, _) | v == var = (var, value) -- Found variable; update value
+--         updateBinding binding = binding -- Not the variable we're looking for; leave unchanged
+
+
+
 
 updateListVar :: String -> [Expression] -> Value -> Psnodig ()
 updateListVar listName indexExprs value = do
@@ -101,8 +131,6 @@ updateNestedListVar (List list) (indexExpr : rest) value = do
         _ -> throwError $ BadArgument $ "List index must evaluate to a number."
 
 updateNestedListVar _ _ _ = throwError $ BadArgument "Sorry blud doesnt work 1"
-
-
 
 findAndUpdateScope :: String -> Value -> Psnodig ()
 findAndUpdateScope listName newList = do

@@ -68,11 +68,14 @@ parseStruct =
 
 parseStructField :: Parser StructField
 parseStructField =
-    StructField <$> parseExpr <* sWhiteSpace '.'
-                <*> parseStructFieldExpr
+    StructField <$> parseExpr1 <* sWhiteSpace '.'
+                <*> parseExpr
 
-parseStructFieldExpr :: Parser Expression
-parseStructFieldExpr = try (StructFieldExp <$> parseStructField) <|> parseExpr
+-- parseStructFieldExpr :: Parser Expression
+-- parseStructFieldExpr = try (StructFieldExp <$> parseStructField) <|> parseExpr
+
+-- update! jeg må ha parseStructFieldExpr blant structFields :((
+    -- må altså refaktorere en del! og knekke denne koden på et vis
 
 
 -- Values -- hvis noe går galt: bytt fra reservedOp til char!!!
@@ -131,6 +134,49 @@ parseExpr = buildExpressionParser table term
         term = choice
             [ try parseNotExp
             , try parseStructExpr
+            , try parseStructFieldExpr
+            , try parseConstant
+            , try parseListIndexExp
+            , try parseFunctionCallExp
+            , try parseVariableExp
+            , try $ parens parseExpr
+            ]
+            where
+                parseNotExp =
+                    Not <$> (reservedOp "not" *> parseExpr)
+                parseListIndexExp =
+                    ListIndex <$> identifier <*> many1 (sWhiteSpace '[' *> parseExpr <* sWhiteSpace ']')
+                parseFunctionCallExp =
+                    CallExp <$> parseFunctionCall
+                parseVariableExp =
+                    VariableExp <$> identifier
+                parseConstant =
+                    Constant <$> parseValue
+                parseStructExpr =
+                    StructExpr <$> parseStruct
+                parseStructFieldExpr =
+                    try (StructFieldExp <$> parseStructField) <|> parseExpr1
+
+parseExpr1 :: Parser Expression
+parseExpr1 = buildExpressionParser table term
+    where
+        table = [ [ Infix (BinaryExp Times <$ reservedOp "*") AssocLeft
+                    , Infix (BinaryExp Division <$ reservedOp "/") AssocLeft
+                    , Infix (BinaryExp Modulo <$ reservedOp "%") AssocLeft ]
+                , [ Infix (BinaryExp Plus <$ reservedOp "+") AssocLeft
+                    , Infix (BinaryExp Minus <$ reservedOp "-") AssocLeft ]
+                , [ Infix (BinaryExp LessThan <$ reservedOp "<") AssocNone
+                    , Infix (BinaryExp LessThanEqual <$ reservedOp "<=") AssocNone
+                    , Infix (BinaryExp GreaterThan <$ reservedOp ">") AssocNone
+                    , Infix (BinaryExp GreaterThanEqual <$ reservedOp ">=") AssocNone ]
+                , [ Infix (BinaryExp Equal <$ reservedOp "==") AssocNone
+                    , Infix (BinaryExp NotEqual <$ reservedOp "!=") AssocNone ]
+                , [ Infix (BinaryExp And <$ reservedOp "&&") AssocLeft
+                    , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
+                ]
+        term = choice
+            [ try parseNotExp
+            , try parseStructExpr
             , try parseConstant
             , try parseListIndexExp
             , try parseFunctionCallExp
@@ -169,7 +215,7 @@ parseFunctionCall :: Parser FunctionCall
 parseFunctionCall =
     FunctionCall
         <$> identifier <* reservedOp "("
-        <*> parseStructFieldExpr `sepBy` comma <* reservedOp ")"
+        <*> parseExpr `sepBy` comma <* reservedOp ")"
 
 parseAssignmentTarget :: Parser AssignmentTarget
 parseAssignmentTarget = choice
