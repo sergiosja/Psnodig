@@ -12,9 +12,9 @@ Correct presentations are especially important in academia, where the goal is to
 
 In this thesis, we present a tool, "Psnodig", which allows for transpiling executable code to other, perhaps less technical presentations. The presentation targets in this thesis are pseudocode and flowcharts. The target audience is students who are already familiar with some C-like programming language syntax. The reader might be familiar with the term "compiling", where the goal is to take a piece of non-executable code and transform it into a piece of executable code. Transpiling however, in this context, is the act of translating one piece of code to a different piece of code, while keeping a similar level of abstraction [kilde?]. \hfill \\
 
-One of our output targets is pseudocode. We are not attempting to create a standardisation or ground truth for pseudocode, but instead we lean on the algorithm2e\footnote{https://www.ctan.org/pkg/algorithm2e} library, which is an aleady established environment for writing algorithms in \LaTeX. One thing we \textit{can} ensure, is consistency, removing the burden of "should this be in italics or boldface or not" from the author. In addition, the author can write her algorithm in an executable programming language, and when sure that it yields the desired result, she can safely use Psnodig to receive a \LaTeX file and a companion PDF of her work. \hfill \\
+One of our output targets is pseudocode. We are not attempting to create a standardisation or ground truth for pseudocode, but rather we lean on the algorithm2e\footnote{https://www.ctan.org/pkg/algorithm2e} library, which is an aleady established environment for writing algorithms in \LaTeX. One thing we \textit{can} ensure, is consistency, removing the burden of "should this be in italics or boldface or not" from the author. In addition, the author can write her algorithm in an executable programming language, and when sure that it yields the desired result, she can safely use Psnodig to receive a \LaTeX file and a companion PDF of her work. \hfill \\
 
-Other freely available alternatives for transpiling source code to pseudocode is Code Kindle\footnote{https://devpost.com/software/code-kindle} and Pseudogen, a tool introduced by Oda et. al\cite{DBLP:conf/kbse/OdaFNHSTN15}. Both solutions use statistical machine translation, which is a technique to train a model on previously translated and analyzed information and conversations\footnote{https://en.wikipedia.org/wiki/Statistical\_machine\_translation}. With Pseudogen, code is transpiled to purely natural language. Code Kindle's results are less verbose, but in most cases still a description accompanying the original source code.
+Other freely available alternatives for transpiling source code to pseudocode is Code Kindle\footnote{https://devpost.com/software/code-kindle} and Pseudogen, a tool introduced by Oda et. al\cite{DBLP:conf/kbse/OdaFNHSTN15}. Both solutions use statistical machine translation, which is a technique to train a model on previously translated and analyzed information and conversations\footnote{https://en.wikipedia.org/wiki/Statistical\_machine\_translation}. With Pseudogen, code is transpiled to purely natural language. Code Kindle's results are less verbose, though in most cases still a description accompanying the original source code.
 
 The other target output of Psnodig is flowcharts. This is a representation very different to the original source code, and the main difficulty consists of keeping the level of abstraction. The main benefit of this representation, is to see the code from a completely different angle. This can be refreshing when looking at the code from the same angle for an extended period of time yields no result. \hfill \\
 
@@ -100,19 +100,19 @@ The above diagram is the result of writing the following code in the online code
     Last expression;
 \end{lstlisting}
 
-Using flowcharts to visualise a program is nothing new, but again we have a situation where the autor has to re-write their algorithm in yet \textit{another} language, and hope they did not drift too far from their original code. Naturally, these flowcharts cannot be tested with any input, and are meant to be presentation-only. \hfill \\
+Using flowcharts to visualise a program is nothing new, however again we have a situation where the autor has to re-write their algorithm in yet \textit{another} language, and hope they did not drift too far from their original code. Naturally, these flowcharts cannot be tested with any input, and are meant to be presentation-only. \hfill \\
 
 Psnodig, on the other hand, makes a point of transpiling syntax-error-free code, which the author can first test on whatever input they want. First then are they allowed to transpile their code, which does not require them to write anything again, unless they want to tweak any details.
 
 \section{Psnodig}
 
-The Psnodig tool in itself is really just a syntax. This syntax includes the standard building blocks like statements, expressions, function declarations, structs etc. But, it also includes two new types of statements, which are specific to our DSL. \hfill \\
+The Psnodig tool in itself is really just a syntax. This syntax includes the standard building blocks like statements, expressions, function declarations, structs etc. However, it also includes two new types of statements, which are specific to our DSL. \hfill \\
 
 \textbf{Hash-Statement}, which can be written like this with BNF: \hfill \\
 
 \textit{HashStmt ::= \# $<$Stmt$>$}. \hfill \\
 
-These statements are read and and processed by the interpreter, but ignored during transpiling. They work much like macros do in e.g. the C programming language, but they are declared inside functions, as Psnodig only allows struct- and function declarations to lie in the global scope. They are limited to the line reside in, which makes it easy for the author to decide which lines should be included or ignored when they wish for a different presentation of their code. \hfill \\
+These statements are read and processed by the interpreter, but ignored during transpiling. They work much like macros do in e.g. the C programming language, but they are declared inside functions, as Psnodig only allows struct- and function declarations to lie in the global scope. They are limited to the line reside in, which makes it easy for the author to decide which lines should be included or ignored when they wish for a different presentation of their code. \hfill \\
 
 \textbf{At-Statement}, which can be written like this with BNF: \hfill \\
 

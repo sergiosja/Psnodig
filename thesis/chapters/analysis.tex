@@ -1,0 +1,79 @@
+\chapter{(Problem) Analysis}
+\begin{itemize}
+    \item What is the problem I am looking at?
+    \item Analysing papers
+    \item What is relevant to include?
+    \item Builds on the background chapter
+\end{itemize}
+
+In this chapter, we will be doing problem analysis. We will dive deeper into the problem we intend to fix, and we will discuss what the current solutions lack. While the alternatives we present boast about successfull outcomes, there are some shortcomings when comparing them to what we wish to achieve, as well as comparing the respective target audiences. \hfill \\
+
+The problem we intend to fix is ... \hfill \\
+
+Ever since the concept of pseudocode was introduced, there have been attempts at creating tools to automate the process of translating code to pseudocode. The most noteworthy attempt to deliver pseudocode in text format was presented in a 2015 paper, a tool called Pseudogen. When it comes to translating code to flow charts, we decided to look at Code2Flow, which is widely used in practice today, even in PIT, the Norwegian police's IT service. \hfill \\
+
+Pseudogen boasts about generating pseudocode from Python. What the examples in the 2015 paper, as well as a video on their website\footnote{https://ahclab.naist.jp/pseudogen/} show, is rather a line-for-line translation to English. This could be desired in cases where the business people on the team are particularly curious about what the product is really doing under the hood (and the boss cannot afford Cobol developers). Since Pseudogen will translate each line in a slave-like manner, we also translate all error handling. For example, the following two lines
+
+\begin{verbatim}
+    except ValueError as e:
+        print(e)
+\end{verbatim}
+
+will translate to
+
+\begin{verbatim}
+    # If ValueError, renamed to e, exception is caught.
+        # Call the function print with an argument e
+\end{verbatim}
+
+One can speculate as to whether or not anyone gained much knowledge from that, though that is, luckily, not our task. We can also assume the business people would not be overly interested in each single piece of error handling anyway, but the absence of possibility for abstraction can make the translated transcript overwhelmingly verbose. \hfill \\
+
+Due to every line being translated, succinct and elegant list comprehension like
+
+\begin{verbatim}
+    a = [f(n) for n in range(-10, 10)]
+\end{verbatim}
+
+is translated into this long, tangled spaghetti of words
+
+\begin{verbatim}
+    # Call the function f with an argument n for every n in
+      range of integers from range 10 negative integer 10,
+      substitute the result for a
+\end{verbatim}
+
+The target audience is people who prefer the English translation to the Python code. The two examples we just provided show that the target audience is unlikely to be someone who has any background with at least programming or mathematics, which is in turn the target audience for \textit{our} tool. \hfill \\
+
+The choice of creating a tool like Psuedogen for a programming language like Python makes sense as a prototype, because Python is already so closely related to ``natural language''. Using syntax like $and$, $or$, colons etc. often makes Python code very easy to read. Thus, imagine a scenario where we declare a list of 10 integers, create a new list by filtering out the even ones, and print the result. In Python, we could do something like
+
+\begin{verbatim}
+    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    even_numbers = [num for num in numbers if num % 2 == 0]
+
+    print("Even numbers:", even_numbers)
+\end{verbatim}
+
+This is already so close to what we would have if we were to write the commands in English, making the task of translation simple. Though it makes you wonder, what is even the point of translating that? As we saw earlier, particularly translation of list comprehensions turn out rather messy compared to their succinct Python counterparts. Another argument against its usefullness is that the listing above is a fully fledged program, ready to be interpreted! If a user is still unsure about what the program is doing, executing it will certainly silence their doubts. \hfill \\
+
+Now, let's analyse the same program written in the Go programming language:
+
+\begin{verbatim}
+    numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+    var evenNumbers []int
+
+    for _, num := range numbers {
+        if num % 2 == 0 {
+            evenNumbers = append(evenNumbers, num)
+        }
+    }
+
+    fmt.Println("Even numbers:", evenNumbers)
+\end{verbatim}
+
+This program is objectively much less decipherable than its Python counterpart. For starters, it's properties of being statically typed introduces patterns like $[]int\{\}$ and keywords like $var$. Since we do not have list comprehension, we are forced to iterate the ``numbers''-list with a for-loop. ``range mubers'' yields two values for each instance, the current index and the current value. On top of this, a syntactically correct Go program would require this being inside a function, a main function, and boilerplate code like declaring the package and imports like ``fmt''. A translation of the Go program would surely be more desired than a translation of the Python program. Sadly, Pseudogen does not offer this. \hfill \\
+
+It also makes you think, did William Shakespeare really write his entire collection of works in pseudocode? \hfill \\
+
+also say what is wrong about the flowcharts, show examples of code etc. maybe inconsistencies?

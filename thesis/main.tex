@@ -27,24 +27,11 @@
 \renewcommand*\contentsname{Contents}
 \tableofcontents
 
-\input{master/introduction}
+\input{chapters/introduction}
 
+\input{chapters/background}
 
-\chapter{Background} % nothing of mine
-\begin{itemize}
-    \item Previous work within the scope of the thesis
-    \item Relevant related work like Pandoc and Derw
-\end{itemize}
-
-% skal background bare være masse basic stuff egt? feks hva er en parser, hva er et ast, hva er algebraiske datatyper? også en liten session om pandoc og derw?
-
-\chapter{(Problem) Analysis}
-\begin{itemize}
-    \item What is the problem I am looking at?
-    \item Analysing papers
-    \item What is relevant to include?
-    \item Builds on the background chapter
-\end{itemize}
+\input{chapters/analysis}
 
 \chapter{Design}
 \begin{itemize}
@@ -61,12 +48,19 @@
     \item Testing: How can I be certain that Psnodig works?
 \end{itemize}
 
+on its own, psnodig is useless! but when paired with parsers and writers, we see its magic. without, you can only but admire its conciseness and love it.
+
+interpreter. what is the point? you see, not all syntactically correct programs are necessarily also semantically correct (cool graphs on this?? figures of some sort??). show an example!
+
+btw (still on interpreter). this gives yet another edge compared to manually writing pseudocode. it's like JVM: write once, run everywhere! except not quite, but at least you can run the same code you transpile, before bothering to transpile it! if you write bubble sort, try it with a carefully (or perhaps not so) selected list, and it fails to sort your example list, then you probably shouldnt transpile it and use in your class, or present in a final masters thesis.
+
 \chapter{Evaluation}
 \begin{itemize}
     \item Use cases
     \item Examples of how it works in practice
     \item Strengts, weaknesses etc.
     \item Maybe: Test it on students that take/have taken IN2010? let them write algorithms and let the transpiler do the work
+    \item How easy is it to add another reader/writer? How few lines can this be done in?
 \end{itemize}
 
 \chapter{Discussion}
@@ -80,10 +74,17 @@
 \begin{itemize}
     \item Future work
     \item Optimisations etc.
+    \item Things I would like to have but didn't have time to implement
     \item Conclude RQs
     \item Important: Remind the reader of all the good stuff!
 \end{itemize}
+The interpreter has a focus on correctness, and is not particularly optimised for speed. Since it works directly on Psnodig datatypes, it is entirely agnostic to how programs are written. There are also likely edge cases that we have not encountered, as is often the case. The design decisions around things like scoping could be tweaked. \hfill \\
 
+Psnodig ignores types, and types like ``list'' and ``Tree'' is only there for the \LaTeX-writer, since doing e.g. $\backslash Array1$ without having defined $\backslash KwArray\{Array1\}$ is illegal when working with the $algorithm2e$ library. \hfill \\
+
+The syntax of Psnodig could also have been refined, for instance spacing things out more (as in, instead of having ``ForEach'' and ``For'' statements, we could make them their own datatype and simply having a ``ForStmt'' or something), allowing for more statements and expressions, more types of values, more operations, maybe also allowing programs to be more flexible, allowing global variables etc. These are design decisions that must be thought through thoroughly, and whilst we made decisions based on what we thought was sufficiently powerful and flexible, we \textit{were} to a certain degree limited by the time on our hands, and could have expanded the syntax even more. \hfill \\
+
+We carried out very limited user testing, and did not include any of that in the thesis, since it was usually quite informal. It was done with friends and others who showed interest in the thesis throughout its course, and included things like, how easy is it to write a program in Gourmet? How satisfied are you with the LaTeX equivalent of the code you wrote? How did you find debugging, as in how descriptive and helpful were error messages? Etc.
 
 \printbibliography
 
