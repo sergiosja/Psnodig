@@ -111,7 +111,6 @@ writeExp (StructExpr struct) =
     writeStruct struct
 writeExp (StructFieldExp structField) =
     writeStructField structField
-writeExp (LocalStructField _) = undefined -- This can't happen since they aren't parsed
 
 -- Function related
 

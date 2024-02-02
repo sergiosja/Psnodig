@@ -14,16 +14,24 @@ import Data.Either (isRight)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+data ActiveFunction = ActiveFunction 
+    { funcName    :: String 
+    , funcArgs    :: [Argument] 
+    , funcBody    :: [Statement] 
+    , funcClosure :: Scope
+} deriving (Eq, Show, Read, Ord)
+
 type StructDecls = Map.Map String [String]
-type FuncEnv = [(String, Function)] -- bruke map heller?
+type FuncEnv = [(String, ActiveFunction)] --Function)] -- bruke map heller?
 type Scope = [(String, Value)] -- bruke map heller?
 type ScopeStack = [Scope]
 
-data ExecutionState = ExecutionState {
-    structDecls :: StructDecls,
-    funcEnv :: FuncEnv,
-    scopeStack :: ScopeStack,
-    output :: [String]
+data ExecutionState = ExecutionState
+    { structDecls :: StructDecls
+    , funcEnv     :: FuncEnv
+    -- , funcStack   :: ScopeStack -- Stack of active functions
+    , scopeStack  :: ScopeStack -- likely redundant after introducing the funcStack
+    , output      :: [String]
 } deriving (Show)
 
 data RuntimeError =
@@ -42,15 +50,36 @@ type Psnodig a = StateT ExecutionState (ExceptT RuntimeError IO) a
 
 -- Scoping and binding
 
+-- pushScope :: Psnodig ()
+-- pushScope = do
+--     currScope@(ExecutionState { scopeStack = scopes }) <- get
+--     put currScope { scopeStack = ([] : scopes) }
+
+-- popScope :: Psnodig ()
+-- popScope = do
+--     currScope@(ExecutionState { scopeStack = (_ : scopes) }) <- get
+--     put currScope { scopeStack = scopes }
+
+-- pushScope :: Scope -> Psnodig ()
+-- pushScope newScope = modify (\st -> st { scopeStack = newScope : scopeStack st })
+
+pushScopeWith :: Scope -> Psnodig ()
+pushScopeWith scope = do
+    modify' (\st -> st { scopeStack = scope : scopeStack st })
+
 pushScope :: Psnodig ()
-pushScope = do
-    currScope@(ExecutionState { scopeStack = scopes }) <- get
-    put currScope { scopeStack = ([] : scopes) }
+pushScope =
+    modify' (\st -> st { scopeStack = [] : scopeStack st })
 
 popScope :: Psnodig ()
-popScope = do
-    currScope@(ExecutionState { scopeStack = (_ : scopes) }) <- get
-    put currScope { scopeStack = scopes }
+popScope = modify (\st -> st { scopeStack = tail (scopeStack st) })
+
+-- safeHead :: [a] -> Maybe a
+-- safeHead []    = Nothing
+-- safeHead (x:_) = Just x
+
+-- getScope :: Psnodig (Maybe Scope)
+-- getScope = gets (safeHead . scopeStack)
 
 lookupVar :: String -> Psnodig (Maybe Value)
 lookupVar var = do
@@ -62,6 +91,7 @@ lookupVar var = do
             case lookup variable scope of
                 Just v -> Just v
                 Nothing -> searchScopes rest variable
+
     -- if length scopes > 0
     -- then return $ case lookup var (head scopes) of
     --     Just v -> Just v
@@ -147,15 +177,20 @@ updateScopes (scope:rest) listName newList =
     else
         (scope :) <$> updateScopes rest listName newList
 
-lookupFunc :: String -> Psnodig (Maybe Function)
+lookupFunc :: String -> Psnodig (Maybe ActiveFunction)
 lookupFunc func = do
     ExecutionState { funcEnv = env } <- get
     return $ lookup func env
 
-bindFunc :: String -> Function -> Psnodig ()
-bindFunc name func = do
-    currScope@(ExecutionState { funcEnv = env }) <- get
-    put currScope { funcEnv = (name, func):env }
+-- bindFunc :: String -> ActiveFunction -> Psnodig ()
+-- bindFunc name func = do
+--     currScope@(ExecutionState { funcEnv = env }) <- get
+--     put currScope { funcEnv = (name, func):env }
+
+bindFunc :: String -> ActiveFunction -> Psnodig ()
+bindFunc name activeFunc =
+    modify' (\st -> st { funcEnv = (name, activeFunc) : funcEnv st })
+
 
 
 -- Structs
@@ -198,7 +233,7 @@ updateStructField (StructField structName fieldExpr) valueExpr = do
                 Just (StructVal fields) -> do
                     StructVal newEnv <- updateField fields fieldExpr valueExpr
                     updateStruct name newEnv
-                _ -> throwError $ BadArgument $ name ++ " is not a defined struct."
+                _ -> throwError $ BadArgument $ name ++ " is not a defined struct. 1"
         listIndex@(ListIndex listName indexExprs) -> do
             maybeStruct <- evalExpr listIndex
             case maybeStruct of
@@ -333,7 +368,6 @@ evalExpr (StructExpr (Struct maybeStruct exprs)) = do
                 return (StructVal $ zip fields values)
             else throwError $ BadArgument $ "Incorrect number of arguments provided for struct " ++ maybeStruct ++ "."
         Nothing -> throwError $ BadArgument $ "Struct " ++ maybeStruct ++ " is not defined."
-evalExpr _ = throwError $ BadArgument "Sorry blud doesnt work 8"
 
 evalStructFieldExprMain :: StructField -> Psnodig Value
 evalStructFieldExprMain (StructField structName fieldExpr) =
@@ -342,7 +376,8 @@ evalStructFieldExprMain (StructField structName fieldExpr) =
             maybeStruct <- lookupVar name
             case maybeStruct of
                 Just (StructVal fields) -> evalStructFieldExprRec fields fieldExpr
-                _ -> throwError $ BadArgument $ name ++ " is not a defined struct."
+                invalidField -> throwError $ BadArgument $ "Either '" ++ name ++ "' is not a defined struct, or a field of '" ++
+                                                           (show invalidField) ++ "' is attempted evaluated. Make sure to check your base cases!"
         listIndex@(ListIndex listName _) -> do
             maybeStruct <- evalExpr listIndex
             case maybeStruct of
@@ -394,9 +429,13 @@ operate LessThanEqual (Number x) (Number y) = return $ Boolean $ x <= y
 operate GreaterThan (Number x) (Number y) = return $ Boolean $ x > y
 operate GreaterThanEqual (Number x) (Number y) = return $ Boolean $ x >= y
 operate Equal (Number x) (Number y) = return $ Boolean $ x == y
+operate Equal Nil Nil = return $ Boolean True
+operate Equal (Text t1) (Text t2) = return $ Boolean $ t1 == t2
+operate Equal _ _ = return $ Boolean False
 operate NotEqual (Number x) (Number y) = return $ Boolean $ x /= y
 operate And x y = return $ Boolean $ (bval x) && (bval y)
 operate Or x y = return $ Boolean $ (bval x) || (bval y)
+
 
 operate _ _ _ = Left "Incompatible operands!"
 
@@ -519,12 +558,75 @@ executeForLoopScope ident stmts acc n =
 -- Functions
 
 -- må legge til feks add to hashmap, add to set osv.
--- length og sånt, ceil, floor osv.
+-- min, max
 callFunction :: FunctionCall -> Psnodig Value
+callFunction (FunctionCall "floor" args) = do
+    when (length args /= 1)
+        $ throwError $ WrongNumberOfArguments "Function 'floor' takes 1 argument: floor( number )."
+    value <- evalExpr $ head args
+    case value of
+        Number n -> return $ value -- fix this obvs
+        _ -> throwError $ BadArgument "Function 'floor' can only be applied on integers."
+
+callFunction (FunctionCall "ceil" args) = do
+    when (length args /= 1)
+        $ throwError $ WrongNumberOfArguments "Function 'ceil' takes 1 argument: ceil( number )."
+    value <- evalExpr $ head args
+    case value of
+        Number n -> return $ value -- fix this obvs
+        _ -> throwError $ BadArgument "Function 'ceil' can only be applied on integers."
+
+callFunction (FunctionCall "min" args) = do
+    values <- mapM evalExpr args
+    if any (not . isNumber) values
+    then throwError $ BadArgument "All arguments to function 'min' must be integers."
+    else return . Number . minimum . map (\(Number x) -> x) $ values
+
+callFunction (FunctionCall "max" args) = do
+    values <- mapM evalExpr args
+    if any (not . isNumber) values
+    then throwError $ BadArgument "All arguments to function 'max' must be integers."
+    else return . Number . maximum . map (\(Number x) -> x) $ values
+
+callFunction (FunctionCall "get" args) = do
+    when (length args /= 2)
+        $ throwError $ WrongNumberOfArguments "Function 'get' takes 2 arguments: get( value , map )."
+    let mapExpr = head $ tail args
+    case mapExpr of
+        VariableExp mapName -> do
+            maybeMap <- evalExpr mapExpr
+            case maybeMap of
+                HashMap m -> do
+                    case Map.lookup (head args) m of
+                        Just v -> evalExpr v
+                        Nothing -> throwError $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ (show $ head args) ++ " is likely an invalid key."
+                _ -> throwError $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ mapName ++ " is likely an invalid Hashmap."
+        _ -> throwError $ BadArgument "Function 'get' takes two arguments: get( key, map )."
+
+callFunction (FunctionCall "append" args) = do
+    when (length args /= 2)
+        $ throwError $ WrongNumberOfArguments "Function 'append' takes 2 arguments: append( value , list )."
+    let listExpr = head $ tail args
+    case listExpr of
+        VariableExp listName -> do
+            maybeList <- evalExpr listExpr
+            case maybeList of
+                List l -> do
+                    let newList = List $ l ++ [head args]
+                    findAndUpdateScope listName newList
+                    return $ Number 1
+                -- ListIndex listName indexes -> ..
+                _ -> throwError $ BadArgument $ "Function 'append' yields error. Either '" ++ (show $ head args) ++ "' is an invalid value, or '" ++ listName ++ "' is an invalid list."
+        _ -> throwError $ BadArgument "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
+
+
+
+-- callFunction (FunctionCall "add" args) = do -- sets and hashmaps
+
 callFunction (FunctionCall "print" args) = do
-    value <- evalExpr $ head args -- burde printe hele greia! ikke bare første arg
-    str <- stringifyValue value False -- map over hele greia liksom og concat s og den nye lista
-    modify (\s -> s { output = output s ++ [str] })
+    values <- mapM evalExpr args
+    strings <- mapM (\v -> stringifyValue v False) values
+    modify (\s -> s { output = output s ++ strings })
     return $ Number 1 -- mock value, maybe I should make Void a value type and return that instead. evt endre typen til (Either () Value)
 
 callFunction (FunctionCall "length" args) = do
@@ -535,22 +637,32 @@ callFunction (FunctionCall "length" args) = do
         _ -> throwError $ BadArgument "length can only be called with iterable!"
 
 callFunction (FunctionCall name args) = do
-    argsValues <- mapM evalExpr args
-    function <- lookupFunc name
-    case function of
+    maybeFunc <- lookupFunc name
+    case maybeFunc of
+        Just func -> do
+            argsValues <- mapM evalExpr args
+            applyFunction func argsValues
         Nothing -> throwError $ FunctionNotFound name
-        Just func -> applyFunction func argsValues
 
-applyFunction :: Function -> [Value] -> Psnodig Value
-applyFunction (Function _ args stmts) values = do
-    when (length args /= length values) $ throwError $ WrongNumberOfArguments "Function takes fewer or more args than provided!"
-    pushScope
-    zipWithM_ bindVar (map fstArg args) values
-    result <- evalStmts stmts
+declareFunction :: Function -> Psnodig ()
+declareFunction (Function name args body) = do
+    let activeFunction = ActiveFunction 
+            { funcName = name
+            , funcArgs = args
+            , funcBody = body
+            , funcClosure = []
+            }
+    bindFunc name activeFunction
+
+applyFunction :: ActiveFunction -> [Value] -> Psnodig Value
+applyFunction func values = do
+    when (length (funcArgs func) /= length values)
+        $ throwError $ WrongNumberOfArguments "Function takes a different number of args than provided!"
+    pushScopeWith (funcClosure func)
+    zipWithM_ bindVar (map fstArg (funcArgs func)) values
+    res <- evalStmts (funcBody func)
     popScope
-    case result of
-        Left _ -> throwError $ NoReturnError "Function must return something!"
-        Right res -> return res
+    either (const $ throwError $ NoReturnError "Function must return something!") return res
 
 
 -- Main functions for execution
@@ -558,15 +670,16 @@ applyFunction (Function _ args stmts) values = do
 evalProgram :: Program -> Psnodig ()
 evalProgram (Program structs funcs entryPoint) = do
     mapM_ processStructDecls structs
-    mapM_ processFunDecl funcs
+    mapM_ declareFunction funcs --processFunDecl funcs
     void $ callFunction entryPoint
-  where
-    processFunDecl f@(Function name _ _) = bindFunc name f
+--   where
+--     processFunDecl f@(Function name _ _) = bindFunc name f
 
 initialState :: ExecutionState
 initialState = ExecutionState
     { structDecls = Map.empty
     , funcEnv = []
+    -- , funcStack = []
     , scopeStack = []
     , output = []
     }
@@ -616,6 +729,10 @@ fromNumber :: Value -> Maybe Integer
 fromNumber (Number n) = Just n
 fromNumber _ = Nothing
 
+isNumber :: Value -> Bool
+isNumber (Number _) = True
+isNumber _ = False
+
 -- deref :: Value -> [Expression]
 -- deref (List xs) = xs
 
@@ -648,7 +765,7 @@ evalNestedIndex (List list) (indexExpr:indexExprs) = do
         Number n -> 
             if 0 <= n && n < fromIntegral (length list)
             then do
-                nextVal <- evalExpr $ list !! fromInteger n
+                nextVal <- evalExpr $ list !! fromInteger n -- burde sjekke at list !! fromInteger n er lov! at det ikke gir outofbounds ellerno
                 evalNestedIndex nextVal indexExprs
             else throwError $ BadArgument "List index out of range!"
         _ -> throwError $ BadArgument "Index must evaluate to a number"

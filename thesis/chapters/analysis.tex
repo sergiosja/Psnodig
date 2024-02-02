@@ -8,9 +8,23 @@
 
 In this chapter, we will be doing problem analysis. We will dive deeper into the problem we intend to fix, and we will discuss what the current solutions lack. While the alternatives we present boast about successfull outcomes, there are some shortcomings when comparing them to what we wish to achieve, as well as comparing the respective target audiences. \hfill \\
 
-The problem we intend to fix is ... \hfill \\
+\section{The problem at hand}
+
+The issue of translating code to some sort of pseudo code has been around for a while (source?), often intended to help people less familiar with code, or perhaps those with no familiarity to code whatsoever, to understand what is being done behind the scenes, and better understanding what product is being built etc. (source??). \hfill \\
+
+We, on the other hand, believe that people who \textit{do} have some familiarity with code could also benefit from being exposed to it. For one, it can be a nice tool for debugging a-little-too-fancy code you did not write yourself, by getting a more abstract view of it. It can also aid beginners in seeing the flow of their code, making them understand how they can improve their code. Unfortunately, there does not seem to be any tools freely available on the market with this target audience in mind: people who also code, but would like to see their code from a different perspective. \hfill \\
+
+Another aspect of pseudo code, is that since it is intended to be a presentation-only tool, you cannot actually verify its semantical properties, that is, if it even does what you want it to do. As Donald Knuth famously put it,
+
+\begin{displayquote}
+    I have only proven the algorithm correct, not tested it.\cite{DBLP:books/aw/Knuth68}
+\end{displayquote}
+
+Therefore, by manually translating executable code into a non-executable form, we are no longer able to test it, and the work of maintaining both quickly turns into a hassle. We believe that everyone benefits from there persisting a stronger relationship between the original code and the presentation-only pseudocode. \hfill \\
 
 Ever since the concept of pseudocode was introduced, there have been attempts at creating tools to automate the process of translating code to pseudocode. The most noteworthy attempt to deliver pseudocode in text format was presented in a 2015 paper, a tool called Pseudogen. When it comes to translating code to flow charts, we decided to look at Code2Flow, which is widely used in practice today, even in PIT, the Norwegian police's IT service. \hfill \\
+
+\section{Translating code to natural language: Pseudogen}
 
 Pseudogen boasts about generating pseudocode from Python. What the examples in the 2015 paper, as well as a video on their website\footnote{https://ahclab.naist.jp/pseudogen/} show, is rather a line-for-line translation to English. This could be desired in cases where the business people on the team are particularly curious about what the product is really doing under the hood (and the boss cannot afford Cobol developers). Since Pseudogen will translate each line in a slave-like manner, we also translate all error handling. For example, the following two lines
 
@@ -75,5 +89,7 @@ Now, let's analyse the same program written in the Go programming language:
 This program is objectively much less decipherable than its Python counterpart. For starters, it's properties of being statically typed introduces patterns like $[]int\{\}$ and keywords like $var$. Since we do not have list comprehension, we are forced to iterate the ``numbers''-list with a for-loop. ``range mubers'' yields two values for each instance, the current index and the current value. On top of this, a syntactically correct Go program would require this being inside a function, a main function, and boilerplate code like declaring the package and imports like ``fmt''. A translation of the Go program would surely be more desired than a translation of the Python program. Sadly, Pseudogen does not offer this. \hfill \\
 
 It also makes you think, did William Shakespeare really write his entire collection of works in pseudocode? \hfill \\
+
+\section{Translating code to flowcharts: Code2Flow}
 
 also say what is wrong about the flowcharts, show examples of code etc. maybe inconsistencies?
