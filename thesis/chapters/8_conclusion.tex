@@ -1,0 +1,17 @@
+\chapter{Conclusion}
+\begin{itemize}
+    \item Future work
+    \item Optimisations etc.
+    \item Things I would like to have but didn't have time to implement
+    \item Conclude RQs
+    \item Important: Remind the reader of all the good stuff!
+\end{itemize}
+The interpreter has a focus on correctness, and is not particularly optimised for speed. Since it works directly on Psnodig datatypes, it is entirely agnostic to how programs are written. There are also likely edge cases that we have not encountered, as is often the case. The design decisions around things like scoping could be tweaked. \hfill \\
+
+Psnodig ignores types, and types like ``list'' and ``Tree'' is only there for the \LaTeX-writer, since doing e.g. $\backslash Array1$ without having defined $\backslash KwArray\{Array1\}$ is illegal when working with the $algorithm2e$ library. \hfill \\
+
+The syntax of Psnodig could also have been refined, for instance spacing things out more (as in, instead of having ``ForEach'' and ``For'' statements, we could make them their own datatype and simply having a ``ForStmt'' or something), allowing for more statements and expressions, more types of values, more operations, maybe also allowing programs to be more flexible, allowing global variables etc. These are design decisions that must be thought through thoroughly, and whilst we made decisions based on what we thought was sufficiently powerful and flexible, we \textit{were} to a certain degree limited by the time on our hands, and could have expanded the syntax even more. \hfill \\
+
+It would also be cool to expand Psnodig to include things like lambda functions, as well as classes more similar to object oriented languages. Since input and output languages are totally independent of each other, Psnodig can, in theory, be as rich as one wants, and then people can decide for themselves what their parsers should pick up and what their readers should produce. \hfill \\
+
+We carried out very limited user testing, and did not include any of that in the thesis, since it was usually quite informal. It was done with friends and others who showed interest in the thesis throughout its course, and included things like, how easy is it to write a program in Gourmet? How satisfied are you with the LaTeX equivalent of the code you wrote? How did you find debugging, as in how descriptive and helpful were error messages? Etc.

@@ -1,11 +1,15 @@
-%\documentclass{article}
 \documentclass[twoside, openright, a4paper,  UKenglish]{report}
 \usepackage[UKenglish]{uiomasterfp}
 \usepackage{amsmath, listings, graphicx, csquotes}
 \usepackage[colorlinks=true, allcolors=black, breaklinks=true]{hyperref}
+\usepackage{listings}
+\usepackage{caption}
 
 % Avoid automatic indentation
 \setlength{\parindent}{0pt}
+
+% For captions
+\renewcommand*\contentsname{Contents} % or?
 
 % bib
 \usepackage[backend=biber,firstinits=true,doi=false,isbn=false,url=false]{biblatex}
@@ -13,78 +17,35 @@
 
 \begin{document}
 
-\title{Psnodig: A tool for code presentation in academia}
+\title{Psnodig: The many faces of code}
 \author{Sergey Jakobsen}
 \uiomasterfp[program={Informatics: Programming and System Architecture}, binding, colour=green] % vil egt ha purple for haskell da
-\pagenumbering{arabic}
-\setcounter{page}{1}
-
-
 
 % link in text:
 %\href{https://www.overleaf.com/learn}{help library}
 
-\renewcommand*\contentsname{Contents}
+\pagenumbering{roman}
 \tableofcontents
+\lstlistoflistings
+\pagenumbering{arabic}
 
-\input{chapters/introduction}
+\input{chapters/1_introduction}
 
-\input{chapters/background}
+\input{chapters/2_background}
 
-\input{chapters/analysis}
+\input{chapters/3_analysis}
 
-\chapter{Design}
-\begin{itemize}
-    \item This is how I intend to solve the problem! % perhaps here is where I mention stuff like #-stmts and @-stmts?
-    \item Builds on the analysis chapter
-\end{itemize}
+\input{chapters/4_design}
 
 % From now on, nothing new should be introduced!
 
-\chapter{Implementation}
-\begin{itemize}
-    \item Which tools am I using?
-    \item Concrete implementation of the Psnodig tool
-    \item Testing: How can I be certain that Psnodig works?
-\end{itemize}
+\input{chapters/5_implementation}
 
-on its own, psnodig is useless! but when paired with parsers and writers, we see its magic. without, you can only but admire its conciseness and love it.
+\input{chapters/6_evaluation}
 
-interpreter. what is the point? you see, not all syntactically correct programs are necessarily also semantically correct (cool graphs on this?? figures of some sort??). show an example!
+\input{chapters/7_discussion}
 
-btw (still on interpreter). this gives yet another edge compared to manually writing pseudocode. it's like JVM: write once, run everywhere! except not quite, but at least you can run the same code you transpile, before bothering to transpile it! if you write bubble sort, try it with a carefully (or perhaps not so) selected list, and it fails to sort your example list, then you probably shouldnt transpile it and use in your class, or present in a final masters thesis.
-
-\chapter{Evaluation}
-\begin{itemize}
-    \item Use cases
-    \item Examples of how it works in practice
-    \item Strengts, weaknesses etc.
-    \item Maybe: Test it on students that take/have taken IN2010? let them write algorithms and let the transpiler do the work
-    \item How easy is it to add another reader/writer? How few lines can this be done in?
-\end{itemize}
-
-\chapter{Discussion}
-\begin{itemize}
-    \item How does my solution hold up against the problem?
-    \item Does it solve \textit{anything}?
-    \item Is it better than what is currently available?
-\end{itemize}
-
-\chapter{Conclusion}
-\begin{itemize}
-    \item Future work
-    \item Optimisations etc.
-    \item Things I would like to have but didn't have time to implement
-    \item Conclude RQs
-    \item Important: Remind the reader of all the good stuff!
-\end{itemize}
-The interpreter has a focus on correctness, and is not particularly optimised for speed. Since it works directly on Psnodig datatypes, it is entirely agnostic to how programs are written. There are also likely edge cases that we have not encountered, as is often the case. The design decisions around things like scoping could be tweaked. \hfill \\
-
-Psnodig ignores types, and types like ``list'' and ``Tree'' is only there for the \LaTeX-writer, since doing e.g. $\backslash Array1$ without having defined $\backslash KwArray\{Array1\}$ is illegal when working with the $algorithm2e$ library. \hfill \\
-
-The syntax of Psnodig could also have been refined, for instance spacing things out more (as in, instead of having ``ForEach'' and ``For'' statements, we could make them their own datatype and simply having a ``ForStmt'' or something), allowing for more statements and expressions, more types of values, more operations, maybe also allowing programs to be more flexible, allowing global variables etc. These are design decisions that must be thought through thoroughly, and whilst we made decisions based on what we thought was sufficiently powerful and flexible, we \textit{were} to a certain degree limited by the time on our hands, and could have expanded the syntax even more. \hfill \\
-
-We carried out very limited user testing, and did not include any of that in the thesis, since it was usually quite informal. It was done with friends and others who showed interest in the thesis throughout its course, and included things like, how easy is it to write a program in Gourmet? How satisfied are you with the LaTeX equivalent of the code you wrote? How did you find debugging, as in how descriptive and helpful were error messages? Etc.
+\input{chapters/8_conclusion}
 
 \printbibliography
 

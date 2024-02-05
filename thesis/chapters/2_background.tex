@@ -1,0 +1,100 @@
+\chapter{Background} % nothing of mine
+\begin{itemize}
+    \item Previous work within the scope of the thesis
+    \item Relevant related work like Pandoc and Derw
+    \item Important definitions
+\end{itemize}
+
+This chapter will cover concepts that one should be familiar with in order to fully understand the rest of this thesis. We start by defining pseudocode to avoid confusion further down the line, as well as discussing transpiling, why Haskell is a good implementation language, and how other transpilers work.
+
+\section{Pseudocode}
+
+Pseudocode is a loose term used to describe a presentation-only version of code ... \hfill \\
+
+History? Use (particularly in education)? \hfill \\
+
+To avoid confusion, we make a distinction between two particular types of pseudocode: text based and image based.
+
+\subsection{Text based pseudocode}
+
+Black n white stuff
+
+\subsection{Image based pseudocode}
+
+Not all programming languages share the same execution flow. For istance, in VHDL all processes are executed simultaneously\footnote{https://www.people.vcu.edu/~rhklenke/tutorials/vhdl/modules/m12\_23/sld008.htm}, whilst in Maude rules are applied in an arbitrary order(source??). Some, on the other hand, like Python, will execute their programs line for line. This means that we can follow the execution flow simply by looking at the order functions are called and the order of statements within those functions. \hfill \\
+
+This way of executing a program opens up for the possibility of flowcharts, which still includes code, but also complements it with boxes, arrows and perhaps pretty colours. When code stretches over enough lines, it all starts looking similar and confusing. Flowcharts, on the other hand, does a good job of isolating each statement, and giving a more birds eye view perspective of the code.
+
+\section{Transpiling}
+We have a program, we transform that into an intermediate representation, and from that intermediate representation we can get an entirely new representation. \hfill \\
+
+An alternative to transpiling is the well-known phenomenon of \textit{compiling}. The difference is that we do not stay on the same abstraction level, but rather we make it much more specific. An example of this is compiling a Java file to bytecode. To humans, the bytecode reads like the most foreign language, though the JVM understands it perfectly, and is able to execute it. \hfill \\
+
+\subsection{Generators}
+One technique of utilising parsers and writers is to apply generators. A generator is basically a stand-alone parser or writer. A parser generator, in the context of Psnodig, would translate an example program to an AST, whilst a writer generator would translate an AST to a program. \hfill \\
+
+An example of this is the programming language Derw\footnote{https://github.com/eeue56/derw}, an ML language mainly inspired by Elm. By utilising generators, it has multiple writers, among others bytecode, JavaScript, and even English. \hfill \\
+
+Another example is Pandoc\footnote{https://github.com/jgm/pandoc}, which works with markdown languages. It has a ``core language'' which all parsers and writers must oblige to, and looks like this
+
+\begin{verbatim}
+    Plain [Inline]
+    Para [Inline]
+    LineBlock [[Inline]]
+    CodeBlock Attr String
+    RawBlock Format String
+    BlockQuote [Block]
+    OrderedList ListAttributes [[Block]]
+    BulletList [[Block]]
+    DefinitionList [([Inline], [[Block]])]
+    Header Int Attr [Inline]
+    HorizontalRule
+    Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]
+    Div Attr [Block]
+    Null
+\end{verbatim}
+
+Every inputlanguage must be able to parse to (at least) these data types, and every writer must be able to work with these data types. \hfill \\
+
+- Give example with e.g. HTML and MD for one of the data types?
+
+\subsection{Haskell's strengths}
+As previously mentioned, we opted for the Haskell programming language when implementing Psnodig. There are several reasons as to why, but the primary one is that it is widely perceived as a fitting tool when working with programming languages, and particularly when working with interpreters\footnote{https://github.com/Gabriella439/post-rfc/blob/main/sotu.md\#compilers}. At the end of the day, programming languages are just tools, and we believe this is the best one for this particular job. \hfill \\
+
+With Haskell, it is straightforward to create your own \textbf{data types}, which are then used to model abstract syntax trees (ASTs). For instance, we can create our own calculator language in just a few lines of code:
+
+\begin{verbatim}
+    data Program = Program Expression
+
+    data Expression =
+          CompoundExpression Integer Operator Expression
+        | IntExpression Integer
+
+    data Operator =
+          Plus
+        | Minus
+        | Times
+        | Division
+\end{verbatim}
+
+From this, we can construct the following AST:
+
+\begin{verbatim}
+    Program (CompoundExpression 1 Plus
+                (CompoundExpression 2 Minus
+                    (IntExpression 3))
+\end{verbatim}
+
+As you can also see, we could create much bigger calculations than this, and if we wish to include extra operators, like for instance exponents in the future, we simply add a \texttt{| Exponent} to the Operator data type. \hfill \\
+
+Another benefit of using Haskell, is that its strong type system opens for clean and efficient pattern matching. This is very useful, both when writing the interpreter, but also when adding new, potential readers. For example, if we wish to transpile the above AST to text, we could start with writing a function to convert the operators:
+
+\begin{lstlisting}[caption={Haskell example to convert data type to string}, captionpos=b]
+    f :: Operator -> String
+    f (Operator Plus)     = " + "
+    f (Operator Minus)    = " - "
+    f (Operator Times)    = " / "
+    f (Operator Division) = " * "
+\end{lstlisting}
+
+The function \textbf{f} takes something of type \textbf{Operator} as input, and returns something of type \textbf{String}. It will pattern match on the input, and return a correspondng value, making it bijective. We could add case of \texttt{f \_ = ""}, which would return the empty string for any other kind of operator, though this would be redundant as we have not defined any other type of operator anyway.
