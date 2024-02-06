@@ -8,3 +8,5 @@
 *.out
 *.run.xml
 *.synctex.gz
+*.lol
+*.toc
