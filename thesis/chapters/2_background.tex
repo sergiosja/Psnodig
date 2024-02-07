@@ -97,4 +97,6 @@ Another benefit of using Haskell, is that its strong type system opens for clean
     f (Operator Division) = " * "
 \end{lstlisting}
 
-The function \textbf{f} takes something of type \textbf{Operator} as input, and returns something of type \textbf{String}. It will pattern match on the input, and return a correspondng value, making it bijective. We could add case of \texttt{f \_ = ""}, which would return the empty string for any other kind of operator, though this would be redundant as we have not defined any other type of operator anyway.
+The function \textbf{f} takes something of type \textbf{Operator} as input, and returns something of type \textbf{String}. It will pattern match on the input, and return a correspondng value, making it bijective. We could add case of \texttt{f \_ = ""}, which would return the empty string for any other kind of operator, though this would be redundant as we have not defined any other type of operator anyway. \hfill \\
+
+Lastly, we can utilise the QuickCheck library\footnote{https://hackage.haskell.org/package/QuickCheck}, which is a testing library suited for automatic property-based testing in Haskell. With this we can prove different properties of our tool, and perhaps also of other (primarily) parsers and (maybe) writers, given that they have to pass through Haskell ADTs anyway.

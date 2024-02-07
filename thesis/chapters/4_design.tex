@@ -4,4 +4,24 @@
     \item Builds on the analysis chapter
 \end{itemize}
 
-THIS is where I start showing examples of how Psnodig is superior etc. In the problem analysis part, I only showcase what I believe lacks in Pseudogen etc.
+This is when I start comparing Psnodig to the other tools, showing why Psnodig is preferrable etc.
+
+\section{Psnodig}
+
+The Psnodig tool in itself is really just a syntax. This syntax includes the standard building blocks like statements, expressions, function declarations, structs etc. However, it also includes two new types of statements, which are specific to our DSL. \hfill \\
+
+\textbf{Hash-Statement}, which can be written like this with BNF: \hfill \\
+
+\textit{HashStmt ::= \# $<$Stmt$>$}. \hfill \\
+
+These statements are read and processed by the interpreter, but ignored during transpiling. They work much like macros do in e.g. the C programming language, but they are declared inside functions, as Psnodig only allows struct- and function declarations to lie in the global scope. They are limited to the line reside in, which makes it easy for the author to decide which lines should be included or ignored when they wish for a different presentation of their code. \hfill \\
+
+\textbf{At-Statement}, which can be written like this with BNF: \hfill \\
+
+\textit{AtStmt ::= @ \{ text \} \{ [$<$Stmt$>$] \}} \hfill \\
+
+These statements consist of two parts, pure text in the first scope, followed by new statements in the second scope. The second part is meant for the interpreter, whilst the first part is meant for the transpilers. This allows the author to abstract over implementation-specific details and/or messy code, which is not crucial for the program's logic. The statement list can also be an empty list, which also makes this a way of letting the author explain things solely with natural language when deemed necessary. \hfill \\
+
+In addition to the syntax, the tool comes with a parser and interpreter for the Gourmet programming language, designed as a proof of concept for this thesis. It also comes with two writers, one presenting the source code with pseudocode, and the other presenting the source code in the form of a flowchart. The main benefit is that we can write our code once in Gourmet, test it, and when we are satisfied, transpile it to pseudocode and/or flowcharts thorugh the command line, rather than having to re-write it manually. \hfill \\
+
+To the best of our knowledge, a tool which combines these methods does not already exist.

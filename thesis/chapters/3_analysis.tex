@@ -70,7 +70,7 @@ The choice of creating a tool like Psuedogen for a programming language like Pyt
 
 This is already so close to what we would have if we were to write the commands in English, making the task of translation simple. Though it makes you wonder, what is even the point of translating that? As we saw earlier, particularly translation of list comprehensions turn out rather messy compared to their succinct Python counterparts. Another argument against its usefullness is that the listing above is a fully fledged program, ready to be interpreted! If a user is still unsure about what the program is doing, executing it will certainly silence their doubts. \hfill \\
 
-Now, let's analyse the same program written in the Go programming language:
+Now, let us analyse the same program written in the Go programming language:
 
 \begin{verbatim}
     numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
@@ -86,10 +86,92 @@ Now, let's analyse the same program written in the Go programming language:
     fmt.Println("Even numbers:", evenNumbers)
 \end{verbatim}
 
-This program is objectively much less decipherable than its Python counterpart. For starters, it's properties of being statically typed introduces patterns like $[]int\{\}$ and keywords like $var$. Since we do not have list comprehension, we are forced to iterate the ``numbers''-list with a for-loop. ``range mubers'' yields two values for each instance, the current index and the current value. On top of this, a syntactically correct Go program would require this being inside a function, a main function, and boilerplate code like declaring the package and imports like ``fmt''. A translation of the Go program would surely be more desired than a translation of the Python program. Sadly, Pseudogen does not offer this. \hfill \\
+This program is objectively much less decipherable than its Python counterpart. For starters, it is properties of being statically typed introduces patterns like $[]int\{\}$ and keywords like $var$. Since we do not have list comprehension, we are forced to iterate the ``numbers''-list with a for-loop. ``range mubers'' yields two values for each instance, the current index and the current value. On top of this, a syntactically correct Go program would require this being inside a function, a main function, and boilerplate code like declaring the package and imports like ``fmt''. A translation of the Go program would surely be more desired than a translation of the Python program. Sadly, Pseudogen does not offer this. \hfill \\
 
-It also makes you think, did William Shakespeare really write his entire collection of works in pseudocode? \hfill \\
+It also makes you think, did William Shakespeare really write his entire collection of works in pseudocode?
+
+\section{Psnodig vs. Pseudogen}
+
+Let us take a more thorough look at Pseudogen, and how it differs to Psnodig. Their transpiler is currently designed to work with a subset of the Python programming language\footnote{https://www.python.org/}. The output target is pure natural language, precisely what you are reading now. \hfill \\
+
+Despite being a programming language notoriously known for using plain English where many other programming languages use more technical notation ($and$ instead of $\&\&$, $or$ instead of $||$ etc.), Python still bears the mark of being a programming language. People not familiar with programming and/or mathematics might struggle to understand what the \% (modulo) is and what it is for. \hfill \\
+
+That is where Pseudogen comes in. Not only is mathematical notation like
+
+\begin{displayquote}
+    if n \% 3 == 0:
+\end{displayquote}
+
+transpiled to
+
+\begin{displayquote}
+    if n is divisible by 3,
+\end{displayquote}
+
+but also programming language specific elements like
+
+\begin{displayquote}
+    raise TypeError('n is not an integer')
+\end{displayquote}
+
+is transpiled to
+
+\begin{displayquote}
+    throw a TypeError exception with a message ...
+\end{displayquote}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.52]{assets/odaetal.png}
+    \caption{Example of source code written in Python and corresponding pseudo-code written in English from Oda et. al}
+    \label{fig:enter-label}
+\end{figure}
+
+For an audience with little to no programming language expereince, this is likely fine. A boss that wishes to see what her engineers are spending their time on, a curious George wanting to get insight into TikToks algorithms, and anyone in between. \hfill \\
+
+Psnodig, however, offers pseudocode for a different crowd: people, primarily the ones involved in academia, who already have some experience with writing and reading code. If you know that the \% symbol stands for modulo, and that it represents the action of returning the remainder of a division operation, it is no longer benefitial to constantly read the verbose description. When reading a novel in italian after successfully learning the language, you would likely prefer each page driving the story forward, rather than having an english word-for-word translation on every other page. \hfill \\
+
+While Pseudogen drives the abstraction levels of Python down to natural language, Psnodig instead wishes to stay closer to the code, while still allowing for an extra layer of abstraction when the implementation is clumsy or too language-specific.
 
 \section{Translating code to flowcharts: Code2Flow}
 
 also say what is wrong about the flowcharts, show examples of code etc. maybe inconsistencies?
+
+\section{Psnodig vs. Code2Flow}
+
+Let us take a more thorough look at Code2Flow, and how it differs to Psnodig. Code2Flow lets the user create flowcharts with natural language, decorated with a C-like syntax.
+
+It mainly consists of
+
+\begin{itemize}
+    \item start- and end expressions, drawn as red ovals
+    \item other expressions, drawn as blue rectangles
+    \item conditionals, loops and match statements, drawn as red red rhombuses
+    \item comments, drawn as orange rectangles
+\end{itemize}
+
+Expressions are separated by semicolons. This is the default colour scheme, though there are also three others the user can pick.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.2]{assets/code2flow_example.png}
+    \caption{Example of a program written with Code2Flow}
+    \label{fig:enter-label}
+\end{figure}
+
+The above diagram is the result of writing the following code in the online code2flow interpreter:
+
+\begin{lstlisting}
+    First expression;
+    Another expression;
+    if (conditional) {
+      expression 1;
+    } else {
+      expression 2; // Random comment
+    }
+    Last expression;
+\end{lstlisting}
+
+Using flowcharts to visualise a program is nothing new, however again we have a situation where the autor has to re-write their algorithm in yet \textit{another} language, and hope they did not drift too far from their original code. Naturally, these flowcharts cannot be tested with any input, and are meant to be presentation-only. \hfill \\
+
+Psnodig, on the other hand, makes a point of transpiling syntax-error-free code, which the author can first test on whatever input they want. First then are they allowed to transpile their code, which does not require them to write anything again, unless they want to tweak any details.
