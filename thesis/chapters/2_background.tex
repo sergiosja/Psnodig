@@ -5,25 +5,45 @@
     \item Important definitions
 \end{itemize}
 
-This chapter will cover concepts that one should be familiar with in order to fully understand the rest of this thesis. We start by defining pseudocode to avoid confusion further down the line, as well as discussing transpiling, why Haskell is a good implementation language, and how other transpilers work.
+utrolig mye bra her: https://www.dei.unipd.it/\~emg/downloads/SIMPAR08-WorkshopProceedings/TeachingWithRobotics/karatrantou.pdf!! veldig mange bra kilder \hfill \\
+
+This chapter will cover concepts that one should be familiar with in order to fully understand the rest of this thesis. We start by defining pseudocode to avoid confusion further down the line, as well as discussing transpiling, why Haskell is a good tool for the job, and how other transpilers work.
 
 \section{Pseudocode}
 
-Pseudocode is a loose term used to describe a presentation-only version of code ... \hfill \\
+Pseudocode is a technique for describing computer programs in a more abstract way than programming languages allow, ignoring specific syntax and keywords. This can make programs easier to understand for both non-programmers and programmers alike, when dealing with new situations \cite{LinfoAlgorithmsIntro2007}. \hfill \\
 
-History? Use (particularly in education)? \hfill \\
+Since it does not follow any partifular syntax rules, pseudocode is also not executable. The whole point is that it is a way of \textit{presenting} code, rather than actually being code (rewrite needed) [kilde]. As such, pseudocode is an abstract concept, and can technically be anything, as long as it aims to aid others in understanding what a particular piece of code does [kilde]. \hfill \\
 
-To avoid confusion, we make a distinction between two particular types of pseudocode: text based and image based.
+Now, since pseudocode has many faces, we must define what we percieve pseudocode to be in the context of this thesis, and what exactly we mean when we refer to ``pseudocode'' in later parts of the thesis. To avoid further confusion, we make a distinction between two particular types of pseudocode: text based and image based.
 
 \subsection{Text based pseudocode}
 
-Black n white stuff
+Black n white stuff \hfill \\
+
+Paper on Latex lib for creating TBP: https://mirror.unpad.ac.id/ctan/macros/latex2e/contrib/pseudocode/pseudocode.pdf \\
+
+Paper on pseudocode (natural language) from Python, with SMT: https://mirror.unpad.ac.id/ctan/macros/latex2e/contrib/pseudocode/pseudocode.pdf \\
+
+Another one on pseudocode (natural language) from Python, but with deep learning: https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8587282\&casa\_token=3-3FqPeozQMAAAAA:9\_dn28HbC2kXbImWk-seSPXFgO-XfpR2IHqAKdx9f5SwOnbEhqVvdR-wznMvL7ToRqGJAoV8Mkw\&tag=1 \\
+
+Impact of pseudocode: https://iopscience.iop.org/article/10.1088/1757-899X/835/1/012044/pdf
 
 \subsection{Image based pseudocode}
 
-Not all programming languages share the same execution flow. For istance, in VHDL all processes are executed simultaneously\footnote{https://www.people.vcu.edu/~rhklenke/tutorials/vhdl/modules/m12\_23/sld008.htm}, whilst in Maude rules are applied in an arbitrary order(source??). Some, on the other hand, like Python, will execute their programs line for line. This means that we can follow the execution flow simply by looking at the order functions are called and the order of statements within those functions. \hfill \\
+Not all programming languages share the same execution flow. For istance, in VHDL all processes are executed simultaneously\footnote{https://www.people.vcu.edu/~rhklenke/tutorials/vhdl/modules/m12\_23/sld008.htm}, whilst in Maude rules are applied in an arbitrary order [kilde]. Some, on the other hand, like Python, will execute their programs line for line. This means that we can follow the execution flow simply by looking at the order functions are called and the order of statements within those functions. \hfill \\
 
-This way of executing a program opens up for the possibility of flowcharts, which still includes code, but also complements it with boxes, arrows and perhaps pretty colours. When code stretches over enough lines, it all starts looking similar and confusing. Flowcharts, on the other hand, does a good job of isolating each statement, and giving a more birds eye view perspective of the code.
+This way of executing a program opens up for the possibility of flowcharts, which still includes text, but also complements it with boxes, arrows and perhaps pretty colours. When code stretches over enough lines, it all starts looking similar and confusing [kilde]. Flowcharts, on the other hand, does a good job of isolating each statement, and potentially gives more of a birds eye view perspective of the code [kilde?]. \hfill \\
+
+Bra språk for å snakke om flowcharts: https://www.researchgate.net/publication/234805404\_Flowchart\_techniques\_for\_structured\_programming \\
+
+Flowchart editor: https://www.researchgate.net/publication/234809385\_RAPTOR\_introducing\_programming\_to\_non-majors\_with\_flowcharts \\
+
+Flowchart editor I think: https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4141379\&casa\_token=GEeSdBwgDfQAAAAA:6BaytVq0aANwj59lq2bHpcyMhV0enyZpOCuz93kEV\_tMaiQPHVY1OpwXO\_Gg1oDtxoKmfvXad4s \\
+
+Generating code FROM flowcharts: https://www.scirp.org/html/7515.html \\
+
+Impact of flowcharts: https://iopscience.iop.org/article/10.1088/1757-899X/835/1/012044/pdf
 
 \section{Transpiling}
 We have a program, we transform that into an intermediate representation, and from that intermediate representation we can get an entirely new representation. \hfill \\
@@ -99,4 +119,4 @@ Another benefit of using Haskell, is that its strong type system opens for clean
 
 The function \textbf{f} takes something of type \textbf{Operator} as input, and returns something of type \textbf{String}. It will pattern match on the input, and return a correspondng value, making it bijective. We could add case of \texttt{f \_ = ""}, which would return the empty string for any other kind of operator, though this would be redundant as we have not defined any other type of operator anyway. \hfill \\
 
-Lastly, we can utilise the QuickCheck library\footnote{https://hackage.haskell.org/package/QuickCheck}, which is a testing library suited for automatic property-based testing in Haskell. With this we can prove different properties of our tool, and perhaps also of other (primarily) parsers and (maybe) writers, given that they have to pass through Haskell ADTs anyway.
+Lastly, we can utilise the QuickCheck\footnote{https://hackage.haskell.org/package/QuickCheck}, which is a testing library suited for automatic property-based testing in Haskell. With this we can prove different properties of our tool \cite{DBLP:conf/icfp/ClaessenH00}, and perhaps also of other (primarily) parsers and (maybe) writers, given that they have to pass through Haskell ADTs anyway.
