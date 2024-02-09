@@ -19,13 +19,15 @@ Now, since pseudocode has many faces, we must define what we percieve pseudocode
 
 \subsection{Text based pseudocode}
 
-Black n white stuff \hfill \\
+The most common form of pseudocode is likely text based pseudocode, commonly found in course curriculum at universities, published papers and (another example?)[kilde]. It is also the form that most closely resembles source code, given that it usually includes line numbers and explains the steps in an imperative matter [kilde]. \hfill \\
 
-Paper on Latex lib for creating TBP: https://mirror.unpad.ac.id/ctan/macros/latex2e/contrib/pseudocode/pseudocode.pdf \\
+- vis 1-2 eksempler med pseudokode \\
 
-Paper on pseudocode (natural language) from Python, with SMT: https://mirror.unpad.ac.id/ctan/macros/latex2e/contrib/pseudocode/pseudocode.pdf \\
+A desire for creating this type of pseudocode has been in the wind for a long time, with the intention of presenting ideas without having to worry about syntax of a particular programming language [kilde]. Text based pseudocode allows authors to draft ideas in an imperative way, just like we write recipes for baking bread and building legos. With pseudocode, the author is free to omit boilerplate code, include mathematical notation, include abstractions and revert to natural language where deemed appropriate [helst en kilde på hver av de punktene!]. \hfill \\
 
-Another one on pseudocode (natural language) from Python, but with deep learning: https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8587282\&casa\_token=3-3FqPeozQMAAAAA:9\_dn28HbC2kXbImWk-seSPXFgO-XfpR2IHqAKdx9f5SwOnbEhqVvdR-wznMvL7ToRqGJAoV8Mkw\&tag=1 \\
+- vis enda et eksempel, sammenlign med source code, hvor sistnevnte har masse boilerplate shit. Naturlig å vise et boilerplate-heavy språk (feks Go)! \\
+
+It is a useful tool when wishing to discuss unpolished ideas with friends and colleagues, but as mentioned, it has a rich history of being applied in university curriculums too [kilde]. When learning algorithms, datastructures, or programming concepts in general, the concepts tend to be more important than the specific implementation details in the author’s programming language of choice [kilde]. Thus, it can be advantageous for students to learn with pseudocode rather than source code, which could be a reason why there have been multiple attempts at translating source code to pseudocode in the past \cite{PSEU:/Kreher/Stinson}\cite{DBLP:conf/kbse/OdaFNHSTN15}\cite{DBLP:conf/aswec/AlhefdhiDHG18}. \hfill \\
 
 Impact of pseudocode: https://iopscience.iop.org/article/10.1088/1757-899X/835/1/012044/pdf
 
@@ -34,6 +36,16 @@ Impact of pseudocode: https://iopscience.iop.org/article/10.1088/1757-899X/835/1
 Not all programming languages share the same execution flow. For istance, in VHDL all processes are executed simultaneously\footnote{https://www.people.vcu.edu/~rhklenke/tutorials/vhdl/modules/m12\_23/sld008.htm}, whilst in Maude rules are applied in an arbitrary order [kilde]. Some, on the other hand, like Python, will execute their programs line for line. This means that we can follow the execution flow simply by looking at the order functions are called and the order of statements within those functions. \hfill \\
 
 This way of executing a program opens up for the possibility of flowcharts, which still includes text, but also complements it with boxes, arrows and perhaps pretty colours. When code stretches over enough lines, it all starts looking similar and confusing [kilde]. Flowcharts, on the other hand, does a good job of isolating each statement, and potentially gives more of a birds eye view perspective of the code [kilde?]. \hfill \\
+
+Throughout the remainder of this thesis, when we talk about ``image based pseudocode'', we are referring to flowcharts. The title does not technically need to belong to flowcharts, but it is the one we will concentrate on. \hfill \\
+
+There have also been multiple attempts at creating flowchart editors, most notably by kilde1 et. al and kilde2 et. al [k1][k2]. This allows authors to visualise their ideas, rather than keeping it all text based. Benefits of learning with help from visual aid is well documented, e.g. when it comes to language learning and mathematics[kilde1][kilde2, kjøre noe roger antonen også eller? Sykt mange bra bilder i boka hans]. It seems a stretch to believe that students could not benefit from learning with images also when it comes to algorithms and programming concepts. \hfill \\
+
+- figur(er)? \\
+
+Given the imperative nature of flowcharts, the way they walk through problems step-by-step, it should not be impossible to convert image based psueodcode back to text based pseudocode. In fact, this has been attempted by kilde et. al, with positive results [kilde]. This gives even more ground to perceive flowcharts as an image based form of pseudocode. \hfill \\
+
+- Vis bilde av ‘generating code FROM flowcharts' \\
 
 Bra språk for å snakke om flowcharts: https://www.researchgate.net/publication/234805404\_Flowchart\_techniques\_for\_structured\_programming \\
 
@@ -55,7 +67,7 @@ One technique of utilising parsers and writers is to apply generators. A generat
 
 An example of this is the programming language Derw\footnote{https://github.com/eeue56/derw}, an ML language mainly inspired by Elm. By utilising generators, it has multiple writers, among others bytecode, JavaScript, and even English. \hfill \\
 
-Another example is Pandoc\footnote{https://github.com/jgm/pandoc}, which works with markdown languages. It has a ``core language'' which all parsers and writers must oblige to, and looks like this
+Another example is Pandoc\footnote{https://github.com/jgm/pandoc}, which works with markdown languages. It has a ``core language'' which all parsers and writers must oblige to, and looks like this 
 
 \begin{verbatim}
     Plain [Inline]
@@ -73,6 +85,8 @@ Another example is Pandoc\footnote{https://github.com/jgm/pandoc}, which works w
     Div Attr [Block]
     Null
 \end{verbatim}
+
+BTW!! PANDOC PAPER: https://www.tug.org/TUGboat/tb35-1/tb109dominici.pdf \hfill \\
 
 Every inputlanguage must be able to parse to (at least) these data types, and every writer must be able to work with these data types. \hfill \\
 
