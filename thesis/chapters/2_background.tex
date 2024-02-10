@@ -1,11 +1,8 @@
 \chapter{Background} % nothing of mine
-\begin{itemize}
-    \item Previous work within the scope of the thesis
-    \item Relevant related work like Pandoc and Derw
-    \item Important definitions
-\end{itemize}
 
 utrolig mye bra her: https://www.dei.unipd.it/\~emg/downloads/SIMPAR08-WorkshopProceedings/TeachingWithRobotics/karatrantou.pdf!! veldig mange bra kilder \hfill \\
+
+og mange eksempler herfra: https://student.cs.uwaterloo.ca/~cs231/resources/pseudocode.pdf \hfill \\
 
 This chapter will cover concepts that one should be familiar with in order to fully understand the rest of this thesis. We start by defining pseudocode to avoid confusion further down the line, as well as discussing transpiling, why Haskell is a good tool for the job, and how other transpilers work.
 
@@ -15,17 +12,65 @@ Pseudocode is a technique for describing computer programs in a more abstract wa
 
 Since it does not follow any partifular syntax rules, pseudocode is also not executable. The whole point is that it is a way of \textit{presenting} code, rather than actually being code (rewrite needed) [kilde]. As such, pseudocode is an abstract concept, and can technically be anything, as long as it aims to aid others in understanding what a particular piece of code does [kilde]. \hfill \\
 
+Usually, pseudocode is used at micro level, describing a \textit{part} of a problem, rather than the entire problem itself [kilde]. For example, when presenting a solution to a group of non-technical people, presenting pseudocode of an entire project might not always be insighful. However, presenting the programs core, or other pieces of code directly related to the programs core, might provide valuable insight to people who can come with suggestions for improvement, despite not being able to program it themselves.
+\hfill \\
+
 Now, since pseudocode has many faces, we must define what we percieve pseudocode to be in the context of this thesis, and what exactly we mean when we refer to ``pseudocode'' in later parts of the thesis. To avoid further confusion, we make a distinction between two particular types of pseudocode: text based and image based.
 
 \subsection{Text based pseudocode}
 
-The most common form of pseudocode is likely text based pseudocode, commonly found in course curriculum at universities, published papers and (another example?)[kilde]. It is also the form that most closely resembles source code, given that it usually includes line numbers and explains the steps in an imperative matter [kilde]. \hfill \\
+The most common form of pseudocode is likely text based pseudocode, commonly found in text books on algorithms, published papers, as well as informal scribbling before attempting to solve a problem [kilder!]. It is also the form that most closely resembles source code, given that it usually includes line numbers and explains the steps in an imperative matter [kilde?]. \hfill \\
 
-- vis 1-2 eksempler med pseudokode \\
+Since there is no proper set of rules commanding how text based pseudocode should look like, we are prone to viewing different variations of the same algorithms across different literatures. A frequently presented algorithm is Binary Search, which in the context of computer science is a search algorithm that finds the position of a target value within a sorted array \cite{BOOK:intro/Cormen/Leiserson}. \hfill \\
 
-A desire for creating this type of pseudocode has been in the wind for a long time, with the intention of presenting ideas without having to worry about syntax of a particular programming language [kilde]. Text based pseudocode allows authors to draft ideas in an imperative way, just like we write recipes for baking bread and building legos. With pseudocode, the author is free to omit boilerplate code, include mathematical notation, include abstractions and revert to natural language where deemed appropriate [helst en kilde på hver av de punktene!]. \hfill \\
+Here is how it is presented in The Design and Analysis of Computer Algorithms by Aho et. al in 1974 \cite[139]{BOOK:DesignAnalysis/Aho}:
 
-- vis enda et eksempel, sammenlign med source code, hvor sistnevnte har masse boilerplate shit. Naturlig å vise et boilerplate-heavy språk (feks Go)! \\
+\begin{lstlisting}
+    procedure SEARCH(a, f, l):
+    if f $>$ l then return "no"
+    else
+        if a = A[$\lfloor$(f + l)/2$\rfloor$] then return "yes"
+        else
+            if a < A[$\lfloor$(f + l)/2$\rfloor$] then
+                return SEARCH(a, f, $\lfloor$(f + l)/2$\rfloor$ - 1)
+            else return SEARCH(a, $\lfloor$(f + l)/2$\rfloor$ + 1, l)
+\end{lstlisting}
+
+Then, roughly 17 years later, Lewis et. al present it like this in Data Structures and Their Algorithms \cite[182]{BOOK:DSA/Lewis}:
+
+\begin{lstlisting}[basicstyle=\small\ttfamily]
+    function BinarySearchLookUp(key K, table T[0..n-1]): info
+    {Return information stored with key K in T, or $\Lambda$ if K is not in T}
+        Left $\gets$ 0
+        Right $\gets$ n - 1
+        repeat forever
+            if Right < Left then
+                return $\Lambda$
+            else
+                Middle $\gets$ $\lfloor$(Left + Right) / 2$\rfloor$
+                if K = Key(T[Middle]) then return Info(T[Middle])
+                else if K < Key(T[Middle]) then Right $\gets$ Middle - 1
+                else Left $\gets$ Middle + 1
+\end{lstlisting}
+
+A desire for automatisation of text based pseudocode has been in the wind for a long time, with the intention of presenting ideas without having to worry about syntax of a particular programming language [kilde]. Text based pseudocode allows authors to draft ideas in an imperative way, just like we write recipes for baking bread and building legos. With pseudocode, the author is free to omit boilerplate code, include mathematical notation, include abstractions and revert to natural language where deemed appropriate \cite{BOOK:intro/Cormen/Leiserson}\cite{DBLP:conf/els/Nuallain15}. \hfill \\
+
+As such, we can comfortably regard the succinctness of figure 2.1 displaying pseudocode, to figure 2.2 displaying an implementation of said pseudocode in a popular programming language \cite{LINCOPINIS2023}:
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.46]{assets/fibonacci_pseudo1.png}
+    \caption{Text based pseudocode illustrating an algorithm to retrieve the nth number in a fibonacci sequence}
+    \label{fig:fibseq1}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.50]{assets/fibonacci_java.png}
+    \caption{An algorithm written in the Java programming language, to retrieve the nth number in a fibonacci sequence. It follows the commenting guidlines JavaDoc\footnotemark.}
+    \label{fig:fibjava}
+\end{figure}
+\footnotetext{https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html}
 
 It is a useful tool when wishing to discuss unpolished ideas with friends and colleagues, but as mentioned, it has a rich history of being applied in university curriculums too [kilde]. When learning algorithms, datastructures, or programming concepts in general, the concepts tend to be more important than the specific implementation details in the author’s programming language of choice [kilde]. Thus, it can be advantageous for students to learn with pseudocode rather than source code, which could be a reason why there have been multiple attempts at translating source code to pseudocode in the past \cite{PSEU:/Kreher/Stinson}\cite{DBLP:conf/kbse/OdaFNHSTN15}\cite{DBLP:conf/aswec/AlhefdhiDHG18}. \hfill \\
 

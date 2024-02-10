@@ -3,6 +3,10 @@
 \usepackage{amsmath, listings, graphicx, csquotes}
 \usepackage[colorlinks=true, allcolors=black, breaklinks=true]{hyperref}
 \usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily,
+    mathescape
+}
 \usepackage{caption}
 
 % Avoid automatic indentation
@@ -25,11 +29,18 @@
 %\href{https://www.overleaf.com/learn}{help library}
 
 \pagenumbering{roman}
-
 \tableofcontents
+\cleardoublepage
+
+% Temporary save the current command
+\let\oldchapter\chapter
 \lstlistoflistings
 
+% Restore the chapter command
+\let\chapter\oldchapter 
+\cleardoublepage
 \pagenumbering{arabic}
+
 
 \input{chapters/1_introduction}
 
