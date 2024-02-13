@@ -28,6 +28,8 @@ The positive effect of teaching with flowcharts as an alternative to traditional
 
 We spend much more time reading code than we do writing code\cite[14]{martin2008clean}, and tools like IDEs and linters can only help us so much long term when it is the logic of our programs that we fail to grasp. We believe that the Psnodig tool can be an alternative for both authors wanting to present their algorithms, as well as students wishing to get a better grasp of them.
 
+% Mention MAINTAINABILITY. For once, doing this shit by hand means we must maintain all (e.g. source code, psueodocode and flowcharts) "by hand". But now we don't have to anymore!
+
 \section{Research Questions}
 
 In this thesis, we aim to answer the following research questions: \hfill \\
@@ -37,10 +39,8 @@ In this thesis, we aim to answer the following research questions: \hfill \\
 
     \textbf{RQ2:} Can we transpile source code to flowcharts whilst maintaining a similar level of abstract?
 
-    \textbf{RQ3:} Can people in academia find such a tool to be helpful in better understanding small-to-medium sized code chunks?
+    \sout{\textbf{RQ3:} Can people in academia find such a tool to be helpful in better understanding small-to-medium sized code chunks?} Keep, replace or remove entirely?
 \end{quote}
-
-% target audience seems to really be students rather than lecturers/"algorithm authors". how can psnodig aid students in better understanding their own code by looking at it through a different lense?
 
 \section{Contributions}
 
@@ -53,8 +53,8 @@ To summarise, the contributions include:
 \begin{itemize}
     \item Psnodig, a tool for transpiling code from one representation to another. Also comes with an interpreter which works on the intermediate AST representation.
     \item The Gourmet programming language, inspired by Go and Python, as a proof of concept. This includes a parser for converting tokens to an AST, as well as a writer to convert the AST back to Gourmet code.
-    \item A writer for presenting an AST with text-based pseudocode, utilising the Algorithm2e package in \LaTeX.
-    \item A writer for presenting an AST with image-based pseudocode (diagrams), utilising the TikZ package, also in \LaTeX.
+    \item A writer for presenting an AST with text based pseudocode, utilising the Algorithm2e package in \LaTeX.
+    \item A writer for presenting an AST with image based pseudocode (flowcharts), utilising the TikZ package, also in \LaTeX.
 \end{itemize}
 
 \section{Chapter Overview}

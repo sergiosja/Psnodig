@@ -84,7 +84,7 @@ This way of executing a program opens up for the possibility of flowcharts, whic
 
 Throughout the remainder of this thesis, when we talk about ``image based pseudocode'', we are referring to flowcharts. The title does not technically need to belong to flowcharts, but it is the one we will concentrate on. \hfill \\
 
-There have also been multiple attempts at creating flowchart editors, most notably by kilde1 et. al and kilde2 et. al [k1][k2]. This allows authors to visualise their ideas, rather than keeping it all text based. Benefits of learning with help from visual aid is well documented, e.g. when it comes to language learning and mathematics[kilde1][kilde2, kjøre noe roger antonen også eller? Sykt mange bra bilder i boka hans]. It seems a stretch to believe that students could not benefit from learning with images also when it comes to algorithms and programming concepts. \hfill \\
+There have also been multiple attempts at creating flowchart editors, most notably by Carlisle et. al and Charntaweekhun et. al \cite{carlisle2004}\cite{charntaweekhun2006}. This allows authors to visualise their ideas, rather than keeping it all text based. Benefits of learning with help from visual aid is well documented, e.g. when it comes to language learning and mathematics [kilde1][kilde2, kjøre noe roger antonen også eller? Sykt mange bra bilder i boka hans]. It seems a stretch to believe that students could not benefit from learning with images also when it comes to algorithms and programming concepts. \hfill \\
 
 - figur(er)? \\
 
@@ -94,25 +94,32 @@ Given the imperative nature of flowcharts, the way they walk through problems st
 
 Bra språk for å snakke om flowcharts: https://www.researchgate.net/publication/234805404\_Flowchart\_techniques\_for\_structured\_programming \\
 
-Flowchart editor: https://www.researchgate.net/publication/234809385\_RAPTOR\_introducing\_programming\_to\_non-majors\_with\_flowcharts \\
-
-Flowchart editor I think: https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4141379\&casa\_token=GEeSdBwgDfQAAAAA:6BaytVq0aANwj59lq2bHpcyMhV0enyZpOCuz93kEV\_tMaiQPHVY1OpwXO\_Gg1oDtxoKmfvXad4s \\
-
 Generating code FROM flowcharts: https://www.scirp.org/html/7515.html \\
 
 Impact of flowcharts: https://iopscience.iop.org/article/10.1088/1757-899X/835/1/012044/pdf
 
-\section{Transpiling}
-We have a program, we transform that into an intermediate representation, and from that intermediate representation we can get an entirely new representation. \hfill \\
 
-An alternative to transpiling is the well-known phenomenon of \textit{compiling}. The difference is that we do not stay on the same abstraction level, but rather we make it much more specific. An example of this is compiling a Java file to bytecode. To humans, the bytecode reads like the most foreign language, though the JVM understands it perfectly, and is able to execute it. \hfill \\
+\section{Transpiling}
+
+A transpiler is a tool that converts input source code into output source code, maintaining an approximate abstraction level \cite{DBLP:conf/els/MarcelinoL22}. For instance, the first transpiler to our knowledge was developed in 1978 by Intel, with the aim of translating assembly source code from the 8080/8085 processor to the 8086 processor \cite{intel1979}. \hfill \\
+
+An alternative to transpiling is the well-known phenomenon of \textit{compiling}. The difference is that we do not stay on the same abstraction level, but rather we make it much more specific. An example of this is compiling a Java file to bytecode. To humans, the bytecode reads like the most foreign language, though the JVM understands it perfectly, and is able to execute it[kilde?]. \hfill \\
+
+A hot example of transpiling involves the JavaScript programming language\footnote{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Language\_overview}, commonly used in web development. It is a language in constant development, frequently updating its features. The issue with this is that not all browsers are always compatible with its newest features. Therefore, there exists a transpiler Babel\footnote{https://babeljs.io} which converts modern JavaScript into a backwardcompatibla version. According to Nicolini et. al, without a transpiler almost 14\% of web users risk facing a JavaScript bug when accessing a website with new JavaScript features \cite{DBLP:journals/software/NicoliniHF24}.
 
 \subsection{Generators}
-One technique of utilising parsers and writers is to apply generators. A generator is basically a stand-alone parser or writer. A parser generator, in the context of Psnodig, would translate an example program to an AST, whilst a writer generator would translate an AST to a program. \hfill \\
 
-An example of this is the programming language Derw\footnote{https://github.com/eeue56/derw}, an ML language mainly inspired by Elm. By utilising generators, it has multiple writers, among others bytecode, JavaScript, and even English. \hfill \\
+Given how syntactically rich programming languages tend to be (in that they tend to have many keywords etc)[kilde], it seems like too difficult of a task to have 1-to-1 mappings from the input source language to the output source language. There are infinite combinations of programs we can write[kilde?], thus we could benefit from some sort of intermediate representation. One of these methods is using so-called \textit{generators}. \hfill \\
 
-Another example is Pandoc\footnote{https://github.com/jgm/pandoc}, which works with markdown languages. It has a ``core language'' which all parsers and writers must oblige to, and looks like this 
+A generator is basically a stand-alone parser or writer. A parser generator, in the context of Psnodig, would translate an example program to an AST, whilst a writer generator would translate an AST to a program. \hfill \\
+
+There are several benefits of using generators. One of them is flexibility. Generators can handle a wide range of source code structures and translate them into various target languages. Another one is naturally the modularity. If we wish to add another reader, we can simply implement one and put it ``on top'' of the rest, without having to modify anything else. Thus we only need to maintain our reader if we wish to change the representation. \hfill \\
+
+An example of this is the programming language Derw\footnote{https://github.com/eeue56/derw}, an ML language mainly inspired by Elm. By utilising generators\footnote{https://github.com/eeue56/derw/tree/main/src/generators}, it has multiple writers, among others bytecode, JavaScript, and even English. The latter translates e.g. $6 <= 8$ to \texttt{6 is less than or equal to 8}. It takes an AST token, and transforms it to its source output language. \hfill \\
+
+Examples of generators ... w/ figures? (maybe a chart (code -> intermediate representation -> code), but also an actual example with pandoc and/or derw!) \\
+
+Another example is Pandoc, which works with markdown languages \cite{dominici2014}. It has a ``core language'' which all parsers and writers must work with, and looks like this 
 
 \begin{verbatim}
     Plain [Inline]
@@ -130,8 +137,6 @@ Another example is Pandoc\footnote{https://github.com/jgm/pandoc}, which works w
     Div Attr [Block]
     Null
 \end{verbatim}
-
-BTW!! PANDOC PAPER: https://www.tug.org/TUGboat/tb35-1/tb109dominici.pdf \hfill \\
 
 Every inputlanguage must be able to parse to (at least) these data types, and every writer must be able to work with these data types. \hfill \\
 

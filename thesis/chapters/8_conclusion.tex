@@ -6,6 +6,9 @@
     \item Conclude RQs
     \item Important: Remind the reader of all the good stuff!
 \end{itemize}
+
+- another future work: even stronger correctness! would be cool to try to revert the produced pseudocode back to source code, thus being even more sure that we are consistent!!! \\
+
 The interpreter has a focus on correctness, and is not particularly optimised for speed. Since it works directly on Psnodig datatypes, it is entirely agnostic to how programs are written. There are also likely edge cases that we have not encountered, as is often the case. The design decisions around things like scoping could be tweaked. \hfill \\
 
 Psnodig ignores types, and types like ``list'' and ``Tree'' is only there for the \LaTeX-writer, since doing e.g. $\backslash Array1$ without having defined $\backslash KwArray\{Array1\}$ is illegal when working with the $algorithm2e$ library. \hfill \\
