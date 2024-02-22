@@ -1,27 +1,25 @@
 \chapter{Introduction}
 
-Pseudocode is commonly used for providing a description of an algorithm at a suitable level of abstraction. It is meant to work as a comprimise between a low-level implementation in a specific programming language, and a verbal, natural language description of a problem solution \cite{LinfoAlgorithmsIntro2007}. \hfill \\
+Pseudocode is commonly used to provide a description of an algorithm at a suitable level of abstraction. It is meant to work as a comprimise between a low-level implementation in a specific programming language, and a verbal, natural language description of a problem solution \cite{LinfoAlgorithmsIntro2007}. \hfill \\
 
-An advantage of pseudocode is the lack of standardisation, therefore authors are not tied down to the syntax of any particular programming language. This gives them complete freedom to omit or de-emphasize certain aspects of their algorithms. Consequently, pseudocode is first and foremost aimed to serve as a tool for presentation [kilde?]. \hfill \\
+An advantage of pseudocode is the lack of standardisation, therefore authors are not tied down to the syntax of any particular programming language. This gives them complete freedom to omit or de-emphasize certain aspects of their algorithms. Consequently, pseudocode is first and foremost aimed to serve as a tool for presentation. \hfill \\
 
 However, as pseudocode is not executable, there is no omniscient way of verifying its correctness. This can, in turn, lead to accidental inclusion of critical inaccuracies. % especially when working with algorithms one is less acquainted with.
 When writing code in IDEs, programming languages are often accompanied by static analysis tools that detect anti-patterns and warn about practices \cite{linter}. Psudocode writers, on the other hand, are left to their own devices, as there can be no anti-patterns or bad practices without standardisation.
 
 \section{Motivation}
 
-Correct presentations are especially important in academia, where the goal is to teach students concepts they were previously unfamiliar with. Traditionally, concepts within the algorithms and data structures realm have proved challenging for undergraduates \cite{10.1145/2157136.2157148}. If then additionally their first impression of an algorithm is an incorrect presentation, their path is already hampered. \hfill \\
+Correct presentations are important in education, including at university level, where the goal is to teach students concepts they were previously unfamiliar with. Traditionally, concepts within the algorithms and data structures realm have proved challenging for undergraduates \cite{10.1145/2157136.2157148}. If then additionally their first impression of an algorithm is an incorrect presentation, their path is already hampered. One of our research questions is: can we transpile source code to pseudocode, whilst maintaining a similar level of abstraction? \hfill \\
 
-In this thesis we present a tool we call \textbf{Psnodig} (pronounced snoo-dee), which allows for transpiling executable code to other, perhaps less technical presentations. The presentation targets in this thesis are pseudocode and flowcharts. The target audience is students who are already familiar with some imperative programming language syntax, like Go or Python. \hfill \\
+In this thesis we present a tool we call \textbf{Psnodig} (pronounced snoo-dee), which allows for transpiling source code to other, perhaps less technical presentations. The presentation targets in this thesis are pseudocode and flowcharts. The target audience is students who are already familiar with some imperative programming language syntax, like Go or Python. \hfill \\
 
-The reader might be familiar with the concept of \textit{compiling}. Traditionally, this is a process where a \textit{compiler} reads a program in a high-level language and translates it to an executable target program \cite{DBLP:books/aw/AhoSU86}. \hfill \\
+Another of our research questions is: can we transpile source code to flowcharts whilst maintaining a similar level of abstraction? The positive effect of teaching algorithms with flowcharts as an alternative to traditional code has been researched since at least the 1980's and is still being researched this decade \cite{DBLP:journals/software/Scanlan89}\cite{7096016}\cite{flowchartsHighschool}, yet direct translation from source code to flowcharts does not seem to be widespread. \hfill \\
 
-Transpiling however, in this context, is the act of translating a program to another program, whilst maintaining a similar level of abstraction. An example can be to transpile a program written in Python to an equivalent program in Rust, for performance optimisation reasons \cite{DBLP:conf/samos/LunnikiviJ020}. \hfill \\
+We spend much more time reading code than we do writing code\cite[14]{martin2008clean}, and tools like IDEs and linters can only help us so much long term when it is the logic of our programs that we fail to grasp. We believe that the Psnodig tool can be an alternative for authors wanting to present their algorithms, as well as students wishing to get a better understanding of them. \hfill \\
 
-The positive effect of teaching algorithms with flowcharts as an alternative to traditional code has been researched since at least the 1980's and is still being researched this decade \cite{DBLP:journals/software/Scanlan89}\cite{7096016}\cite{flowchartsHighschool}, yet direct translation from source code to flowcharts does not seem to be widespread. \hfill \\
+We aim to promote algorithmic thinking through various forms of representation. We believe that this can aid in better understanding and modification of code, which in turn can lead to more efficient and effective programming practices. By not having to worry about syntactic intricacies, the audience can focus entirely on logic underlying the algorithms.
 
-We spend much more time reading code than we do writing code\cite[14]{martin2008clean}, and tools like IDEs and linters can only help us so much long term when it is the logic of our programs that we fail to grasp. We believe that the Psnodig tool can be an alternative for both authors wanting to present their algorithms, as well as students wishing to get a better understanding of them.
-
-% Mention MAINTAINABILITY. For once, doing this shit by hand means we must maintain all (e.g. source code, psueodocode and flowcharts) "by hand". But now we don't have to anymore!
+% Psnodig also boasts the ability to centralize all resources. By providing a single reader, you are able to present your ideas in multiple variations. As these alternative forms are generated directly from the source code, there's no added burden of keeping them updated separately. However, should any refinements or customizations be necessary, the transpiled outputs come with their own Latex source files, offering full flexibility for post-translation adjustments.
 
 \section{Research Questions}
 
@@ -39,7 +37,7 @@ In this thesis, we aim to answer the following research questions: \hfill \\
 
 \section{Contributions}
 
-The main contribution of this thesis is the Psnodig tool for transpiling executable source code to various other only versions of said code, giving people in academia an easy and accessible way of looking at their code from a different perspective. By using the Psnodig tool, we hope people can spend more time writing code and less time mastering LaTeX libraries, writing boilerplate and worrying about consistency. \hfill \\
+The main contribution of this thesis is the Psnodig tool for transpiling executable source code to various other only versions of said code, to give people in academia an easy and accessible way to look at their code from a different perspective. By using the Psnodig tool, we hope people can spend more time writing code and less time mastering LaTeX libraries, writing boilerplate and worrying about consistency. \hfill \\
 
 The Psnodig tool is written entirely in the Haskell programming language\footnote{https://www.haskell.org/}. The tool comes with a parser for the Gourmet programming language, which offers a syntax rich enough for writing all algorithms and data structures introduced in the introductory course to algorithms and data structures at the University of Oslo\footnote{https://www.uio.no/studier/emner/matnat/ifi/IN2010/index-eng.html}. It is also accompanied by a Gourmet writer, as well as writers for pseudocode and flowcharts in LaTeX, utilising the Algorithm2e package\footnote{https://www.ctan.org/pkg/algorithm2e} and the TikZ package\footnote{https://www.overleaf.com/learn/latex/TikZ\_package} respectively. \hfill \\
 % https://www.overleaf.com/learn/latex/LaTeX_Graphics_using_TikZ%3A_A_Tutorial_for_Beginners_(Part_3)%E2%80%94Creating_Flowcharts
