@@ -6,9 +6,33 @@
     \item Builds on the background chapter
 \end{itemize}
 
+One of our output targets is pseudocode. We are not attempting to create a standardisation or ground truth for pseudocode. Rather, we lean on the algorithm2e\footnote{https://www.ctan.org/pkg/algorithm2e} library, which is an aleady established environment for writing algorithms in LaTeX. One thing we \textit{can} ensure, is consistency, removing the burden of "should this be in italics or boldface or not" from the author. In addition, the author can write her algorithm in an executable programming language, and when sure that it yields the desired result, she can safely use Psnodig to receive a LaTeX file and a companion PDF of her work. \hfill \\
+
+The other target output of Psnodig is flowcharts. This is a representation very different to the original source code, and the main difficulty consists of keeping the level of abstraction. The main benefit of this representation, is to see the code from a completely different perspective. This can be refreshing when you have been trying to debug code for an extended period of time with no result [source?]. \hfill \\
+
+Currently, to our knowledge, the only freely available tool solely dedicated to converting source code to flowcharts is Code2Flow\footnote{https://app.code2flow.com/}. This is a DSL with support for most common programming concepts like statements, loops, conditionals, and more. We are aware of other tools which also convert code to diagrams, like Mermaid.js\footnote{https://mermaid.js.org/} and Diagrams\footnote{https://diagrams.mingrammer.com/}, but they are either very general purpose, or focus on different types of diagrams. \hfill \\
+
 In this chapter, we will be doing problem analysis. We will dive deeper into the problem we intend to fix, and we will discuss what the current solutions lack. While the alternatives we present boast about successfull outcomes, there are some shortcomings when comparing them to what we wish to achieve, as well as comparing the respective target audiences. \hfill \\
 
 \section{The problem at hand}
+
+As such, we can comfortably regard the succinctness of figure 2.1 displaying TBP, to figure 2.2 displaying an implementation of said TBP in a popular programming language \cite{javaIsAPopularProgrammingLanguage}:
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.46]{assets/fibonacci_pseudo1.png}
+    \caption{Text based pseudocode illustrating an algorithm to retrieve the nth number in a fibonacci sequence.}
+    \label{fig:fibseq2}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.50]{assets/fibonacci_java.png}
+    \caption[An algorithm written in the Java programming language, to retrieve the nth number in a fibonacci sequence.]{An algorithm written in the Java programming language, to retrieve the nth number in a fibonacci sequence. It follows the commenting guidlines JavaDoc\footnotemark.}
+    \label{fig:fibjava}
+\end{figure}
+\footnotetext{https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html}
+
 
 The issue of translating code to some sort of pseudo code has been around for a while (source?), often intended to help people less familiar with code, or perhaps those with no familiarity to code whatsoever, to understand what is being done behind the scenes, and better understanding what product is being built etc. (source??). \hfill \\
 
@@ -124,7 +148,7 @@ is transpiled to
     \centering
     \includegraphics[scale=0.52]{assets/odaetal.png}
     \caption{Example of source code written in Python and corresponding pseudo-code written in English from Oda et. al}
-    \label{fig:enter-label}
+    \label{fig:odaetal}
 \end{figure}
 
 For an audience with little to no programming language expereince, this is likely fine. A boss that wishes to see what her engineers are spending their time on, a curious George wanting to get insight into TikToks algorithms, and anyone in between. \hfill \\
@@ -156,7 +180,7 @@ Expressions are separated by semicolons. This is the default colour scheme, thou
     \centering
     \includegraphics[scale=0.2]{assets/code2flow_example.png}
     \caption{Example of a program written with Code2Flow}
-    \label{fig:enter-label}
+    \label{fig:code2flow}
 \end{figure}
 
 The above diagram is the result of writing the following code in the online code2flow interpreter:
