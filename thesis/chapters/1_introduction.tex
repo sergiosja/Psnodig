@@ -1,71 +1,96 @@
 \chapter{Introduction}
 
-Pseudocode is commonly used to provide a description of an algorithm at a suitable level of abstraction. It is meant to work as a comprimise between a low-level implementation in a specific programming language, and a verbal, natural language description of a problem solution \cite{LinfoAlgorithmsIntro2007}. \hfill \\
+Pseudocode is commonly used to provide a description of an algorithm at a suitable level of abstraction. It is meant to work as a comprimise between a low-level implementation in a specific programming language, and a verbal, natural language description of a problem solution~\cite{LinfoAlgorithmsIntro2007}. \hfill \\
 
 An advantage of pseudocode is the lack of standardisation, therefore authors are not tied down to the syntax of any particular programming language. This gives them complete freedom to omit or de-emphasize certain aspects of their algorithms. Consequently, pseudocode is first and foremost aimed to serve as a tool for presentation. \hfill \\
 
 However, as pseudocode is not executable, there is no omniscient way of verifying its correctness. This can, in turn, lead to accidental inclusion of critical inaccuracies. % especially when working with algorithms one is less acquainted with.
-When writing code in IDEs, programming languages are often accompanied by static analysis tools that detect anti-patterns and warn about practices \cite{linter}. Psudocode writers, on the other hand, are left to their own devices, as there can be no anti-patterns or bad practices without standardisation.
+When writing code in IDEs, programming languages are often accompanied by static analysis tools that detect anti-patterns and warn about practices~\cite{linter}. Psudocode writers, on the other hand, are left to their own devices, as there can be no anti-patterns or bad practices without standardisation.
 
 \section{Motivation}
 
-Correct presentations are important in education, including at university level, where the goal is to teach students concepts they were previously unfamiliar with. Traditionally, concepts within the algorithms and data structures realm have proved challenging for undergraduates \cite{10.1145/2157136.2157148}. If then additionally their first impression of an algorithm is an incorrect presentation, their path is already hampered. One of our research questions is: can we transpile source code to pseudocode, whilst maintaining a similar level of abstraction? \hfill \\
+Correct presentations are important in education, including at university level, where the goal is to teach students concepts they were previously unfamiliar with. Traditionally, concepts within algorithms and data structures have proved challenging for undergraduates~\cite{10.1145/2157136.2157148}. If their first impression of an algorithm is an incorrect presentation, their path is already hampered. \hfill \\ % One of our goals with this thesis is: can we transpile source code to pseudocode, whilst maintaining a similar level of abstraction? \hfill \\
 
-In this thesis we present a tool we call \textbf{Psnodig} (pronounced snoo-dee), which allows for transpiling source code to other, perhaps less technical presentations. The presentation targets in this thesis are pseudocode and flowcharts. The target audience is students who are already familiar with some imperative programming language syntax, like Go or Python. \hfill \\
+In this thesis we present a tool \textbf{Psnodig} (pronounced snoo-dee), which allows for transpiling source code to other, perhaps less technical presentations. The presentation targets in this thesis are pseudocode and flowcharts. The target audience is students who are already familiar with some imperative programming language syntax, like Go or Python. \hfill \\
 
-Another of our research questions is: can we transpile source code to flowcharts whilst maintaining a similar level of abstraction? The positive effect of teaching algorithms with flowcharts as an alternative to traditional code has been researched since at least the 1980's and is still being researched this decade \cite{DBLP:journals/software/Scanlan89}\cite{7096016}\cite{flowchartsHighschool}, yet direct translation from source code to flowcharts does not seem to be widespread. \hfill \\
+%Another one of our goals is: can we transpile source code to flowcharts whilst maintaining a similar level of abstraction?
+The positive effect of teaching algorithms with flowcharts as an alternative to traditional code has been researched since at least the 1980's and is still being researched this decade~\cite{DBLP:journals/software/Scanlan89, 7096016, flowchartsHighschool}, yet direct translation from source code to flowcharts does not seem to be widespread. \hfill \\
 
-We spend much more time reading code than we do writing code\cite[14]{martin2008clean}, and tools like IDEs and linters can only help us so much long term when it is the logic of our programs that we fail to grasp. We believe that the Psnodig tool can be an alternative for authors wanting to present their algorithms, as well as students wishing to get a better understanding of them. \hfill \\
+We spend much more time reading code than we do writing code~\cite[14]{martin2008clean}. Tools like IDEs and linters can only help us so much when it is the \textit{logic} of our programs that we fail to grasp. We believe that the Psnodig tool can be an alternative for authors wanting to present their algorithms, as well as students wishing to get a better understanding of them. \hfill \\
 
 We aim to promote algorithmic thinking through various forms of representation. We believe that this can aid in better understanding and modification of code, which in turn can lead to more efficient and effective programming practices. By not having to worry about syntactic intricacies, the audience can focus entirely on logic underlying the algorithms.
 
 % Psnodig also boasts the ability to centralize all resources. By providing a single reader, you are able to present your ideas in multiple variations. As these alternative forms are generated directly from the source code, there's no added burden of keeping them updated separately. However, should any refinements or customizations be necessary, the transpiled outputs come with their own Latex source files, offering full flexibility for post-translation adjustments.
 
-\section{Research Questions}
+%\section{Research Questions}
 
-In this thesis, we aim to answer the following research questions: \hfill \\
+%In this thesis, we aim to answer the following research questions: \hfill \\
 
-\begin{quote}
-    \textbf{RQ1:} Can we transpile source code to pseudocode whilst maintaining a similar level of abstraction?
+%\begin{quote}
+    %\textbf{RQ1:} Can we transpile source code to pseudocode whilst maintaining a similar level of abstraction?
 
-    \textbf{RQ2:} Can we transpile source code to flowcharts whilst maintaining a similar level of abstraction?
+    %\textbf{RQ2:} Can we transpile source code to flowcharts whilst maintaining a similar level of abstraction?
 
-    \sout{\textbf{RQ3:} Can people in academia find such a tool to be helpful in better understanding small-to-medium sized code chunks?} Keep, replace or remove entirely?
-\end{quote}
+    %\sout{\textbf{RQ3:} Can people in academia find such a tool to be helpful in better understanding small-to-medium sized code chunks?} Keep, replace or remove entirely?
+%\end{quote}
 
-(så er spørsmålet: hvor enkelt er det egentlig å skulle måle dette? hva vil det i det hele tatt si å ha similar level of abstraction?)
+%(så er spørsmålet: hvor enkelt er det egentlig å skulle måle dette? hva vil det i det hele tatt si å ha similar level of abstraction?)
+
+\section{Goals}
+
+The goal of this thesis is to construct a tool with the following properties:
+
+\begin{itemize}
+    \item \textbf{Presentable}, the user can lift her source code to a higher level of abstraction.
+    \begin{itemize}
+        \item \textbf{Modifiable}, the presentation result should be modifiable.
+    \end{itemize}
+    \item \textbf{Executable}, the user can run the source code they have written.
+    %\item \textbf{Testable}, the user can ...
+\end{itemize}
+
+\forsup{Et litt viktig punkt som vi tilbyr er at brukeren får den tilhørende LaTeX-filen, slik at de kan endre detaljer om de vil. Dette tilbyr (så vidt jeg vet) ingen andre. Jeg har pakket det inn som en underkategori av ``presentable'', men jeg føler det bør presiseres tydeligere. Eller?}
+
+Standard tools traditionally fulfill one or the other. Programming languages, in which you can write programs and test them, do not necessary have the appropriate abstraction level to be understood by students at all levels. Pseudocode, on the other hand, is intentionally not executable, and thus the presented ideas cannot be tested directly. \hfill \\
+
+The perk of centralising the resources to a single tool makes the job easier for everyone involved. \hfill \\
+
+In chapter 3 we will analyse some tools which perform well in one or more area, but fail to satisfy all three. With Psnodig, we hope to fulfill this task.
 
 \section{Contributions}
 
 The main contribution of this thesis is the Psnodig tool for transpiling executable source code to various presentation-only versions of said code, to give people an easy and accessible way to look at their code from a different perspective. By using the Psnodig tool, we hope people can spend more time writing code and less time mastering LaTeX libraries, writing boilerplate code and worrying about maintaining multiple sources. \hfill \\
 
-The Psnodig tool is written entirely in the Haskell programming language\footnote{https://www.haskell.org/}. The tool comes with a parser for the Gourmet programming language, which offers a syntax rich enough for writing all algorithms and data structures introduced in the introductory course to algorithms and data structures at the University of Oslo\footnote{https://www.uio.no/studier/emner/matnat/ifi/IN2010/index-eng.html}. It is also accompanied by a Gourmet writer, as well as writers for pseudocode and flowcharts in LaTeX, utilising the Algorithm2e package\footnote{https://www.ctan.org/pkg/algorithm2e} and the TikZ package\footnote{https://www.overleaf.com/learn/latex/TikZ\_package} respectively. \hfill \\
+The Psnodig tool is written entirely in the Haskell programming language.\footnote{https://www.haskell.org/} It comes with a parser for a simple imperative language we call Gourmet, to serve as a proof of concept. The language offers a rich enough syntax for writing all algorithms introduced in the introductory course to algorithms and data structures at the University of Oslo.\footnote{https://www.uio.no/studier/emner/matnat/ifi/IN2010/index-eng.html} \hfill \\
+
+The tool is also accompanied by multiple \textit{writers}, which are able to transform a Psnodig abstract syntax tree (AST) to Gourmet source code, as well as pseudocode and flowcharts in LaTeX. The latter two utilise the Algorithm2e\footnote{https://www.ctan.org/pkg/algorithm2e} and TikZ\footnote{https://www.overleaf.com/learn/latex/TikZ\_package} packages, respectively. \hfill \\
+
 % https://www.overleaf.com/learn/latex/LaTeX_Graphics_using_TikZ%3A_A_Tutorial_for_Beginners_(Part_3)%E2%80%94Creating_Flowcharts
 
 To summarise, the contributions include:
 \begin{itemize}
-    \item Psnodig, a tool for transpiling code from one representation to another. Also comes with an interpreter which works on the intermediate abstract syntax tree (AST) representation, so that you can run your code.
+    \item Psnodig, a tool for transpiling code from one representation to another. It also comes with an interpreter which works on the intermediate AST representation, so that you can run your code.
     \item The Gourmet programming language, inspired by Go and Python, as a proof of concept. This includes a parser for converting tokens to an AST, as well as a writer to convert the AST back to Gourmet code.
     \item A writer for presenting ASTs with text based pseudocode, utilising the Algorithm2e package in LaTeX.
     \item A writer for presenting ASTs with flowcharts, utilising the TikZ package, also in LaTeX.
 \end{itemize}
 
-\section{Chapter Overview}
+% \section{Chapter Overview}
 
-\textbf{Chapter 2} provides a clear definition of pseudocode which we carry with us for the remainder of the thesis, as well as some background on transpiling. \hfill \\
+% \textbf{Chapter 2} provides a clear definition of pseudocode which we carry with us for the remainder of the thesis, as well as some background on transpiling. \hfill \\
 
-\textbf{Chapter 3} breaks down the exact problem we are looking at, in addition to analysing selected tools which already offer some of the functionality we aim to contribute with. \hfill \\
+% \textbf{Chapter 3} breaks down the exact problem we are looking at, in addition to analysing selected tools which already offer some of the functionality we aim to contribute with. \hfill \\
 
-\textbf{Chapter 4} delves further into how we intend to solve the problem we introduce in the previous chapter, and compares our tool to what we believe are the shortcomings of its competitors. \hfill \\
+% \textbf{Chapter 4} delves further into how we intend to solve the problem we introduce in the previous chapter, and compares our tool to what we believe are the shortcomings of its competitors. \hfill \\
 
-\textbf{Chapter 5} provides concrete implementation details of Psnodig. \hfill \\
+% \textbf{Chapter 5} provides concrete implementation details of Psnodig. \hfill \\
 
-\textbf{Chapter 6} covers how we evaluated Psnodig, how it really works in practice, strengths, weaknesses, and how we attempted to make sure it actually works as intended. \hfill \\
+% \textbf{Chapter 6} covers how we evaluated Psnodig, how it really works in practice, strengths, weaknesses, and how we attempted to make sure it actually works as intended. \hfill \\
 
-\textbf{Chapter 7} discusses how the solution holds up agains the problem, and whether or not it fills the holes we believe exist in the alternatives. \hfill \\
+% \textbf{Chapter 7} discusses how the solution holds up agains the problem, and whether or not it fills the holes we believe exist in the alternatives. \hfill \\
 
-\textbf{Chapter 8} concludes the work of this thesis, discussing the research questions and future work.
+% \textbf{Chapter 8} concludes the work of this thesis, discussing the research questions and future work.
 
 \section{Project Source Code}
 
-All the source code from the master thesis can be found on Github\footnote{https://github.com/dashboard} (NOTE: nå ligger den på uio enterprise-githuben. burde være mulig å overføre den til github.com slik at den forblir tilgjengelig også etter at jeg leverer oppgaven og mister uio-rettighetene :smilefjes:).
+All the source code from the master thesis can be found on Github.\footnote{https://github.com/dashboard} (NOTE: nå ligger den på uio enterprise-githuben. burde være mulig å overføre den til github.com slik at den forblir tilgjengelig også etter at jeg leverer oppgaven og mister uio-rettighetene :smilefjes:).
