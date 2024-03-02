@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,6 +28,7 @@ library
       Gourmet.GourmetParser
       Gourmet.GourmetWriter
       Interpreter
+      LaTeX.Flowcharts
       LaTeX.LatexEnv
       LaTeX.LatexWriter
       Petite.PetiteParser
@@ -68,7 +69,6 @@ test-suite psnodig-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      TestArbitraries
       Paths_psnodig
   hs-source-dirs:
       test

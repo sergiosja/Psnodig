@@ -234,7 +234,7 @@ writeStmt Continue _ =
     tell "\\KwContinue \\;"
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
-writeAssignmentTarget (VariableTarget var) = tell $ "$\\var{" ++ var ++ "} "
+writeAssignmentTarget (VariableTarget var) = tell $ "$\\texttt{" ++ var ++ "} "
 writeAssignmentTarget (ListIndexTarget var indexes) = do
     tell $ "$\\" ++ var
     mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes >> tell " "
@@ -300,7 +300,7 @@ constantConfig = do
     tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
     writeStaticFunctions
     writeStaticLists
-    tell "\\SetKw{KwNil}{Nil}\n\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\newcommand{\\var}{\\texttt}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
+    tell "\\SetKw{KwNil}{Nil}\n\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
 
 funcStart :: LatexWriter ()
 funcStart =
