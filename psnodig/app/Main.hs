@@ -80,7 +80,7 @@ p2f program = do
     let parsed = parse parseGourmet "" program
     case parsed of
         Right p -> do
-            let flowTex = execWriter $ runStateT (writeFlowchart p) (Stack [("start", [])] 0)
+            let flowTex = execWriter $ runStateT (writeFlowchart p) (Stack [("0", [])] 0)
             writeFile "flowchart.tex" flowTex
             callCommand $ "pdflatex flowchart.tex"
         Left err -> putStrLn $ show err

@@ -30,26 +30,23 @@ updateStack :: String -> String -> [String] -> Flowchart ()
 updateStack current parent children =
     modify (\stack -> stack { edges = (current, []) : (parent, current : children) : tail (edges stack) })
 
+countBranches :: (Maybe Else) -> Int
+countBranches Nothing = 0
+countBranches (Just (Else _)) = 1
+countBranches (Just (ElseIf _ _ branch)) = 1 + countBranches branch
 
--- må ha en stack for å vite hva som er på!
+
+-- Drawing functions
 
 drawFunction :: Function -> Flowchart ()
 drawFunction (Function name args stmts) = do
-    tell $ "\\node (start) [startstop] {" ++ name
-    drawArgs args
-    mapM_ drawStmt stmts
+    tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ drawArgs args ++ ")};\n"
+    mapM_ (\s -> drawStmt s "below of=") stmts
 
-drawArgs :: [Argument] -> Flowchart ()
-drawArgs [] = tell "()};"
-drawArgs [x] =
-    tell $ " ( " ++ (fstArg x) ++ " )};\n"
-drawArgs args = do
-    tell $ "( "
-    mapM_ (\x -> tell $ (fstArg x) ++ ", ") (init args)
-    tell $ (show $ fstArg $ last args) ++ ")};\n"
-
-fstArg :: Argument -> String
-fstArg (Argument x _) = x
+drawArgs :: [Argument] -> String
+drawArgs [] = ""
+drawArgs ((Argument x _) : []) = x
+drawArgs ((Argument x _) : xs) = x ++ ", " ++ drawArgs xs
 
 
 -- Drawing values
@@ -106,46 +103,78 @@ drawIndexExprs (x:xs) = "[" ++ drawExpr x ++ "]" ++ drawIndexExprs xs
 
 -- Drawing statements
 
-drawStmt :: Statement -> Flowchart ()
-drawStmt (Assignment target value) = do
+drawStmt :: Statement -> String -> Flowchart ()
+drawStmt (Assignment target value) pos = do
     currentId <- uniqueID
     (parentId, children) <- peekStack
-    -- get last entry from stack
-    tell $ "\\node (" ++ currentId ++ ") [statement, below of=" ++ parentId ++ "] {" ++ drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value ++ "};\n"
+    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value ++ "};\n"
     updateStack currentId parentId children
 
 -- drawStmt (Loop expr stmts) =
 
-drawStmt (If expr stmts maybeElse) = do
+drawStmt (If expr stmts maybeElse) pos = do
     currentId <- uniqueID
     (parentId, children) <- peekStack
     updateStack currentId parentId children
-    tell $ "\\node (" ++ currentId ++ ") [decision, below of=" ++ parentId ++ "] {" ++
+    tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ "};\n"
 
---     tell $ "\\node (" ++ ??? ++ ") [decision, below of=" ++ ??? ++ ", xshift=2cm] {" ++ drawExpr expr ++ "};\n"
---     mapM_ drawStmt stmts
+    -- Find number of branches
+    -- let numberOfBranches = countBranches maybeElse
+    -- case numberOfBranches of
+    --     0 -> do
+            -- drawStmt _ "below left of="
+            -- drawStmt _ "below right of="
+
+            {- ### 2 scenarios:
+
+            1. No `return` in `stmts`
+                - Edge from currentId to first stmt in `smts`
+                - Edge from currentId to next stmt after this `If`
+                - Edge from last stmt in `stmts` to the next stmt after this `If`
+
+            2. A `return` in `stmts`
+                - Edge from currentId to first stmt in `stmts`
+                - Edge from currentId to next stmt after this `If`
+            -}
+        -- n -> do
+            {- ### 1 scenario?
+
+            - Calculate xshift- and yshift values depending on `n`
+            - Edge from currentId to first stmt in `stmts`
+            - Edge from currentId to the first else-branch
+            - Edge from all branches without `return` to the next stmt after this `If`
+            -}
+
+        -- ### Also
+        -- If all branches have a return, we can technically finish,
+        -- as next stmt will be unreahable
 
 -- drawStmt (ForEach str expr stmts) =
 -- drawStmt (For str expr1 expr2 stmts) =
-drawStmt (CallStmt functionCall) = tell $ drawFunctionCall functionCall
 
-drawStmt (Return expr) = do
+drawStmt (CallStmt functionCall) pos = do
     currentId <- uniqueID
     (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [startstop, below of=" ++ parentId ++ "] {" ++ (drawExpr expr) ++ "};\n"
+    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ drawFunctionCall functionCall ++ "};\n"
     updateStack currentId parentId children
 
-drawStmt (HashStmt _) = return ()
-drawStmt (AnnotationStmt str _) = do
+drawStmt (Return expr) pos = do
     currentId <- uniqueID
     (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [statement, below of=" ++ parentId ++ "] {" ++ str ++ "};\n"
+    tell $ "\\node (" ++ currentId ++ ") [startstop, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ "};\n"
     updateStack currentId parentId children
 
-drawStmt Break = return () -- denne kan vel fikses greit? feks peke på neste
-drawStmt Continue = return () -- og denne? feks peke på forrige skop
+drawStmt (HashStmt _) _ = return ()
+drawStmt (AnnotationStmt str _) pos = do
+    currentId <- uniqueID
+    (parentId, children) <- peekStack
+    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ str ++ "};\n"
+    updateStack currentId parentId children
 
-drawStmt _ = return ()
+drawStmt Break _ = return () -- denne kan vel fikses greit? feks peke på neste
+drawStmt Continue _ = return () -- og denne? feks peke på forrige skop
+
+drawStmt _ _ = return ()
 
 
 drawAssignmentTarget :: AssignmentTarget -> String
@@ -157,23 +186,34 @@ drawAssignmentTarget (StructFieldTarget (StructField x y)) =
 
 drawAssignmentValue :: AssignmentValue -> String
 drawAssignmentValue (ExpressionValue expr) = drawExpr expr
-drawAssignmentValue (StructValue (Struct name exprs)) = name ++
-    case length exprs of
-        0 -> "()"
-        1 -> "(" ++ drawExpr (head exprs) ++ ")"
-        _ -> "(" ++ (show $ map (\x -> drawExpr x ++ ", ") (init exprs)) ++ (drawExpr $ last exprs) ++ ")"
+drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ drawExprsInParentheses exprs ++ ")"
+
+-- drawElse :: Else -> ..
+-- drawElse maybeElse
 
 
 -- Functions
 
 drawFunctionCall :: FunctionCall -> String
-drawFunctionCall (FunctionCall name exprs) = name ++ drawExprsInParentheses exprs -- trenger en counter på name her!
-
+drawFunctionCall (FunctionCall name exprs) = name ++ "(" ++ drawExprsInParentheses exprs ++ ")" -- trenger en counter på name her!
 
 drawExprsInParentheses :: [Expression] -> String
-drawExprsInParentheses [] = ")"
-drawExprsInParentheses (x:[]) = drawExpr x ++ ")"
+drawExprsInParentheses [] = ""
+drawExprsInParentheses (x:[]) = drawExpr x
 drawExprsInParentheses (x:xs) = drawExpr x ++ ", " ++ drawExprsInParentheses xs
+
+
+-- Edges
+
+drawEdges :: Flowchart ()
+drawEdges = do
+    (Stack edges' _) <- get
+    tell "\n" >> mapM_ drawEdge edges'
+
+drawEdge :: Scope -> Flowchart ()
+drawEdge (parent, children) =
+    mapM_ (\child -> tell $ "\\draw [edge] (" ++ parent ++ ") -- (" ++ child ++ ");\n") children
+
 
 -- Config
 
@@ -195,4 +235,5 @@ writeFlowchart :: Program -> Flowchart ()
 writeFlowchart (Program _ funcs _) = do
     constantConfig
     drawFunction $ head funcs
+    drawEdges
     tell "\n\\end{tikzpicture}\n\\end{document}"
