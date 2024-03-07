@@ -14,23 +14,15 @@ import Data.Either (isRight)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-data ActiveFunction = ActiveFunction 
-    { funcName    :: String 
-    , funcArgs    :: [Argument] 
-    , funcBody    :: [Statement] 
-    , funcClosure :: Scope
-} deriving (Eq, Show, Read, Ord)
-
 type StructDecls = Map.Map String [String]
-type FuncEnv = [(String, ActiveFunction)] --Function)] -- bruke map heller?
-type Scope = [(String, Value)] -- bruke map heller?
+type FuncEnv = [(String, Function)] -- bruke map heller?
+type Scope = [(String, Value)]
 type ScopeStack = [Scope]
 
 data ExecutionState = ExecutionState
     { structDecls :: StructDecls
     , funcEnv     :: FuncEnv
-    -- , funcStack   :: ScopeStack -- Stack of active functions
-    , scopeStack  :: ScopeStack -- likely redundant after introducing the funcStack
+    , scopeStack  :: ScopeStack
     , output      :: [String]
 } deriving (Show)
 
@@ -50,36 +42,15 @@ type Psnodig a = StateT ExecutionState (ExceptT RuntimeError IO) a
 
 -- Scoping and binding
 
--- pushScope :: Psnodig ()
--- pushScope = do
---     currScope@(ExecutionState { scopeStack = scopes }) <- get
---     put currScope { scopeStack = ([] : scopes) }
-
--- popScope :: Psnodig ()
--- popScope = do
---     currScope@(ExecutionState { scopeStack = (_ : scopes) }) <- get
---     put currScope { scopeStack = scopes }
-
--- pushScope :: Scope -> Psnodig ()
--- pushScope newScope = modify (\st -> st { scopeStack = newScope : scopeStack st })
-
-pushScopeWith :: Scope -> Psnodig ()
-pushScopeWith scope = do
-    modify' (\st -> st { scopeStack = scope : scopeStack st })
-
 pushScope :: Psnodig ()
-pushScope =
-    modify' (\st -> st { scopeStack = [] : scopeStack st })
+pushScope = do
+    currScope@(ExecutionState { scopeStack = scopes }) <- get
+    put currScope { scopeStack = ([] : scopes) }
 
 popScope :: Psnodig ()
-popScope = modify (\st -> st { scopeStack = tail (scopeStack st) })
-
--- safeHead :: [a] -> Maybe a
--- safeHead []    = Nothing
--- safeHead (x:_) = Just x
-
--- getScope :: Psnodig (Maybe Scope)
--- getScope = gets (safeHead . scopeStack)
+popScope = do
+    currScope@(ExecutionState { scopeStack = (_ : scopes) }) <- get
+    put currScope { scopeStack = scopes }
 
 lookupVar :: String -> Psnodig (Maybe Value)
 lookupVar var = do
@@ -177,20 +148,15 @@ updateScopes (scope:rest) listName newList =
     else
         (scope :) <$> updateScopes rest listName newList
 
-lookupFunc :: String -> Psnodig (Maybe ActiveFunction)
+lookupFunc :: String -> Psnodig (Maybe Function)
 lookupFunc func = do
     ExecutionState { funcEnv = env } <- get
     return $ lookup func env
 
--- bindFunc :: String -> ActiveFunction -> Psnodig ()
--- bindFunc name func = do
---     currScope@(ExecutionState { funcEnv = env }) <- get
---     put currScope { funcEnv = (name, func):env }
-
-bindFunc :: String -> ActiveFunction -> Psnodig ()
-bindFunc name activeFunc =
-    modify' (\st -> st { funcEnv = (name, activeFunc) : funcEnv st })
-
+bindFunc :: String -> Function -> Psnodig ()
+bindFunc name func = do
+    currScope@(ExecutionState { funcEnv = env }) <- get
+    put currScope { funcEnv = (name, func):env }
 
 
 -- Structs
@@ -644,23 +610,13 @@ callFunction (FunctionCall name args) = do
             applyFunction func argsValues
         Nothing -> throwError $ FunctionNotFound name
 
-declareFunction :: Function -> Psnodig ()
-declareFunction (Function name args body) = do
-    let activeFunction = ActiveFunction 
-            { funcName = name
-            , funcArgs = args
-            , funcBody = body
-            , funcClosure = []
-            }
-    bindFunc name activeFunction
-
-applyFunction :: ActiveFunction -> [Value] -> Psnodig Value
-applyFunction func values = do
-    when (length (funcArgs func) /= length values)
+applyFunction :: Function -> [Value] -> Psnodig Value
+applyFunction (Function _ args stmts) values = do
+    when (length args /= length values)
         $ throwError $ WrongNumberOfArguments "Function takes a different number of args than provided!"
-    pushScopeWith (funcClosure func)
-    zipWithM_ bindVar (map fstArg (funcArgs func)) values
-    res <- evalStmts (funcBody func)
+    pushScope
+    zipWithM_ bindVar (map fstArg args) values
+    res <- evalStmts stmts
     popScope
     either (const $ throwError $ NoReturnError "Function must return something!") return res
 
@@ -670,16 +626,15 @@ applyFunction func values = do
 evalProgram :: Program -> Psnodig ()
 evalProgram (Program structs funcs entryPoint) = do
     mapM_ processStructDecls structs
-    mapM_ declareFunction funcs --processFunDecl funcs
+    mapM_ processFunDecl funcs
     void $ callFunction entryPoint
---   where
---     processFunDecl f@(Function name _ _) = bindFunc name f
+  where
+    processFunDecl f@(Function name _ _) = bindFunc name f
 
 initialState :: ExecutionState
 initialState = ExecutionState
     { structDecls = Map.empty
     , funcEnv = []
-    -- , funcStack = []
     , scopeStack = []
     , output = []
     }
