@@ -17,7 +17,12 @@ import qualified Data.Set as Set
 type StructDecls = Map.Map String [String]
 type FuncEnv = [(String, Function)] -- bruke map heller?
 type Scope = [(String, Value)]
-type ScopeStack = [Scope]
+type ScopeStack = [[Scope]]
+
+-- type Binding = (String, Value)
+-- type BindingStack = [Binding]
+-- type ScopeStack = [BindingStack]
+-- type FunctionStack = [ScopeStack]
 
 data ExecutionState = ExecutionState
     { structDecls :: StructDecls
@@ -42,19 +47,32 @@ type Psnodig a = StateT ExecutionState (ExceptT RuntimeError IO) a
 
 -- Scoping and binding
 
-pushScope :: Psnodig ()
-pushScope = do
+-- "Outer layer", the scopes of active functions
+pushFunctionScope :: Psnodig ()
+pushFunctionScope = do
     currScope@(ExecutionState { scopeStack = scopes }) <- get
     put currScope { scopeStack = ([] : scopes) }
 
-popScope :: Psnodig ()
-popScope = do
+popFunctionScope :: Psnodig ()
+popFunctionScope = do
     currScope@(ExecutionState { scopeStack = (_ : scopes) }) <- get
     put currScope { scopeStack = scopes }
 
+-- "Inner layer", the scopes of active variables within functions
+pushScope :: Psnodig ()
+pushScope = do
+    currScope@(ExecutionState { scopeStack = (h : rest) }) <- get
+    put currScope { scopeStack = (([] : h) : rest) }
+
+popScope :: Psnodig ()
+popScope = do
+    currScope@(ExecutionState { scopeStack = ((_ : h) : rest) }) <- get
+    put currScope { scopeStack = h : rest }
+
+
 lookupVar :: String -> Psnodig (Maybe Value)
 lookupVar var = do
-    ExecutionState { scopeStack = scopes } <- get
+    ExecutionState { scopeStack = (scopes : _) } <- get
     return $ searchScopes scopes var
     where
         searchScopes [] _ = Nothing
@@ -63,41 +81,30 @@ lookupVar var = do
                 Just v -> Just v
                 Nothing -> searchScopes rest variable
 
-    -- if length scopes > 0
-    -- then return $ case lookup var (head scopes) of
-    --     Just v -> Just v
-    --     Nothing -> Nothing
-    -- else throwError $ BadArgument $ "Variable " ++ var ++ " not found!"
-
-
 bindVar :: String -> Value -> Psnodig ()
 bindVar var value = do
-    currScope@(ExecutionState { scopeStack = (top:rest) }) <- get
-    put currScope { scopeStack = ((var, value):top) : rest }
+    currScope@(ExecutionState { scopeStack = (currentFuncScope : rest) }) <- get
+    put currScope { scopeStack = (updateVar currentFuncScope var value) : rest }
 
--- bindVar :: String -> Value -> Psnodig ()
--- bindVar var value = do
---     currScope@ExecutionState{ scopeStack = scopes } <- get
---     let updatedStack = updateVarInScopes scopes var value
---     put currScope{ scopeStack = updatedStack }
+---------
 
--- -- Update the first occurrence of a variable in the scope stack with a new value
--- updateVarInScopes :: ScopeStack -> String -> Value -> [[(String, Value)]]
--- updateVarInScopes [] _ _ = []
--- updateVarInScopes (scope:rest) var value =
---     case lookup var scope of
---         Just _ -> updateVarInScope scope var value : rest -- Variable found; update value
---         Nothing -> scope : updateVarInScopes rest var value -- Keep looking in the outer scope
+updateVar :: [[(String, Value)]] -> String -> Value -> [[(String, Value)]]
+updateVar [] var value = [[(var, value)]]
+updateVar scopes@(scope : rest) var value =
+    let updatedScopes@(currScope : restScopes) = updateAllScopes scopes var value
+    in if varInScope var scope then updatedScopes else (((var, value) : currScope) : restScopes)
 
--- -- Update a variable in a single scope, assuming the variable is guaranteed to exist
--- updateVarInScope :: [(String, Value)] -> String -> Value -> [(String, Value)]
--- updateVarInScope scope var value = map updateBinding scope
---     where
---         updateBinding (v, _) | v == var = (var, value) -- Found variable; update value
---         updateBinding binding = binding -- Not the variable we're looking for; leave unchanged
+updateAllScopes :: [[(String, Value)]] -> String -> Value -> [[(String, Value)]]
+updateAllScopes scopes var val = map (updateCurrentScope var val) scopes
 
+updateCurrentScope :: String -> Value -> [(String, Value)] -> [(String, Value)]
+updateCurrentScope var val =
+    map (\orig@(var', _) -> if var' == var then (var', val) else orig)
 
+varInScope :: String -> [(String, Value)] -> Bool
+varInScope var scope = any (\(var', _) -> var' == var) scope
 
+---------
 
 updateListVar :: String -> [Expression] -> Value -> Psnodig ()
 updateListVar listName indexExprs value = do
@@ -135,9 +142,9 @@ updateNestedListVar _ _ _ = throwError $ BadArgument "Sorry blud doesnt work 1"
 
 findAndUpdateScope :: String -> Value -> Psnodig ()
 findAndUpdateScope listName newList = do
-    currScope@(ExecutionState { scopeStack = scopes }) <- get
+    currScope@(ExecutionState { scopeStack = (scopes : rest) }) <- get
     case updateScopes scopes listName newList of
-        Just newScopes -> put currScope { scopeStack = newScopes }
+        Just newScopes -> put currScope { scopeStack = (newScopes : rest) }
         Nothing -> throwError $ VariableNotFound $ "List " ++ listName ++ " not found."
 
 updateScopes :: [[(String, Value)]] -> String -> Value -> Maybe [[(String, Value)]]
@@ -309,7 +316,7 @@ evalExpr (VariableExp var) = do
     maybeVar <- lookupVar var
     case maybeVar of
         Just val -> return val
-        Nothing -> throwError $ VariableNotFound $ "Variable " ++ var ++ " not found!"
+        Nothing -> throwError $ VariableNotFound $ "Variable " ++ var ++ " not found! 123"
 evalExpr (BinaryExp op expr1 expr2) = do
     val1 <- evalExpr expr1
     val2 <- evalExpr expr2
@@ -614,10 +621,10 @@ applyFunction :: Function -> [Value] -> Psnodig Value
 applyFunction (Function _ args stmts) values = do
     when (length args /= length values)
         $ throwError $ WrongNumberOfArguments "Function takes a different number of args than provided!"
-    pushScope
+    pushFunctionScope
     zipWithM_ bindVar (map fstArg args) values
     res <- evalStmts stmts
-    popScope
+    popFunctionScope
     either (const $ throwError $ NoReturnError "Function must return something!") return res
 
 
