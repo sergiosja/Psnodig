@@ -2,7 +2,7 @@ module Main (main) where
 
 -- Psnodig syntax
 import Syntax
-import Interpreter (ExecutionState(..), runPsnodig)
+import Interpreter (ExecutionState(..), RuntimeError(RuntimeErrorWithOutput), runPsnodig)
 
 -- Pytite lang
 -- import Petite.PetiteParser (parsePetite)
@@ -99,8 +99,13 @@ interpret program = do
         (Right p) -> do
             res <- runPsnodig p
             case res of
-                (Right finalState) -> forM_ (output finalState) putStrLn 
-                (Left err) -> print err
+                (Right finalState) ->
+                    mapM_ putStrLn (output finalState)
+                (Left (RuntimeErrorWithOutput output' err)) -> do
+                    mapM_ putStrLn output'
+                    print err
+                (Left err) ->
+                    print err
         (Left err) -> putStrLn $ show err
 
 
