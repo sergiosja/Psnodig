@@ -7,21 +7,7 @@ import qualified Data.Set as Set
 
 -- Program
 
-data Program = Program [StructDecl] [Function] FunctionCall
-    deriving (Eq, Show, Read, Ord)
-
-data Argument = Argument String String
-    deriving (Eq, Show, Read, Ord)
-
-data Value =
-      Nil
-    | Boolean Bool
-    | Number Integer
-    | Text String
-    | List [Expression]
-    | HashSet (Set.Set Expression)
-    | HashMap (Map.Map Expression Expression)
-    | StructVal [(String, Value)] -- bonus, kan omdøpe til LocalStructValue
+data Program = Program [StructDecl] [Function] (Maybe FunctionCall)
     deriving (Eq, Show, Read, Ord)
 
 -- Structs
@@ -41,6 +27,10 @@ data Function = Function String [Argument] [Statement]
     deriving (Eq, Show, Read, Ord)
 
 data FunctionCall = FunctionCall String [Expression]
+    deriving (Eq, Show, Read, Ord)
+
+
+data Argument = Argument String String
     deriving (Eq, Show, Read, Ord)
 
 -- Statements
@@ -104,4 +94,17 @@ data Operator =
     | And
     | Or
     | Modulo
+    deriving (Eq, Show, Read, Ord)
+
+-- Values
+
+data Value =
+      Nil
+    | Boolean Bool
+    | Number Integer
+    | Text String
+    | List [Expression]
+    | HashSet (Set.Set Expression)
+    | HashMap (Map.Map Expression Expression)
+    | StructVal [(String, Value)] -- kan omdøpe til LocalStructValue
     deriving (Eq, Show, Read, Ord)

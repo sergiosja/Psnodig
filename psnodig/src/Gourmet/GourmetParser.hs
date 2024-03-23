@@ -14,15 +14,17 @@ lexer = Token.makeTokenParser emptyDef {
     Token.identStart = letter,
     Token.identLetter = alphaNum <|> char '\'',
     Token.reservedOpNames =
-        [ ":=", "+", "-", "*", "/", "<", ">", "=="
-        , "!=", "while", "{", "}", "if", "func", "("
-        , ")", ">=", "<=", "true", "false", "return"
-        , "[", "]", "else", "&&", "||", "!", "for"
-        , ",", "contains", "length", "ceil", "floor"
-        , ":", "#", "@", "break", "continue", "struct"
-        , "not", "%", "map", "set", "int", "str", "bool"
-        , "."
-        ]
+        [ ":=", "+", "-", "*", "/", "<", ">", "=="   -- 8
+        , "!=", "while", "{", "}", "if", "func", "(" -- 7 | 15
+        , ")", ">=", "<=", "true", "false", "return" -- 6 | 21
+        , "[", "]", "else", "&&", "||", "!", "for"   -- 7 | 28
+        , ",", ":", "#", "@", "break", "continue"    -- 6 | 34
+        , "struct", "not", "%", "map", "set", "."    -- 6 | 40
+        ],
+    Token.commentStart = "/*",
+    Token.commentEnd = "*/",
+    Token.commentLine = "//",
+    Token.nestedComments = False
 }
 
 identifier :: Parser String
@@ -132,9 +134,9 @@ parseExpr = buildExpressionParser table term
                     , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
                 ]
         term = choice
-            [ try parseNotExp
+            [ try parseStructFieldExpr
+            , try parseNotExp
             , try parseStructExpr
-            , try parseStructFieldExpr
             , try parseConstant
             , try parseListIndexExp
             , try parseFunctionCallExp
@@ -171,8 +173,8 @@ parseExpr1 = buildExpressionParser table term
                     , Infix (BinaryExp GreaterThanEqual <$ reservedOp ">=") AssocNone ]
                 , [ Infix (BinaryExp Equal <$ reservedOp "==") AssocNone
                     , Infix (BinaryExp NotEqual <$ reservedOp "!=") AssocNone ]
-                , [ Infix (BinaryExp And <$ reservedOp "&&") AssocLeft
-                    , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
+                , [ Infix (BinaryExp And <$ reservedOp "&&") AssocLeft ]
+                , [ Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
                 ]
         term = choice
             [ try parseNotExp
@@ -306,6 +308,6 @@ parseGourmet :: Parser Program
 parseGourmet = do
     whiteSpace
     structs <- many parseStructDecl
-    funcs <- many1 parseFunction
-    functioncall <- parseFunctionCall
+    funcs <- many parseFunction
+    functioncall <- optionMaybe parseFunctionCall
     return $ Program structs funcs functioncall

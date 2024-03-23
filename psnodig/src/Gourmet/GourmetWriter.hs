@@ -225,4 +225,6 @@ writeGourmet :: Program -> GourmetWriter ()
 writeGourmet (Program structs funcs funcCall) = do
     mapM_ (\s -> (writeStructDecl s) >> tell "\n\n") structs
     mapM_ (\f -> (writeFunc f) >> tell "\n\n") funcs
-    writeFunctionCall funcCall
+    case funcCall of
+        Just f -> writeFunctionCall f
+        Nothing -> return ()

@@ -3,7 +3,11 @@
 -- f :: Int
 -- f = 1
 
-module Interpreter (ExecutionState(..), RuntimeError(RuntimeErrorWithOutput), runPsnodig) where
+module Interpreter (
+      ExecutionState(..)
+      , RuntimeError(RuntimeErrorWithOutput)
+      , runPsnodig
+    ) where
 
 import Syntax
 import Control.Monad.State
@@ -87,8 +91,6 @@ bindVar var value = do
     currScope@(ExecutionState { scopeStack = (currentFuncScope : rest) }) <- get
     put currScope { scopeStack = (updateVar currentFuncScope var value) : rest }
 
----------
-
 updateVar :: [[(String, Value)]] -> String -> Value -> [[(String, Value)]]
 updateVar [] var value = [[(var, value)]]
 updateVar scopes@(scope : rest) var value =
@@ -105,7 +107,6 @@ updateCurrentScope var val =
 varInScope :: String -> [(String, Value)] -> Bool
 varInScope var scope = any (\(var', _) -> var' == var) scope
 
----------
 
 updateListVar :: String -> [Expression] -> Value -> Psnodig ()
 updateListVar listName indexExprs value = do
@@ -196,7 +197,7 @@ bindStruct name (Struct maybeStruct args) = do
 
 updateStruct :: String -> [(String, Value)] -> Psnodig ()
 updateStruct name fields =
-    bindVar name (StructVal fields)-- fix this! not safe. should use something like [if k == name then (k, newVal) else (k, v) | k, v <- existingList]
+    bindVar name (StructVal fields) -- fix this! not safe. should use something like [if k == name then (k, newVal) else (k, v) | k, v <- existingList]
 
 updateStructField :: StructField -> Expression -> Psnodig ()
 updateStructField (StructField structName fieldExpr) valueExpr = do
@@ -317,18 +318,17 @@ evalExpr (VariableExp var) = do
     maybeVar <- lookupVar var
     case maybeVar of
         Just val -> return val
-        Nothing -> throwError' $ VariableNotFound $ "Variable " ++ var ++ " not found! 123"
+        Nothing -> throwError' $ VariableNotFound $ "Variable " ++ var ++ " not found!"
 evalExpr (BinaryExp op expr1 expr2) = do
-    val1 <- evalExpr expr1
-    val2 <- evalExpr expr2
-    case operate op val1 val2 of
+    res <- operate op expr1 expr2
+    case res of
         Left errMsg -> throwError' $ ArithmeticError errMsg
         Right val -> return val
 evalExpr (ListIndex var indexExprs) = do
     maybeList <- lookupVar var
     case maybeList of
         Just val -> evalNestedIndex val indexExprs
-        Nothing  -> throwError' $ VariableNotFound "Variable not found!"
+        Nothing  -> throwError' $ VariableNotFound $ "List" ++ var ++ "not found!"
 evalExpr (CallExp fcall) = callFunction fcall
 evalExpr (Not expr) = (Boolean . not . bval) <$> evalExpr expr
 evalExpr (StructFieldExp structField) = evalStructFieldExprMain structField
@@ -385,38 +385,58 @@ evalStructFieldExprRec fields expr = do
                 _ -> throwError' $ BadArgument "Tried to access field of non-struct identifier. 1"
         _ -> throwError' $ BadArgument "Tried to access field of non-struct identifier. 2"
 
+
 -- Operators
 
-operate :: Operator -> Value -> Value -> Either String Value
-operate Plus (Number x) (Number y) = return $ Number $ x + y
-operate Plus (Text s1) (Text s2) = return $ Text $ s1 ++ s2
-operate Minus (Number x) (Number y) = return $ Number $ x - y
-operate Times (Number x) (Number y) = return $ Number $ x * y
-operate Division (Number _) (Number 0) = Left "Division by zero!"
+operate :: Operator -> Expression -> Expression -> Psnodig (Either String Value)
+operate And expr1 expr2 = do
+    val1 <- evalExpr expr1
+    if not $ bval val1
+    then return . Right $ Boolean False
+    else do
+        val2 <- evalExpr expr2
+        return $ Right $ Boolean (bval val2)
+operate Or expr1 expr2 = do
+    val1 <- evalExpr expr1
+    if bval val1 then return $ Right $ Boolean True
+    else do
+            val2 <- evalExpr expr2
+            return $ Right $ Boolean (bval val2)
+operate op expr1 expr2 = do
+    val1 <- evalExpr expr1
+    val2 <- evalExpr expr2
+    return $ operate' op val1 val2
+
+operate' :: Operator -> Value -> Value -> Either String Value
+operate' Plus (Number x) (Number y) = Right $ Number $ x + y
+operate' Plus (Text s1) (Text s2) = Right $ Text $ s1 ++ s2
+operate' Minus (Number x) (Number y) = Right $ Number $ x - y
+operate' Times (Number x) (Number y) = Right $ Number $ x * y
+operate' Division (Number _) (Number 0) = Left "Division by zero!"
 -- should probs fix floats/doubles too
-operate Division (Number x) (Number y) = return $ Number $ div x y
-operate Modulo (Number _) (Number 0) = Left "Modulo by zero!"
-operate Modulo (Number x) (Number y) = return $ Number $ mod x y
+operate' Division (Number x) (Number y) = Right $ Number $ div x y
+operate' Modulo (Number _) (Number 0) = Left "Modulo by zero!"
+operate' Modulo (Number x) (Number y) = Right $ Number $ mod x y
 
-operate LessThan (Number x) (Number y) = return $ Boolean $ x < y
-operate LessThanEqual (Number x) (Number y) = return $ Boolean $ x <= y
-operate GreaterThan (Number x) (Number y) = return $ Boolean $ x > y
-operate GreaterThanEqual (Number x) (Number y) = return $ Boolean $ x >= y
+operate' LessThan (Number x) (Number y) = Right $ Boolean $ x < y
+operate' LessThanEqual (Number x) (Number y) = Right $ Boolean $ x <= y
+operate' GreaterThan (Number x) (Number y) = Right $ Boolean $ x > y
+operate' GreaterThanEqual (Number x) (Number y) = Right $ Boolean $ x >= y
 
-operate Equal (Number x) (Number y) = return $ Boolean $ x == y
-operate Equal Nil Nil = return $ Boolean True
-operate Equal (Text t1) (Text t2) = return $ Boolean $ t1 == t2
-operate Equal _ _ = return $ Boolean False
+operate' Equal (Number x) (Number y) = Right $ Boolean $ x == y
+operate' Equal Nil Nil = Right $ Boolean True
+operate' Equal (Text t1) (Text t2) = Right $ Boolean $ t1 == t2
+operate' Equal _ _ = Right $ Boolean False
 
-operate NotEqual (Number x) (Number y) = return $ Boolean $ x /= y
-operate NotEqual Nil Nil = return $ Boolean False
-operate NotEqual (Text t1) (Text t2) = return $ Boolean $ t1 /= t2
-operate NotEqual _ _ = return $ Boolean False
+operate' NotEqual (Number x) (Number y) = Right $ Boolean $ x /= y
+operate' NotEqual Nil Nil = Right $ Boolean False
+operate' NotEqual (Text t1) (Text t2) = Right $ Boolean $ t1 /= t2
+operate' NotEqual _ _ = Right $ Boolean False
 
-operate And x y = return $ Boolean $ (bval x) && (bval y)
-operate Or x y = return $ Boolean $ (bval x) || (bval y)
+-- operate' And x y = return $ Boolean $ (bval x) && (bval y)
+-- operate' Or x y = return $ Boolean $ (bval x) || (bval y)
 
-operate op x y = Left $ "Incompatible operands! Tried to apply " ++
+operate' op x y = Left $ "Incompatible operands! Tried to apply " ++
     (show op) ++ " to " ++ (show x) ++ " and " ++ (show y) ++ "!"
 
 
@@ -481,7 +501,8 @@ evalStmt (For ident expr1 expr2 stmts) = do
     val1 <- evalExpr expr1
     val2 <- evalExpr expr2
     case (fromNumber val1, fromNumber val2) of
-        (Just n1, Just n2) -> foldM (executeForLoopScope ident stmts) (Left ()) [n1 .. n2]
+        (Just n1, Just n2) ->
+            foldM (executeForLoopScope ident stmts) (Left ()) (forRange n1 n2)
         _ -> throwError' $ BadArgument "Range must be whole numbers!"
 
 evalStmt (CallStmt f) =
@@ -534,6 +555,8 @@ executeForLoopScope ident stmts acc n =
                 _ -> return (Left ())
         Right _ -> return acc
 
+forRange :: Integer -> Integer -> [Integer]
+forRange x y = if x <= y then [x..y] else [x,x-1..y]
 
 -- Functions
 
@@ -586,18 +609,36 @@ callFunction (FunctionCall "get" args) = do
 callFunction (FunctionCall "append" args) = do
     when (length args /= 2)
         $ throwError' $ WrongNumberOfArguments "Function 'append' takes 2 arguments: append( value , list )."
-    let listExpr = head $ tail args
-    case listExpr of
-        VariableExp listName -> do
-            maybeList <- evalExpr listExpr
-            case maybeList of
-                List l -> do
-                    let newList = List $ l ++ [head args]
+    let listExpr = args !! 1
+    maybeList <- evalExpr listExpr
+    case maybeList of
+        List l -> do
+            case listExpr of
+                VariableExp listName -> do
+                    val <- evalExpr $ head args
+                    let newList = List $ l ++ [(Constant val)]
                     findAndUpdateScope listName newList
                     return $ Number 1
-                -- ListIndex listName indexes -> ..
-                _ -> throwError' $ BadArgument $ "Function 'append' yields error. Either '" ++ (show $ head args) ++ "' is an invalid value, or '" ++ listName ++ "' is an invalid list."
-        _ -> throwError' $ BadArgument "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
+                -- ListIndex listName indexes -> do
+                --     val <- evalExpr $ head args
+                    -- vi har en List l, som er en liste med lister
+                    -- listName er faktiske lista som ligger i skopet.
+                    -- indexes er lista som skal appendes til
+
+                    -- altså: ta lista som ligger på indexes av listName,
+                    -- og legg til `val` der
+
+                    -- altså:
+                    -- legg denne nye lista inn på stedet der `listName indexes` lå før
+                    -- ny variabel som har disse oppdaterte listene
+                    -- kjør findAndUpdateScope listName newList
+
+
+                    -- findAndUpdateScope listName newList
+                    -- return $ Number 1
+
+                _ -> throwError' $ BadArgument "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
+        _ -> throwError' $ BadArgument $ "Function 'append' yields error. Either '" ++ (show $ head args) -- ++ "' is an invalid value, or '" ++ listName ++ "' is an invalid list."
 
 
 
@@ -607,14 +648,19 @@ callFunction (FunctionCall "print" args) = do
     values <- mapM evalExpr args
     strings <- mapM (\v -> stringifyValue v False) values
     modify (\s -> s { output = output s ++ strings })
-    return $ Number 1 -- mock value, maybe I should make Void a value type and return that instead. evt endre typen til (Either () Value)
+    return . Number . toInteger . length $ args
 
 callFunction (FunctionCall "length" args) = do
-    maybeList <- evalExpr $ head args
-    case maybeList of
-        (List l) -> return (Number (toInteger $ length l))
-        -- legg til hashmap og sånt og da
+    maybeIterable <- evalExpr $ head args
+    case maybeIterable of
+        (Text t) -> toNum t
+        (List l) -> toNum l
+        (HashSet s) -> toNum $ Set.toList s
+        (HashMap m) -> toNum $ Map.toList m
         _ -> throwError' $ BadArgument "length can only be called with iterable!"
+    where
+        toNum :: [a] -> Psnodig Value
+        toNum = return . Number . toInteger . length
 
 callFunction (FunctionCall name args) = do
     maybeFunc <- lookupFunc name
@@ -641,7 +687,9 @@ evalProgram :: Program -> Psnodig ()
 evalProgram (Program structs funcs entryPoint) = do
     mapM_ processStructDecls structs
     mapM_ processFunDecl funcs
-    void $ callFunction entryPoint
+    case entryPoint of
+        Just f -> void $ callFunction f
+        Nothing -> throwError $ BadArgument "No function call to run the program."
   where
     processFunDecl f@(Function name _ _) = bindFunc name f
 
@@ -736,7 +784,7 @@ evalNestedIndex (List list) (indexExpr:indexExprs) = do
             then do
                 nextVal <- evalExpr $ list !! fromInteger n -- burde sjekke at list !! fromInteger n er lov! at det ikke gir outofbounds ellerno
                 evalNestedIndex nextVal indexExprs
-            else throwError' $ BadArgument "List index out of range!"
+            else throwError' $ BadArgument $ "Attempted to access index " ++ (show n) ++ " of list with length " ++ (show $ length list) ++ "!"
         _ -> throwError' $ BadArgument "Index must evaluate to a number"
 evalNestedIndex _ _ = throwError' $ BadArgument "Expected a list for index operation"
 
@@ -759,7 +807,6 @@ throwError' :: RuntimeError -> Psnodig a
 throwError' err = do
     currentOutput <- gets output
     throwError $ RuntimeErrorWithOutput currentOutput err
-
 
 -- -- Thought:
 -- -- There are no global variables

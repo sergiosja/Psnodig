@@ -151,13 +151,13 @@ writeFunctionCall (FunctionCall funcname args) = do
             tell " to "
             writeExp $ args !! 0
         _ -> do
-            tell $ "\\" ++ funcname ++ "("
+            tell $ "\\" ++ funcname ++ "{"
             case length args of
-                0 -> tell ")"
-                1 -> (writeExp $ collectionVariableNotation (head args) lists) >> tell ")"
+                0 -> tell "}"
+                1 -> (writeExp $ collectionVariableNotation (head args) lists) >> tell "}"
                 _ -> do
                     mapM_ (\arg -> (writeExp $ collectionVariableNotation arg lists) >> tell ", ") (init args)
-                    (writeExp $ collectionVariableNotation (last args) lists) >> tell ")"
+                    (writeExp $ collectionVariableNotation (last args) lists) >> tell "}"
 
 getArgumentNames ::  [Argument] -> [String]
 getArgumentNames args = map getArgName args
@@ -313,5 +313,6 @@ funcEnd (Function name _ _) =
 writeLatex :: Program -> LatexWriter ()
 writeLatex (Program _ funcs _) = do
     constantConfig
-    mapM_ (\f -> (funcStart >> writeFunc f >> funcEnd f)) funcs
+    if length funcs == 0 then return ()
+    else funcStart >> writeFunc (head funcs) >> funcEnd (head funcs)
     tell "\\end{document}"
