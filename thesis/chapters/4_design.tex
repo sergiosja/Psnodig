@@ -216,7 +216,7 @@ The interpreter provides several built-in functions, which are also found in mos
 
 \textbf{get($k$, $hm$)}, which takes two arguments, an \texttt{Expression} $k$ and a \texttt{HashMap} $hm$. If $k$ is a key in $hm$, the function will return the value that $k$ maps to in $hm$. \\
 
-\forsup{mangler: ``in'', for å sjekke for membership. kan brukes i sets, maps, lister og text}
+\textbf{in($x$, $xs$)}, which takes two arguments, an \texttt{Expression} $x$ and either a \texttt{List}, \texttt{HashSet}, or \texttt{HashMap}. The function will check if $x$ exists in $xs$, and return $True$ or $False$ accordingly.
 
 \subsection{Testing}
 

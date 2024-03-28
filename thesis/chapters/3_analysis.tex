@@ -20,51 +20,27 @@ Lastly, researchers might wish to exchange ideas despite using different program
 
 In the context of our problem, and the remainder of this thesis, we view flowcharts as a form of pseudocode rather than an isolated concept. As such, we have to make a different distinction between flowcharts and traditional pseudocode which resembles source code. From now, we will refer to traditional pseudocode as \textbf{Text based pseudocode} (TBP) and flowcharts as \textbf{Image based pseudocode} (IBP).
 
-
-
 \section{Comparing source code with TBP and IBP}
 
-In this section we aim to show how the same computer program can be presented in three different levels of abstraction, and why TBP and IBP is preferred when strictly focusing on presentation. \\
+In this section we aim to show how the same computer program can be presented in three different levels of abstraction. The first one will be source code written in a popular programming language, while the latter two will be TBP and IBP. \\
 
-\forsup{vis AGTI-algoritmen}
+The program in question \forsup{beskriv programmet. Feks bucket sort?}
 
-\forsup{vis et flowchart hvor man tydelig ser hvordan en algoritme går videre fra mange ifs med return (jeg syns dette kan være kronglete å se i vanlig kode, fordi alt står skrevet sekvensielt!)}
+Listing ?? shows the program written in the programming language Go. Figure ?? and Figure ?? show the same program, but with TBP and IBP, respectively.
 
-\forsup{vis hvor konsis og kortfattet tbp er i forhold til java eller go. prøv begge, se hvilken av dem som blir styggest hahah}
+The main similarity between the source code and the TBP is that both versions look like an executable program. People familiar with programming will look at the pseudocode and likely understand what is going on. In fact, the versions are almost identical, so this should not be a concern. \forsup{Forklare likhetene nærmere?}
 
-As such, we can comfortably regard the succinctness of figure 2.1 displaying TBP, to figure 2.2 displaying an implementation of said TBP in a popular programming language \cite{javaIsAPopularProgrammingLanguage}:
+The difference is mainly the format. The TBP version describes the input and output, which allows us to have rather succinct variable names. In the Java example, even though the variable names are explanatory, we cannot always be 100\% sure about how the author intends for them to be applied. This is not an issue with TBP. \\
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[scale=0.46]{assets/fibonacci_pseudo1.png}
-    \caption{Text based pseudocode illustrating an algorithm to retrieve the nth number in a fibonacci sequence.}
-    \label{fig:fibseq2}
-\end{figure}
+Another thing to notice is the difference in notation. While in Java we have to write terms like \texttt{!=} and \texttt{ceil(x)}, TBP allows us to use more precise mathematical notation like \texttt{$\neq$} and \texttt{$\lceil$x$\rceil$}. \\
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[scale=0.50]{assets/fibonacci_java.png}
-    \caption[An algorithm written in the Java programming language, to retrieve the nth number in a fibonacci sequence.]{An algorithm written in the Java programming language, to retrieve the nth number in a fibonacci sequence. It follows the commenting guidlines JavaDoc\footnotemark.}
-    \label{fig:fibjava}
-\end{figure}
-\footnotetext{https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html}
+Additionally, since the TBP is intentionally not executable, we allow ourselves to omit implementation specific details which are not necessary to understand the program's logic. This makes for a much more concise presentation, minimising the chance of confusion by whoever is trying to understand the program. \\
 
+The same can be said for the IBP version, which does not really resemble the original source program. In appearance, they are on very different abstraction levels. Whereas the code is written in sequential lines, the flowchart shows colourful shapes wandering off in different directions. \\
 
-The issue of translating code to some sort of pseudo code has been around for a while (source?), often intended to help people less familiar with code, or perhaps those with no familiarity to code whatsoever, to understand what is being done behind the scenes, and better understanding what product is being built etc. (source??). \hfill \\
+The spacing and colourfulness of IBP makes it easy to isolate parts of the program, and to see more precisely how each part works individually. It also makes it easier to follow each path of the program, compared to the Java program, where lines follow each other, and things like Gotos and scoping of if-statements can confuse even more seasoned programmers. \\
 
-We, on the other hand, believe that people who \textit{do} have some familiarity with code could also benefit from being exposed to it. For one, it can be a nice tool for debugging a-little-too-fancy code you did not write yourself, by getting a more abstract view of it. It can also aid beginners in seeing the flow of their code, making them understand how they can improve their code. Unfortunately, there does not seem to be any tools freely available on the market with this target audience in mind: people who also code, but would like to see their code from a different perspective. \hfill \\
-
-Another aspect of pseudo code, is that since it is intended to be a presentation-only tool, you cannot actually verify its semantical properties, that is, if it even does what you want it to do. As Donald Knuth famously put it,
-
-\begin{displayquote}
-    I have only proven the algorithm correct, not tested it.\cite{DBLP:books/aw/Knuth68}
-\end{displayquote}
-
-Therefore, by manually translating executable code into a non-executable form, we are no longer able to test it, and the work of maintaining both quickly turns into a hassle. We believe that everyone benefits from there persisting a stronger relationship between the original code and the presentation-only pseudocode. \hfill \\
-
-Ever since the concept of pseudocode was introduced, there have been attempts at creating tools to automate the process of translating code to pseudocode. The most noteworthy attempt to deliver pseudocode in text format was presented in a 2015 paper, a tool called Pseudogen. When it comes to translating code to flow charts, we decided to look at Code2Flow, which is widely used in practice today, even in PIT, the Norwegian police's IT service. \hfill \\
-
-
+The notation pretty much stays the same, but since the flowcharts are not to be executed, we can again opt for more precise mathematical notation to describe expressions, and exclude static properties like typing.
 
 \section{Related work}
 

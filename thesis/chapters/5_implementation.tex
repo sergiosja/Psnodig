@@ -1,14 +1,65 @@
 \chapter{Implementation}
 \begin{itemize}
-    \item Which tools am I using?
+    \item Which tools am I using? Why?
     \item Concrete implementation of the Psnodig tool
     \item Testing: How can I be certain that Psnodig works?
 \end{itemize}
 
-on its own, psnodig is useless! but when paired with parsers and writers, we see its magic. without, you can only but admire its conciseness and love it.
+describe the monad?? \\
 
-interpreter. what is the point? you see, not all syntactically correct programs are necessarily also semantically correct (cool graphs on this?? figures of some sort??). show an example!
+mention some kind of testing with quickcheck, e.g. from gourmet to ast and back to gourmet, to show consistency at least. \\
 
-btw (still on interpreter). this gives yet another edge compared to manually writing pseudocode. it is like JVM: write once, run everywhere! except not quite, but at least you can run the same code you transpile, before bothering to transpile it! if you write bubble sort, try it with a carefully (or perhaps not so) selected list, and it fails to sort your example list, then you probably shouldnt transpile it and use in your class, or present in a final masters thesis. \hfill \\
+--- \\
 
-mention some kind of testing with quickcheck, e.g. from gourmet to ast and back to gourmet, to show consistency at least.
+THIS!!! IS where I mention parsec etc!!! :))) <3
+
+- Parsec, how I fixed dangling else?
+
+
+--- \\
+
+Note! In code: If say we have \texttt{KwFunction(m)(m)}, but m is not used. This will give us an error!! \\
+
+Edit! Det stemmer ikke. Problemet er at backslash m allerede er en kommando, og jeg prøver å redefinere den! Dette er noe en bruker bør være obs på.
+
+\section{Gourmet}
+
+We can use the parsec library to build a parser in relatively few lines of code. Applicative style makes the code straight forward to read and understand. We use the following functors a lot:
+
+\begin{itemize}
+    \item $<$\$$>$
+    \item $<$*$>$
+    \item *$>$
+    \item $<$*
+\end{itemize}
+
+They mean this and that ... . Remember the data type ForEach
+
+\begin{lstlisting}
+    ForEach String Expression [Statement]
+\end{lstlisting}
+
+We parse it like this
+
+\begin{lstlisting}
+    ForEach
+    <$\$$> (reservedOp "for" *> identifier) <* reservedOp ":="
+    <*> parseExpr <* reservedOp "{"
+    <*> many parseStmt <* reservedOp "}"    
+\end{lstlisting}
+
+We start with the data type \textbf{ForEach}. The first $<$\$$>$ says ``use the rest as an argument to the data type''. It is followed by
+
+\begin{lstlisting}
+    (reservedOp "for" *> identifier)
+\end{lstlisting}
+
+This means ``read the keyword \textbf{for}, followed by an identifier. Ignore the keyword, and append the identifier as an argument to the data type''. Thus the identifier fills in the ``String'' slot. Next we have
+
+\begin{lstlisting}
+    <* reservedOp ":="
+\end{lstlisting}
+
+which says ``read the keyword :=, but ignore it''. \\
+
+Etc.
