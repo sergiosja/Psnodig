@@ -140,7 +140,7 @@ updateNestedListVar (List list) (indexExpr : rest) value = do
             else throwError' $ Error $ "Index " ++ show index ++ " out of bounds."
         _ -> throwError' $ BadArgument $ "List index must evaluate to a number."
 
-updateNestedListVar _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 1"
+updateNestedListVar _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 1" -- fix this lool
 
 findAndUpdateScope :: String -> Value -> Psnodig ()
 findAndUpdateScope listName newList = do
@@ -245,7 +245,7 @@ updateField env fieldExpr valueExpr = do
                         Just list@(List _) -> do
                             list' <- updateRecursiveFieldList list indexExprs fieldExpr' valueExpr
                             updateListEntry env listName list'
-                        _ -> throwError' $ BadArgument "Sorry blud doesnt work 2"
+                        _ -> throwError' $ BadArgument "Sorry blud doesnt work 2" -- change these
                 _ -> throwError' $ BadArgument "Sorry blud doesnt work 3"
                         
         _ -> throwError' $ BadArgument "Sorry blud doesnt work 4"
@@ -272,10 +272,10 @@ updateSingleFieldList (List list) (indexExpr : rest) valueExpr = do
                 list' <- evalExpr listExpr
                 list'' <- updateSingleFieldList list' rest valueExpr
                 return $ List (replaceValueAtIndex list (fromInteger index) list'')
-            else throwError' $ BadArgument "List index outtta boundz!"
-        _ -> throwError' $ BadArgument "Not int!"
+            else throwError' $ BadArgument "List index outtta boundz!" -- change
+        _ -> throwError' $ BadArgument "Not int!" -- change
 
-updateSingleFieldList _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 5"
+updateSingleFieldList _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 5" -- change this
 
 
 updateRecursiveFieldList :: Value -> [Expression] -> Expression -> Expression -> Psnodig Value
@@ -288,8 +288,8 @@ updateRecursiveFieldList (List list) (indexExpr : []) fieldExpr valueExpr = do
                 StructVal fields <- evalExpr $ list !! (fromInteger index)
                 list' <- updateField fields fieldExpr valueExpr
                 return $ List (replaceValueAtIndex list (fromInteger index) list')
-            else throwError' $ BadArgument "List index outtta boundz!"
-        _ -> throwError' $ BadArgument "Sorry blud doesnt work 6"
+            else throwError' $ BadArgument "List index outtta boundz!" -- change
+        _ -> throwError' $ BadArgument "Sorry blud doesnt work 6" -- change this
 
 updateRecursiveFieldList (List list) (indexExpr : rest) fieldExpr valueExpr = do
     maybeIndex <- evalExpr indexExpr
@@ -301,10 +301,10 @@ updateRecursiveFieldList (List list) (indexExpr : rest) fieldExpr valueExpr = do
                 list' <- evalExpr listExpr
                 list'' <- updateRecursiveFieldList list' rest fieldExpr valueExpr
                 return $ List (replaceValueAtIndex list (fromInteger index) list'')
-            else throwError' $ BadArgument "List index outtta boundz!"
-        _ -> throwError' $ BadArgument "Not int!"
+            else throwError' $ BadArgument "List index outtta boundz!" --change
+        _ -> throwError' $ BadArgument "Not int!" --change
 
-updateRecursiveFieldList _ _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 7"
+updateRecursiveFieldList _ _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 7" --change
 
 
 updateListEntry :: [(String, Value)] -> String -> Value -> Psnodig Value
@@ -606,6 +606,45 @@ callFunction (FunctionCall "get" args) = do
                 _ -> throwError' $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ mapName ++ " is likely an invalid Hashmap."
         _ -> throwError' $ BadArgument "Function 'get' takes two arguments: get( key, map )."
 
+callFunction (FunctionCall "add" args) = do
+    when (length args < 2 || length args > 3)
+        $ throwError' $ WrongNumberOfArguments "Function 'add' takes either 2 arguments: add( value , set ) or 3 arguments: add( key, value, map )."
+    if length args == 2
+    then do
+        let VariableExp setName = args !! 1
+        maybeSet <- evalExpr (VariableExp setName)
+        case maybeSet of
+            HashSet hs -> do
+                let newSet = HashSet $ Set.insert (args !! 0) hs
+                findAndUpdateScope setName newSet
+                return $ Number 1
+            _ -> throwError' $ BadArgument "Function 'add'. Second argument is likely not a HashSet."
+    else do
+        let VariableExp mapName = args !! 2
+        maybeMap <- evalExpr (VariableExp mapName)
+        case maybeMap of
+            HashMap hm -> do
+                let newMap = HashMap $ Map.insert (args !! 0) (args !! 1) hm
+                findAndUpdateScope mapName newMap
+                return $ Number 1
+            _ -> throwError' $ BadArgument "Function 'add'. Third argument is likely not a HashMap."
+
+callFunction (FunctionCall "in" args) = do
+    when (length args /= 2)
+        $ throwError' $ WrongNumberOfArguments "Function 'in' takes 2 arguments: add( value , list/set/map )."
+    let target = args !! 0
+    maybeCollection <- evalExpr (args !! 1)
+    case maybeCollection of
+        List l ->
+            return $ Boolean $ elem target l
+        HashSet hs ->
+            return $ Boolean $ Set.member target hs
+        HashMap hm ->
+            return $ Boolean $ case Map.lookup target hm of
+                Just _ -> True
+                Nothing -> False
+        _ -> throwError' $ BadArgument "Function 'in'. Second argument must be of type List, HashSet, or HashMap."
+
 callFunction (FunctionCall "append" args) = do
     when (length args /= 2)
         $ throwError' $ WrongNumberOfArguments "Function 'append' takes 2 arguments: append( value , list )."
@@ -619,35 +658,19 @@ callFunction (FunctionCall "append" args) = do
                     let newList = List $ l ++ [(Constant val)]
                     findAndUpdateScope listName newList
                     return $ Number 1
-                -- ListIndex listName indexes -> do
-                --     val <- evalExpr $ head args
-                    -- vi har en List l, som er en liste med lister
-                    -- listName er faktiske lista som ligger i skopet.
-                    -- indexes er lista som skal appendes til
-
-                    -- altså: ta lista som ligger på indexes av listName,
-                    -- og legg til `val` der
-
-                    -- altså:
-                    -- legg denne nye lista inn på stedet der `listName indexes` lå før
-                    -- ny variabel som har disse oppdaterte listene
-                    -- kjør findAndUpdateScope listName newList
-
-
-                    -- findAndUpdateScope listName newList
-                    -- return $ Number 1
-
-                _ -> throwError' $ BadArgument "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
-        _ -> throwError' $ BadArgument $ "Function 'append' yields error. Either '" ++ (show $ head args) -- ++ "' is an invalid value, or '" ++ listName ++ "' is an invalid list."
-
-
-
--- callFunction (FunctionCall "add" args) = do -- sets and hashmaps
+                ListIndex listName indexes -> do
+                    val <- evalExpr $ head args
+                    let newList = List $ l ++ [(Constant val)]
+                    updateListVar listName indexes newList
+                    return $ Number 1
+                _ -> throwError' $ BadArgument "Function 'append' takes two arguments: append( value , list ). The first argument is likely an invalid value."
+        _ -> throwError' $ BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
 
 callFunction (FunctionCall "print" args) = do
     values <- mapM evalExpr args
     strings <- mapM (\v -> stringifyValue v False) values
-    modify (\s -> s { output = output s ++ strings })
+    let string = intercalate " " strings
+    modify (\s -> s { output = output s ++ [string] })
     return . Number . toInteger . length $ args
 
 callFunction (FunctionCall "length" args) = do

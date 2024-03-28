@@ -142,14 +142,19 @@ writeFunctionCall (FunctionCall funcname args) = do
             writeExp $ collectionVariableNotation (head args) lists
         "append" -> do
             tell "append "
-            writeExp $ args !! 1
-            tell " to "
             writeExp $ args !! 0
+            tell " to "
+            writeExp $ args !! 1
         "add" -> do
             tell "add "
-            writeExp $ args !! 1
-            tell " to "
             writeExp $ args !! 0
+            tell " to "
+            writeExp $ args !! 1
+        "in" -> do
+            writeExp $ args !! 0
+            tell " in "
+            writeExp $ args !! 1
+            tell "?"
         _ -> do
             tell $ "\\" ++ funcname ++ "{"
             case length args of
@@ -294,6 +299,14 @@ writeStaticLists :: LatexWriter ()
 writeStaticLists = do
     lists <- asks thrd'
     mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") lists
+
+-- Need a way to set some flags here, to see what is used instead of adding all these macros.
+-- A string like `0000000000`, where each bit symbolises a keyword.
+-- E.g. `0001010001` means we have to add SetKw for nil, false and return.
+
+-- Not sure how tricky this actually is with Haskell.
+-- Start with int 0. If break, add 1000. if continue, add 10. if false, add 1.
+-- In the end we end up with 1101. This could be a way.
 
 constantConfig :: LatexWriter ()
 constantConfig = do

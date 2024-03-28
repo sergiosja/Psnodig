@@ -59,7 +59,7 @@ transpile program filename = do
             let transpiled = execWriter $ runReaderT (writeLatex p) env
             let texfile = gourmet2tex filename
             writeFile texfile transpiled
-            callCommand $ "pdflatex " ++ texfile
+            callCommand $ "latexmk -pdf " ++ texfile
         (Left err) -> putStrLn $ show err
     where
         gourmet2tex :: String -> String
