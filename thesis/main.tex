@@ -1,6 +1,6 @@
 \documentclass[twoside, openright, a4paper,  UKenglish]{report}
 \usepackage[UKenglish]{uiomasterfp}
-\usepackage{amsmath, listings, graphicx, csquotes}
+\usepackage{amsmath, listings, graphicx, csquotes, amsfonts, commath}
 \usepackage[colorlinks=true, allcolors=black, breaklinks=true]{hyperref}
 \usepackage{listings}
 \lstset{
@@ -18,6 +18,8 @@
 
 % Pseudocode
 \usepackage{algorithm2e}
+\SetKwFunction{f}{f}
+
 \usepackage{tikz}
 
 % Avoid automatic indentation
@@ -32,7 +34,7 @@
 
 \begin{document}
 
-\title{Psnodig: The many faces of code}
+\title{Psnodig: Title WIP}
 \subtitle{A tool for converting source code to presentation targets}
 \author{Sergey Jakobsen}
 \uiomasterfp[program={Informatics: Programming and System Architecture}, binding, colour=blue] % vil egt ha purple for haskell da
@@ -44,14 +46,21 @@
 \tableofcontents
 \cleardoublepage
 
-% Temporary save the current command
+% List of figures
 \let\oldchapter\chapter
 \lstlistoflistings
 
-% Restore the chapter command
 \let\chapter\oldchapter 
+%\cleardoublepage
+
+% List of figures
+\let\oldchapter\chapter
+\listoffigures
+
+\let\chapter\oldchapter
 \cleardoublepage
 \pagenumbering{arabic}
+
 
 
 \input{chapters/1_introduction}
