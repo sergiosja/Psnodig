@@ -1,20 +1,36 @@
-\chapter{(Problem) Analysis}
-\begin{itemize}
-    \item What is the problem I am looking at?
-    \item Analysing papers
-    \item What is relevant to include?
-    \item Builds on the background chapter
-\end{itemize}
+\chapter{Analysis}
 
-One of our output targets is pseudocode. We are not attempting to create a standardisation or ground truth for pseudocode. Rather, we lean on the algorithm2e\footnote{https://www.ctan.org/pkg/algorithm2e} library, which is an aleady established environment for writing algorithms in LaTeX. One thing we \textit{can} ensure, is consistency, removing the burden of "should this be in italics or boldface or not" from the author. In addition, the author can write her algorithm in an executable programming language, and when sure that it yields the desired result, she can safely use Psnodig to receive a LaTeX file and a companion PDF of her work. \hfill \\
+In this chapter, we will be doing problem analysis. We will dive deeper into the problem we intend to fix, and why we think it is a problem in the first place. We will discuss various existing approaches at solving the problem, and why these are great efforts. We finish by discussing why believe that the existing approaches fall short of what we aim to achieve.
 
-The other target output of Psnodig is flowcharts. This is a representation very different to the original source code, and the main difficulty consists of keeping the level of abstraction. The main benefit of this representation, is to see the code from a completely different perspective. This can be refreshing when you have been trying to debug code for an extended period of time with no result [source?]. \hfill \\
+\section{Problem Definition}
 
-Currently, to our knowledge, the only freely available tool solely dedicated to converting source code to flowcharts is Code2Flow\footnote{https://app.code2flow.com/}. This is a DSL with support for most common programming concepts like statements, loops, conditionals, and more. We are aware of other tools which also convert code to diagrams, like Mermaid.js\footnote{https://mermaid.js.org/} and Diagrams\footnote{https://diagrams.mingrammer.com/}, but they are either very general purpose, or focus on different types of diagrams. \hfill \\
+Now is as good a time as any to more concretely outline the problem at hand. Simply put, we aim to portray computer programs at different abstraction levels, without losing the underlying ideas. This can be - and traditionally also has been - done ``manually'' by the program authors. For instance: writing a computer program, testing it, and later rewriting the source code to pseudocode. We believe this is something that comfortabely could, and should, be possible to automate. \hfill \\
 
-In this chapter, we will be doing problem analysis. We will dive deeper into the problem we intend to fix, and we will discuss what the current solutions lack. While the alternatives we present boast about successfull outcomes, there are some shortcomings when comparing them to what we wish to achieve, as well as comparing the respective target audiences. \hfill \\
+There are several use cases where displaying source code with an alternative representation could be useful. Mainly within education, where the goal is to teach students concepts in an agonstic way. However, it could also be used by researchers exchanging ideas, across preferred programming languages. \hfill \\
 
-\section{The problem at hand}
+Already in the 80's Clements et al. predicted that computers would be an integral part of the classroom~\cite{clements1984effects}. Slowly but steady also the art of computer programming has been introduced into school curriculums, at a younger and younger age. While teaching pointers and monads to 10-year-olds, there is a point of introducing them to computer programs integral to the digitalised world we spend our lives in. \hfill \\
+
+If the teacher is to transpile her code to flowcharts, it offers a visual approach to understanding programming concepts. Consequently, the whole classroom can focus more on the underlying logic than on the syntactic quirks of the teacher's preferred programming language. \hfill \\ % Aditionally, the flowcharts should be fairly easy to recreate in an imperative programming language
+
+This is also the case when teaching computer programs at a higher level, for instance in university. Students who already have some experience with programming and reading mathematical notation can still benefit from pseudocode. This also equals the playing field, and avoids putting students who struggle with a specific programming language at a disadvantage. \hfill \\
+
+Lastly, researchers might wish to exchange ideas despite using different programming languages. Just like every animal in the kingdom can be called upon in latin, every idea can be presented with pseudocode. \hfill \\
+
+\forsup{litt tynt?}
+
+In the context of our problem, and the remainder of this thesis, we view flowcharts as a form of pseudocode rather than an isolated concept. As such, we have to make a different distinction between flowcharts and traditional pseudocode which resembles source code. From now, we will refer to traditional pseudocode as \textbf{Text based pseudocode} (TBP) and flowcharts as \textbf{Image based pseudocode} (IBP).
+
+
+
+\section{Comparing source code with TBP and IBP}
+
+In this section we aim to show how the same computer program can be presented in three different levels of abstraction, and why TBP and IBP is preferred when strictly focusing on presentation. \\
+
+\forsup{vis AGTI-algoritmen}
+
+\forsup{vis et flowchart hvor man tydelig ser hvordan en algoritme går videre fra mange ifs med return (jeg syns dette kan være kronglete å se i vanlig kode, fordi alt står skrevet sekvensielt!)}
+
+\forsup{vis hvor konsis og kortfattet tbp er i forhold til java eller go. prøv begge, se hvilken av dem som blir styggest hahah}
 
 As such, we can comfortably regard the succinctness of figure 2.1 displaying TBP, to figure 2.2 displaying an implementation of said TBP in a popular programming language \cite{javaIsAPopularProgrammingLanguage}:
 
@@ -48,101 +64,29 @@ Therefore, by manually translating executable code into a non-executable form, w
 
 Ever since the concept of pseudocode was introduced, there have been attempts at creating tools to automate the process of translating code to pseudocode. The most noteworthy attempt to deliver pseudocode in text format was presented in a 2015 paper, a tool called Pseudogen. When it comes to translating code to flow charts, we decided to look at Code2Flow, which is widely used in practice today, even in PIT, the Norwegian police's IT service. \hfill \\
 
-\section{Translating code to natural language: Pseudogen}
 
-Pseudogen boasts about generating pseudocode from Python. What the examples in the 2015 paper, as well as a video on their website\footnote{https://ahclab.naist.jp/pseudogen/} show, is rather a line-for-line translation to English. This could be desired in cases where the business people on the team are particularly curious about what the product is really doing under the hood (and the boss cannot afford Cobol developers). Since Pseudogen will translate each line in a slave-like manner, we also translate all error handling. For example, the following two lines
 
-\begin{verbatim}
-    except ValueError as e:
-        print(e)
-\end{verbatim}
+\section{Related work}
 
-will translate to
+This section will cover selected related work, that has already solved parts of the problem, in their own right. We have separated the section into two further subsections, to analyse efforts related to TBP and IBP individually.
 
-\begin{verbatim}
-    # If ValueError, renamed to e, exception is caught.
-        # Call the function print with an argument e
-\end{verbatim}
+\subsection{Source code to TBP}
 
-One can speculate as to whether or not anyone gained much knowledge from that, though that is, luckily, not our task. We can also assume the business people would not be overly interested in each single piece of error handling anyway, but the absence of possibility for abstraction can make the translated transcript overwhelmingly verbose. \hfill \\
+Despite TBP being used in so many text books, online courses and published papers, the amount of source-code-to-pseudocode-editors currently available on the internet is anything but overwhelming. Additionally, there is no undisputed choice that is commonly used. There are, however, a couple of candidates who stick out if we look closely enough.
 
-Due to every line being translated, succinct and elegant list comprehension like
+\subsubsection{Naive approach}
 
-\begin{verbatim}
-    a = [f(n) for n in range(-10, 10)]
-\end{verbatim}
+The naive approach would be to do this manually. Perhaps the wording is too harsh, but in this context, \texttt{naive} corresponds to \texttt{manual}. By manually writing our own pseudocode, we are void of any restrictions, and can do it just the way we like. \\
 
-is translated into this long, tangled spaghetti of words
+The downside is the extra effort in writing both the original algorith, and later also spending time on writing the pseudocode. By doing it manually, we are also forced to maintain both versions.
 
-\begin{verbatim}
-    # Call the function f with an argument n for every n in
-      range of integers from range 10 negative integer 10,
-      substitute the result for a
-\end{verbatim}
+\subsubsection{Pseudogen}
 
-The target audience is people who prefer the English translation to the Python code. The two examples we just provided show that the target audience is unlikely to be someone who has any background with at least programming or mathematics, which is in turn the target audience for \textit{our} tool. \hfill \\
+The Psuedogen transpiler is currently designed to work with a subset of the Python programming language\footnote{https://www.python.org/}. The output target is purely natural language, precisely what you are reading now. As mentioned in Section 2.1.1, the tool is developed using statistical machine translation. This is a technique of translating from one language to another based on statistical models, and is generally used to translate between natural languages \cite{DBLP:conf/kbse/OdaFNHSTN15}. \hfill \\
 
-The choice of creating a tool like Psuedogen for a programming language like Python makes sense as a prototype, because Python is already so closely related to ``natural language''. Using syntax like $and$, $or$, colons etc. often makes Python code very easy to read. Thus, imagine a scenario where we declare a list of 10 integers, create a new list by filtering out the even ones, and print the result. In Python, we could do something like
+Despite being a programming language notoriously known for using plain English where many other programming languages use more technical notation ($and$ instead of $\&\&$, $or$ instead of $||$ etc.), Python still bears the mark of being a programming language. People unfamiliar with programming and/or mathematics still might struggle to understand some of the more technical aspects of its syntax. \hfill \\
 
-\begin{verbatim}
-    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-    even_numbers = [num for num in numbers if num % 2 == 0]
-
-    print("Even numbers:", even_numbers)
-\end{verbatim}
-
-This is already so close to what we would have if we were to write the commands in English, making the task of translation simple. Though it makes you wonder, what is even the point of translating that? As we saw earlier, particularly translation of list comprehensions turn out rather messy compared to their succinct Python counterparts. Another argument against its usefullness is that the listing above is a fully fledged program, ready to be interpreted! If a user is still unsure about what the program is doing, executing it will certainly silence their doubts. \hfill \\
-
-Now, let us analyse the same program written in the Go programming language:
-
-\begin{verbatim}
-    numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-
-    var evenNumbers []int
-
-    for _, num := range numbers {
-        if num % 2 == 0 {
-            evenNumbers = append(evenNumbers, num)
-        }
-    }
-
-    fmt.Println("Even numbers:", evenNumbers)
-\end{verbatim}
-
-This program is objectively much less decipherable than its Python counterpart. For starters, it is properties of being statically typed introduces patterns like $[]int\{\}$ and keywords like $var$. Since we do not have list comprehension, we are forced to iterate the ``numbers''-list with a for-loop. ``range mubers'' yields two values for each instance, the current index and the current value. On top of this, a syntactically correct Go program would require this being inside a function, a main function, and boilerplate code like declaring the package and imports like ``fmt''. A translation of the Go program would surely be more desired than a translation of the Python program. Sadly, Pseudogen does not offer this. \hfill \\
-
-It also makes you think, did William Shakespeare really write his entire collection of works in pseudocode?
-
-\section{Psnodig vs. Pseudogen}
-
-Let us take a more thorough look at Pseudogen, and how it differs to Psnodig. Their transpiler is currently designed to work with a subset of the Python programming language\footnote{https://www.python.org/}. The output target is pure natural language, precisely what you are reading now. \hfill \\
-
-Despite being a programming language notoriously known for using plain English where many other programming languages use more technical notation ($and$ instead of $\&\&$, $or$ instead of $||$ etc.), Python still bears the mark of being a programming language. People not familiar with programming and/or mathematics might struggle to understand what the \% (modulo) is and what it is for. \hfill \\
-
-That is where Pseudogen comes in. Not only is mathematical notation like
-
-\begin{displayquote}
-    if n \% 3 == 0:
-\end{displayquote}
-
-transpiled to
-
-\begin{displayquote}
-    if n is divisible by 3,
-\end{displayquote}
-
-but also programming language specific elements like
-
-\begin{displayquote}
-    raise TypeError('n is not an integer')
-\end{displayquote}
-
-is transpiled to
-
-\begin{displayquote}
-    throw a TypeError exception with a message ...
-\end{displayquote}
+Figure ?? shows an example taken from the initial 2015 paper where Pseudogen was first presented. It displays Python source code on the left, and pseudocode on the right. The program in question is an algorithm that solves the \textbf{FizzBuzz} problem, a common problem presented in e.g. interview settings. \hfill \\
 
 \begin{figure}[ht]
     \centering
@@ -151,41 +95,71 @@ is transpiled to
     \label{fig:odaetal}
 \end{figure}
 
-For an audience with little to no programming language expereince, this is likely fine. A boss that wishes to see what her engineers are spending their time on, a curious George wanting to get insight into TikToks algorithms, and anyone in between. \hfill \\
+What the examples in the 2015 paper, as well as a video on their website\footnote{https://ahclab.naist.jp/pseudogen/} show, is really a line-for-line translation to English. This could be desired in cases where the business people on the team are particularly curious about what the product is really doing under the hood (and the boss cannot afford Cobol developers). \\
 
-Psnodig, however, offers pseudocode for a different crowd: people, primarily the ones involved in academia, who already have some experience with writing and reading code. If you know that the \% symbol stands for modulo, and that it represents the action of returning the remainder of a division operation, it is no longer benefitial to constantly read the verbose description. When reading a novel in italian after successfully learning the language, you would likely prefer each page driving the story forward, rather than having an english word-for-word translation on every other page. \hfill \\
+However, since Pseudogen will translate each line in a slave-like manner, we also translate all error handling of a ``real'' program. Listing ?? shows some error handling in Python, and Listing ?? shows the result from transpiling it with Pseudogen. \\
 
-While Pseudogen drives the abstraction levels of Python down to natural language, Psnodig instead wishes to stay closer to the code, while still allowing for an extra layer of abstraction when the implementation is clumsy or too language-specific.
+\begin{lstlisting}[caption={Error handling in Python}, captionpos=b, frame=trbl]
+    except ValueError as e:
+        print(e)
+\end{lstlisting}
 
-\section{Translating code to flowcharts: Code2Flow}
+\begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b, frame=trbl]
+    # If ValueError, renamed to e, exception is caught.
+        # Call the function print with an argument e.
+\end{lstlisting}
 
-also say what is wrong about the flowcharts, show examples of code etc. maybe inconsistencies?
+The results tend to be overwhelmingly verbose, which also defeats much of the point with Python. Programs in the language tend to be elegant and succinct, and already closely resemble natural language. \hfill \\
 
-\section{Psnodig vs. Code2Flow}
+Another example is visible in Listing ?? and Listing ??, where list comprehension has been translated very literally. It is plausible to assume people with backgrounds in e.g. mathematics might favour the Python version to the transpiled one. \hfill \\
 
-Let us take a more thorough look at Code2Flow, and how it differs to Psnodig. Code2Flow lets the user create flowcharts with natural language, decorated with a C-like syntax.
+\begin{lstlisting}[caption={A list comprehension of applying f(n) to integers in the range -10 to 10, and placing the results in a list}, captionpos=b, frame=trbl]
+    a = [f(n) for n in range(-10, 10)]
+\end{lstlisting}
 
-It mainly consists of
+\begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b, frame=trbl]
+    # Call the function f with an argument n for every
+      n in range of integers from range 10 negative
+      integer 10, substitute the result for a
+\end{lstlisting}
 
-\begin{itemize}
-    \item start- and end expressions, drawn as red ovals
-    \item other expressions, drawn as blue rectangles
-    \item conditionals, loops and match statements, drawn as red red rhombuses
-    \item comments, drawn as orange rectangles
-\end{itemize}
+It is clear that the target audience for Pseudogen's output formats must be people with little to no experience with reading/writing code. It seems like an excellent tool for translating Python to English, and shows that something like this is indeed possible. However, Psnodig's intended target audience is broader, and thus we believe Pseudogen alone is not enough to satisfy our needs.
 
-Expressions are separated by semicolons. This is the default colour scheme, though there are also three others the user can pick.
+\subsubsection{PseudoEditor}
+
+\forsup{Har ikke fått denne til å funke enda! Gir ikke mening}
+
+
+\subsection{Source code to IBP}
+
+Even though there is research arguing for the good effects of flowcharts in computer science, there have been few documented efforts towards developing a tool that can effectively translate source code to flowcharts. However, there does exist some software that lets us write flowcharts through a DSL, and we will look at two of them.
+
+\subsubsection{Naive approach}
+
+Yet again, calling it a naive approach might not be entirely accurate, but manually translating our code to flowcharts does introduce some intricacies. For one, like with TBP, we have to maintain both versions, and if we change too much of our main idea, then the time spent on making the IBP version is - to a certain extent - wasted. \\
+
+Another flaw is that we have to spend time thinking about how the flowchart should look like, which parts could and should be abstracted, how they should be presented instead (or if they should be removed altogether) etc. Which colours should the frames have? How should the arrows look? Which font should be used? By using an automated tool, we do not have to worry about details unrelated to the actual program. \\
+
+The perk of doing it this way, however, is that we can do it entirely our way. We can choose which tools we want to use, and if we are already proficient, then this seems like a natural choice. If we also like spending time on details like colours, fonts, shapes etc., then at least the naive approach does not limit our creativity in any way. \\
+
+\forsup{Jeg føler egentlig at det er naturlig å starte med det positive, og avslutte med det negative?}
+
+\subsubsection{Code2Flow}
+
+Code2Flow is a tool that lets us create flowcharts with natural language, decorated with a C-inspired syntax. Their website states that we might get away with pasting C programs, but that this is purely incidental, indicating that they have indeed developed a DSL with their own syntax. \\
+
+Flowcharts created with Code2Flow have a few, consistent colours to differentiate parts of their corresponding programs. Start- and end expressions are displayed as red ovals, while all other expressions are displayed as blue rectangles. Conditionals, loops and match statements are displayed with red rhombuses, and comments are displayed with orange rectangles. \\
 
 \begin{figure}[ht]
     \centering
     \includegraphics[scale=0.2]{assets/code2flow_example.png}
-    \caption{Example of a program written with Code2Flow}
+    \caption{The resulting flowchart from transpiling the Code2Flow code in Listing ??}
     \label{fig:code2flow}
 \end{figure}
 
-The above diagram is the result of writing the following code in the online code2flow interpreter:
+Listing ?? shows a program written with Code2Flow, and Figure ?? shows the corresponding flowchart. As we can see, syntactically correct expressions are just any combination of UTF-8 characters. Thus, we have no way to test a Code2Flow program. In fact, Code2Flow will \textit{never} let us know about syntactic errors, and always try to construct whatever flowchart it can. \\
 
-\begin{lstlisting}
+\begin{lstlisting}[caption={A Code2Flow program}, captionpos=b, frame=trbl]
     First expression;
     Another expression;
     if (conditional) {
@@ -196,6 +170,34 @@ The above diagram is the result of writing the following code in the online code
     Last expression;
 \end{lstlisting}
 
-Using flowcharts to visualise a program is nothing new, however again we have a situation where the autor has to re-write their algorithm in yet \textit{another} language, and hope they did not drift too far from their original code. Naturally, these flowcharts cannot be tested with any input, and are meant to be presentation-only. \hfill \\
+If our C program inadvertently creates a ``correct'' flowchart, we can use a C compiler to test said program on the side. However, we must now maintain both versions, and changes to the C program are not guaranteed to successfully transpile to a flowchart. \\
 
-Psnodig, on the other hand, makes a point of transpiling syntax-error-free code, which the author can first test on whatever input they want. First then are they allowed to transpile their code, which does not require them to write anything again, unless they want to tweak any details.
+\subsubsection{Mermaid.js}
+
+Mermaid.js is a DSL for rendering diagrams (including flowcharts) from a Markdown-inspired syntax. Even though they make many different diagrams, we will focus on the flowcharts. \\
+
+Like Code2Flow, they also render flowcharts in real time. However, Mermaid.js will warn us about syntax errors, and only re-render syntactically correct programs. \\
+
+To write a Mermaid.js flowchart, the code has to start with \texttt{flowchart TD}. Nodes can come in many different shapes, and are denoted by the types of brackets they use. For instance, \texttt{Node[ ]} displays a rectangle, \texttt{Node(( ))} displays a circle, and \texttt{Node\{ \}} displays a rhombus. Edges also come in many shapes. \texttt{-->} displays an arrow, \texttt{---} displays a simple link, and \texttt{-.->} displays a dotted arrow. We can also have add text, by doing e.g. \texttt{Node[text]} or \texttt{-- text -->}. The full documentation can be found at~\url{https://mermaid.js.org/syntax/flowchart.html}. \\
+
+\begin{lstlisting}[caption={A mermaid.js program}, captionpos=b, frame=trbl]
+    flowchart TD
+        A([First expression])
+            --> B[Another expression]
+        B --> C{contidional}
+        C -- True --> D[Expression 1]
+        C -- False --> E[Expression 2]
+        D --> F([Last expression])
+        E --> F
+\end{lstlisting}
+
+Just like with Code2Flow, the text inside these nodes can be anything. Listing ?? shows a program written with Mermaid.js, and Figure ?? shows the corresponding flowchart. Contrary to Code2Flow, comments are ignored by the parser, and solely exist to ait the programmer. \\
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.5]{assets/mermaidjs.png}
+    \caption{The resulting flowchart from transpiling the Mermaid.js code in Listing ??}
+    \label{fig:code2flow}
+\end{figure}
+
+The biggest drawback of Mermaid.js, is that the syntax is very different from any programming language. This means pasting our source code will not yield any result, and we have to carefully translate our code every time. This means that it is fully our responsability to maintain the abstraction level we want. Like Code2Flow, Mermaid.js has no way of letting us test the code either.
