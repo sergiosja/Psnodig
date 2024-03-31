@@ -1,65 +1,169 @@
 \chapter{Implementation}
-\begin{itemize}
-    \item Which tools am I using? Why?
-    \item Concrete implementation of the Psnodig tool
-    \item Testing: How can I be certain that Psnodig works?
-\end{itemize}
 
-describe the monad?? \\
+This chapter will present concrete implementations of Psnodig and its parts. As previously mentioned, Psnodig is really just a syntax. The remaining contributions of this thesis are Haskell programs, written to work together with Psnodig. We will look at how each of these individual programs are created, as well as roughly explaining Monads, which are essential to all of our main programs. \hfill \\
 
-mention some kind of testing with quickcheck, e.g. from gourmet to ast and back to gourmet, to show consistency at least. \\
+\forsup{Rekkefølgen her stemmer ikke. Er det dumt?}
 
---- \\
+\section{Monads}
 
-THIS!!! IS where I mention parsec etc!!! :))) <3
+First introduced in a programming context by Philip Wadler back in the 90's, monads allow us to structure computations within programs~\cite{wadler_monads, leifharald_master}. They are a fundamental pattern that harmonise the needs of imperative and functional programming. They preserve the benefits of functional purity, whilst elevating the expressiveness of our code. \hfill \\
 
-- Parsec, how I fixed dangling else?
+Haskell is a purely functional programming language~\cite{haskell}. In this paradigm, functions' output values are solely determined by their input values. \textit{Side effects} are operations that occur outside a function's scope, somehow affecting or depending on an external state. Monads are a way of keeping the immutable and predictible nature of our functions, whilst simultaneously working with the ``outside world''. \hfill \\
 
+Monads play a vital role in all of our main implementations. For instance, the interpreter uses monads to modify a global state, and our TBP writer uses monads to read from an external environment. \hfill \\
 
---- \\
+We also utilise monads for more effective error handling, mainly in our interpreter. We use the \textbf{Maybe} monad, which returns either \texttt{Just value} or \texttt{Nothing}, and the \textbf{Either} monad, which returns either \texttt{Left value} or \texttt{Right value}. \hfill \\
 
-Note! In code: If say we have \texttt{KwFunction(m)(m)}, but m is not used. This will give us an error!! \\
+\texttt{Maybe} is used for lookups, for instance when trying to access the value of a variable. Thus, we either return the value, or \texttt{Nothing}, if it is not already bound. \texttt{Either} is used when we expect one of two values, though the left side is often associated with an error. For instance, running a Psnodig program will yield either an error, or the state of the finished program. \hfill \\
 
-Edit! Det stemmer ikke. Problemet er at backslash m allerede er en kommando, og jeg prøver å redefinere den! Dette er noe en bruker bør være obs på.
+The remaining implementations in this chapter will for the most part revolve around the monad we opted for.
+
+\section{Interpreter}
+
+\subsection{Monad}
+
+The interpreter is built around our monad of choice, \textbf{StateT ExecutionState (ExceptT RuntimeError IO)}. It arguably looks a bit heavy, so let us break it down. The main point of our monad is \texttt{StateT}, whose signature is \texttt{StateT s m a}.\footnote{More documentation can be found at~\url{https://hackage.haskell.org/package/transformers-0.6.1.1/docs/Control-Monad-Trans-State-Lazy.html\#g:2}} As you can see, it takes three arguments: some state \texttt{s}, an inner monad \texttt{m}, and lastly \texttt{a}, the type of the result of applying the monad.
+
+\subsubsection{ExecutionState}
+
+The state we apply is \texttt{ExecutionState}, fleshed out in Listing 5.1. It is a compound type with named fields, and closely resembles a struct in programming languages like Go and C. Applying \texttt{StateT} allows us to maintain and operate on this state throughout computations. \hfill \\
+
+\begin{lstlisting}[caption={The Psnodig interpreter's state}, captionpos=b, frame=trbl]
+    type StructDecls = Map.Map String [String]
+    type FuncEnv = Map.Map String Function
+    type Scope = [[(String, Value)]]
+    type ScopeStack = [Scope]
+
+    data ExecutionState = ExecutionState
+        { structDecls :: StructDecls
+        , funcEnv     :: FuncEnv
+        , scopeStack  :: ScopeStack
+        , output      :: [String]
+        }
+\end{lstlisting}
+
+It contains \texttt{structDecls}, which is a declaration of structs. This is a mapping from struct names to their corresponding fields. For instance, the value \texttt{StructDecl "Person" [Argument "name" "txt", Argument "age" "int"]} is saved as a mapping from \texttt{"Person"} to \texttt{["name", "age"]}. \hfill \\
+
+We also have \texttt{funcEnv}, which is a declaration of functions. It is a mapping from function names to the corresponding function values. If we call a function, we can look it up, bind the arguments to temporary values, and run the statements within the function body. The use of \texttt{Map} was primarily chosen due to its O(log n) lookups,~\footnote{The entire Map documentation can be found at \url{https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html}} which beats the O(n) lookups of its \texttt{List} counterpart.\footnote{The entire List documentation can be found at \url{https://hackage.haskell.org/package/base-4.19.1.0/docs/Data-List.html}} \hfill \\
+
+The third value in our state is the \texttt{scopeStack}. This is a triple nested list of \texttt{(String, Value)} pairs. A pair of this type is a binding, so writing \texttt{x := 23} will create the binding \texttt{("x", Number 23)}. The initial scope list is intended to be the base level scope of a function. \hfill \\
+
+\forsup{Når jeg tenker meg om er det ingen kjempegod grunn til å ikke bruke maps her og. Er det verdt å refaktorere? Ja, maps må resize, men vi aksesserer antakeligvis variabler oftere enn vi legger til nye, og O(log n) slår fortsatt O(n).}
+
+The nesting accounts for loops and if-statements. Upon entering e.g. a while-loop, we push a new scope to the stack, and all variables created within this loop will die when we exit the loop. The last nesting introduced by \texttt{ScopeStack} accounts for functions. Each function has their own scope, much like any other programming language. \hfill \\
+
+Lastly, our state takes care of \texttt{output}, which is a list of strings. This stores whatever we pass to the \texttt{print} function. If a program crashes, only the print-calls up until the crash will be presented in the terminal, which makes it a great tool for debugging. If a program runs uninterrupted, all print-calls will be presented in the terminal.
+
+\subsubsection{ExceptT}
+
+The inner monad that StateT operates over is \texttt{ExceptT RuntimeError IO}. This allows us to augment the \texttt{IO} monad with a value of type \texttt{RuntimeError}. The latter is several types of custom error messages, to locate the source of error easier. The entire list is shown in Listing 5.2. \hfill \\
+
+\begin{lstlisting}[caption={All error messages to be encountered in Psnodig}, captionpos=b, frame=trbl]
+    data RuntimeError =
+          VariableNotFound String
+        | FunctionNotFound String
+        | StructNotFound String
+        | ArithmeticError String
+        | BadArgument String
+        | WrongNumberOfArguments String
+        | NoReturnError String
+        | Error String
+        | RuntimeErrorWithOutput [String] RuntimeError
+        deriving (Show)
+\end{lstlisting}
+
+\forsup{Skal rydde opp i denne på toget til Roma, akkurat nå bruker jeg nesten bare 'BadArgument'.}
+
+What this really means is that we have a computation that does IO (prints to the terminal). If we encounter an error condition, we do not proceed with further computations, and instead return the error, which is also displayed in the terminal. This is also what allows us to print errors, by joining the current print calls to \texttt{RuntimeErrorWithOutput}, and followingly displaying them to the terminal before the error message.
+
+\subsection{Evaluation strategy}
+
+The Psnodig interpreter operates with a strict call-by-value evaluation strategy, just like the Pascal programming language.~\footnote{\url{https://www.freepascal.org/docs-html/ref/refsu68.html}} When we pass lists or structs as arguments to a function, it has the capability to modify indexes and fields. However, these changes remain local to the function's scope and do not affect the caller's original data structure.
+
+\subsection{Deviations from the Psnodig syntax}
+
+Even though Psnodig's syntax opens up for it, the interpreter does not currently support Break- and Continue statements. This would require a significant refactoring of our monad, and potentially a larger refactoring of the entire interpreter. \hfill \\
+
+\forsup{Bør jeg forklare hvordan standard library er implementert?}
 
 \section{Gourmet}
 
-We can use the parsec library to build a parser in relatively few lines of code. Applicative style makes the code straight forward to read and understand. We use the following functors a lot:
+There are two tools related to Gourmet: a parser and a writer. \forsup{Jeg nevner at vi har en Gourmet writer i Introduction, men ikke i Design. Bør den være med der og?}
 
-\begin{itemize}
-    \item $<$\$$>$
-    \item $<$*$>$
-    \item *$>$
-    \item $<$*
-\end{itemize}
+\subsection{Parser}
 
-They mean this and that ... . Remember the data type ForEach
+We used the Haskell library Parsec to write the parser for Gourmet. Parsec is an industrial-strength parser library, being simple, safe, and well documented.\footnote{The entire Parsec documentation can be found at \url{https://hackage.haskell.org/package/parsec}} It is monadic parser combinator library, which roughly means that it combines multiple smaller parsers using monadic abstraction. This allows us to write a parser very succinctly, describing each rule in more or less natural language. \hfill \\
 
-\begin{lstlisting}
-    ForEach String Expression [Statement]
+Parsec also lets us write our lexer and parser in one. The entire lexer is presented in Listing 5.3, which takes up just 20 lines. It could have been presented with even fewer lines, but we have focused on readability instead of showboating. The lexer mainly defines the form of identifiers, comments and reserved names. \hfill \\
+
+\begin{lstlisting}[caption={The Gourmet lexer}, captionpos=b, frame=trbl]
+    lexer :: Token.TokenParser ()
+    lexer = Token.makeTokenParser emptyDef {
+        Token.identStart = letter,
+        Token.identLetter = alphaNum <|> char '\'',
+        Token.reservedOpNames =
+            [ ":=", "+", "-", "*", "/", "<", ">", "=="
+            , "!=", "{", "}", "(", ")", ">=", "<="
+            , "[", "]", "&&", "||", "!", ",", ":", "#"
+            , "@", "%", "."
+            ],
+        Token.reservedNames =
+            [ "while", "if", "func", "true", "false"
+            , "return", "else", "for", "break", "set"
+            , "map", "not", "struct", "continue"
+            ],
+        Token.commentStart = "/*",
+        Token.commentEnd = "*/",
+        Token.commentLine = "//",
+        Token.nestedComments = False
+    }
 \end{lstlisting}
 
-We parse it like this
+Listing 5.4 shows the entry function, and how programs are parsed. We parse all struct declarations, function declarations, and potentially a function call, before the program returns the resulting AST in a Parser context. \texttt{Many} means 0 or more, and \texttt{optionMaybe} means 0 or 1. This also reveals that any text written after the function call is simply ignored. \hfill \\
 
-\begin{lstlisting}
-    ForEach
-    <$\$$> (reservedOp "for" *> identifier) <* reservedOp ":="
-    <*> parseExpr <* reservedOp "{"
-    <*> many parseStmt <* reservedOp "}"    
+\begin{lstlisting}[caption={Parsing Gourmet programs}, captionpos=b, frame=trbl]
+    parseGourmet :: Parser Program
+    parseGourmet = do
+        whiteSpace
+        structs <- many parseStructDecl
+        funcs <- many parseFunction
+        functioncall <- optionMaybe parseFunctionCall
+        return $\$$ Program structs funcs functioncall
 \end{lstlisting}
 
-We start with the data type \textbf{ForEach}. The first $<$\$$>$ says ``use the rest as an argument to the data type''. It is followed by
+We have opted for an applicative programming style when developing the parser, which means that we use applicative functors. The four central ones are \texttt{$<$\$$>$}, \texttt{$<$*$>$}, \texttt{*$>$}, and \texttt{$<$*}. An example where all are applied can be seen in Listing 5.5, where we parse function calls. Remember, the Psnodig FunctionCall data type is \texttt{FunctionCall String [Expression]}. \hfill \\
 
-\begin{lstlisting}
-    (reservedOp "for" *> identifier)
+\texttt{$<$\$$>$} allows us to put everything on the right as arguments to \texttt{FunctionCall}. \texttt{$<$*} means that we parse both the left side and the right side, but only keep the left side. \texttt{*$>$} means the opposite. \texttt{$<$*$>$} means that we keep both. \hfill \\
+
+\begin{lstlisting}[caption={Parsing Gourmet function calls}, captionpos=b, frame=trbl]
+    parseFunctionCall :: Parser FunctionCall
+    parseFunctionCall =
+        FunctionCall
+            <$\$$> identifier
+            <* reserved "("
+            <*> parseExpr `sepBy` comma
+            <* reserved ")"
 \end{lstlisting}
 
-This means ``read the keyword \textbf{for}, followed by an identifier. Ignore the keyword, and append the identifier as an argument to the data type''. Thus the identifier fills in the ``String'' slot. Next we have
+\subsection{Writer}
 
-\begin{lstlisting}
-    <* reservedOp ":="
+Creating a writer when you already have a parser is manageable. In fact, the writer is more or less just a reverse engineering of the parser. The only potential difference between a Gourmet program we write, and the corresponding Gourmet program Psnodig can give us, is the formatting. \hfill \\
+
+Since Psnodig does not take formatting into consideration, it has no way of knowing the combination of whitespace we used in our program. Therefore, we use the function in Listing 5.6 to add indentation. This is used when entering new scopes in loops and if-statements, to add readability to our programs. Thus, in a way Psnodig works like a linter: By transpiling our Gourmet programs, we receive semantically identical programs, but with the intended amount of whitespace. \hfill \\
+
+\begin{lstlisting}[caption={A function for adding indentation}, captionpos=b, frame=trbl]
+    addIndents :: Int -> String
+    addIndents n = replicate n '\t'
 \end{lstlisting}
 
-which says ``read the keyword :=, but ignore it''. \\
+The monad we opted for here is a simple \texttt{Writer String}. This allows computations to produce a String as the final result. We traverse the AST and use the \texttt{tell} function to write the corresponding Gourmet syntax. The final result is therefore just a combination of strings added together.
 
-Etc.
+\section{TBP Writer}
+
+The monad we opted for was similar to the one of the Gourmet writer. However, before we write our pseudocode, another program skims the AST and grabs some valuable information. This informations, like function names and whether or not there are return statements, is then stored in a tuple of sets. The first set contains function names, and the second set contains keywords. The TBP writer then uses this information to utilise Algorithm2e better. \hfill \\
+
+The monad is \texttt{ReaderT Environment (Writer String)}. The last part is already covered in the previous section. However, we are now also working with \texttt{ReaderT Environment}. \texttt{ReaderT} adds the ability to read from a fixed environment. In our case, \texttt{Environment} is the set tuple that contains all the information collected from the AST.
+
+\section{IBP Writer}
+
+\forsup{Sparer denne til den er mer ferdig.}

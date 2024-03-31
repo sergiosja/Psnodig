@@ -1,42 +1,50 @@
 \chapter{Design}
 
-In this chapter, we introduce our tool Psnodig, and relevant design decisions. We also describe the design behind the Gourmet programming language, and the programs generating TBP and IBP.
+In this chapter, we introduce Psnodig and relevant design decisions behind the tool. We also describe the design behind the Gourmet programming language, and the programs that generate TBP and IBP.
 
 \section{Proposed solution}
 
-To solve the problem we are dealing with, we introduce Psnodig. We believe that Psnodig offers something unique in the context of this problem. Psnodig is a transpiler, intended to convert executable source programs to presentation-only target programs. \hfill \\
+To solve the problem we are dealing with, we introduce Psnodig. We believe that Psnodig offers something unique in the context of this problem. Psnodig is a transpiler, intended to convert executable programs to equivalent presentation-only programs. \hfill \\
 
-The programs discussed in Chapter 3 all do a very good job in their own right. The effort invested by developers, researchers and others involved is clearly reflected in both functionality and performance in each application. \hfill \\
+The software discussed in Chapter 3 all do a very good job in their own right. The effort invested by developers, researchers and others involved is clearly reflected in both functionality and performance in each application. \hfill \\
 
-However, none of them are particularly modifiable. We believe that a tool that combines these measures would be of even greater benefit. This way, the user does not have to operate with multiple tools at the same time. The user should also be able to add their own preferred output targets.
+However, the results they generate are sealed, and we have no choice but to accept whatever we receive. We believe there is more value in a tool that also lets us modify the final result, in case the translation from source code to PDF too lossy. \hfill \\
 
-\forsup{``modifiable'' er ikke ordet jeg leter etter her. men kommer ikke på noe bedre akkurat nå..}
+Additionally, we also believe these programs lie in the same sphere. Thus, it would make sense to gather and apply them in the same tool, rather than having to switch between different ones. We also see value in users adding their own parsers and code generators. \hfill \\
 
-Additionally, these tools provide only the final result of conversion in the form of a PDF. We believe that the user would benefit from being able to modify the final result, in case the transition from the intermediate representation to the target is too lossy. \hfill \\
+Where the programs primarily specialise in code generations, the DSLs are not executable. We believe that this is something that could be of tremendous use, and have therefore incorporated an interpreter that works on the internal representation of Psnodig. To the best of our knowledge, a tool which combines all these methods does not currently exist. \hfill \\
 
-Where the programs primarily specialise in code generations, the DSLs are not executable. We believe that this is something that can be tremendously useful, and have therefore corporated an interpreter that works on the internal representation of Psnodig. To the best of our knowledge, a tool which combines all these methods does not currently exist. \hfill \\
-
-Lastly, code generators traditionally do much more than directly translating data types to the target language. Therefore, we will refer to these programs simply as \textbf{writers} in the context of Psnodig, for the remainder of the thesis. \hfill \\
-
-\forsup{Det er visstnok overraskende enkelt å skulle release Psnodig. Fikse noe cabal-greier og legge det ut på github, så skal man kunne kjøre `stack install`, og deretter skrive ting som `psnodig --tbp program.gt` istedenfor `stack run -- "--tbp" "program.gt"`!}
+Lastly, code generators traditionally do much more than directly translating data types to the target language. Therefore, we will refer to these programs simply as \textbf{writers} for the remainder of the thesis, in the context of Psnodig.
 
 \section{Psnodig}
 
 Psnodig is a collection of data types in Haskell, describing a computer program. As such, it does not provide a lot of functionality on its own. It is first when we add parsers and writers that it shows its usefulness. \hfill \\
 
-Since we are free to add parsers and writers at will, only our imagination (and programming skills) can limit what we use it to convert. However, it is first and foremost intended as a tool for converting executable source programs to a presentation-only target programs. \hfill \\
+Since we are free to add parsers and writers at will, only our imagination (and programming abilities) can limit what we use it to convert. However, it is first and foremost intended as a tool for converting executable source programs to a presentation-only target programs. \hfill \\
 
-To utilise Psnodig, source programs are parsed to an intermediate, internal representation. Later, this representation is used to convert the original program further into a new target program. This means that all source programs can be converted to the same target programs. \hfill \\
+Psnodig's transpilation flow is as follows: source programs are parsed to an intermediate, internal representation. Later, this representation is used to convert the original program further into a new target program. This means that a source program written in two different languages can produce the same target program, given that they have identical ASTs. \hfill \\
 
-Psnodig also comes with an interpreter, which works on the internal representation. This means that we can add parsers and run the code, without having to write an additionaly interpreter or compiler. \hfill \\
+Psnodig also comes with an interpreter, which works on the internal representation. This means that we can add parsers and run the code, without also having to write an interpreter or compiler. \hfill \\
 
-The main benefit is that we can write our code once in a source language, test it, and when we are satisfied, transpile it to TBP and/or IBP thorugh the command line, rather than having to re-write it manually or search for a tool that can do that job for us. \hfill \\
+The main benefit is that we can write our code once in a source language, test it with the interpreter, and when we are satisfied, transpile it to TBP and/or IBP thorugh the command line, rather than having to re-write it manually or search for a tool that can do that job for us. \hfill \\
+
+\forsup{Den neste delen stemmer ikke foreløpig, men er visstnok veldig enkel å få til.. Bare fikse noe cabal-greier og legge det ut på github :) Akkurat nå må man skrive f.eks. `stack run --ast program`, sikkert ikke krise om det ender slik og?}
+
+Currently, Psnodig offers four command line arguments. If we at some point wish to add more, we can add them to the project's \texttt{Main.hs} file. \hfill \\
+
+\texttt{psnodig program}, which will parse a program and run it through the interpreter. \hfill \\
+
+\texttt{psnodig --ast program}, which will print the program's AST to the terminal, given that it is syntactically correct. This can be a nice way to debug programs, and get a better understanding of how our parsers actually parse our programs. \hfill \\
+
+\texttt{psnodig --tbp program}, which will parse the program and produce a LaTeX file of TBP. We can also add another flag \texttt{--pdf} to get an accompanying PDF of said LaTeX file. \hfill \\
+
+\texttt{psnodig --ibp program}, which will parse the program and produce a LaTeX file of IBP. We can also add another flag \texttt{--pdf} to get an accompanying PDF of said LaTeX file.
 
 \subsection{Syntax}
 
-\forsup{blir egentlig syntax riktig ord å bruke her?}
+\forsup{Blir syntax riktig ord å bruke her?}
 
-The data types of Psnodig are presented in Listing ??. The entry point of a Psnodig program is \texttt{Program}, but since it consists of two lists and a \texttt{Maybe} data types, a minimal working example is actually an empty file. This flexibility allows our parsers and writers to utilise just as much, or as little, of the Psnodig syntax as we wish. \hfill \\
+The data types of Psnodig are presented in Listing 4.1. The entry point of a Psnodig program is \texttt{Program}, but since it consists of two lists and a \texttt{Maybe} data types, a minimal working example is actually an empty file. This flexibility allows our parsers and writers to utilise just as much, or as little, of the Psnodig syntax as we wish. \hfill \\
 
 Most of the syntax will resemble the syntax of common programming languages. However, there are two statements that have been introduced specifically for Psnodig's real use case: Hash- and Annotation statements. \hfill \\
 
@@ -114,6 +122,7 @@ Most of the syntax will resemble the syntax of common programming languages. How
           Nil
         | Boolean Bool
         | Number Integer
+        | Decimal Double
         | Text String
         | List [Expression]
         | HashSet (Set.Set Expression)
@@ -121,21 +130,21 @@ Most of the syntax will resemble the syntax of common programming languages. How
         | StructVal [(String, Value)]
 \end{lstlisting}
 
-Hash statements are statements intended to be parsed by the interpreter, but ignored by the writers. This lets us abstract away things that should be obvious to our audience, or perhaps things that have already been stated elsewhere, but still need to be stated for our programs to actually run. The name derives from how we can write single line comments in Python with a hash symbol. \hfill \\
+Hash statements are picked up by the parser and intended to be interpreted, but ignored by writers. This lets us abstract away things that we deem to be obvious to our audience. It could also be things that have already been stated implicitly elsewhere, but still need to be parsed for our programs to run. The name derives from how we can write single line comments in Python with a hash symbol. \hfill \\
 
-A common use case of this is when a lower case \texttt{n} is often used to denote amounts in TBP. By using a hash statement, we avoid including superflous function calls to length-functions when it is obvious what \texttt{n} symbolises. \hfill \\
+A common use case of this is how a lower case \texttt{n} is often used to denote amounts in TBP. By using a hash statement, we avoid including superflous length-function calls in cases where it is obvious what \texttt{n} symbolises. However, this will never be obvious to the interpreter, and thus we still have to include it in our source programs somehow. \hfill \\
 
-Annotation statements are statements that allow us to add an extra layer of abstraction to our output targets. The first string is what is presented, in natural language, whilst the list of statements is read by the interpreter. \hfill \\
+Annotation statements are statements that allow us to add an extra layer of abstraction to our output targets. The first string is what is transpiled, without any conversion, whilst the list of statements is reserved for the interpreter. \hfill \\
 
-A common use case of this is when we wish to swap two elements in a list. In many programming languages, when swapping two elements \texttt{a} and \texttt{b}, we have to assign \texttt{a} to a temporary variable, before assigning \texttt{a} to \texttt{b}, and finally assigning \texttt{b} to that temporary variable. These three implementation-specific lines could easily be abstracted with \texttt{swap a and b}. \hfill \\
+A common use case of this is when we wish to swap two elements in a list. In many programming languages, when swapping two elements \texttt{a} and \texttt{b}, we have to assign \texttt{a} to a temporary variable, then assign \texttt{a} to \texttt{b}, before we can finally assign \texttt{b} to that temporary variable. These three implementation-specific lines could easily be abstracted with \texttt{swap a and b}. \hfill \\
 
-These two statements are particularly useful when a piece of code is not crucial to the program's logic, or when the code is very implementation specific. The statement list can also be empty, which lets us explain things solely with natural language when deemed necessary. \hfill \\
+These two statements are particularly useful when a piece of code is not crucial to the program's logic, or when the code is very implementation specific. The statement list can also be empty, which lets us explain things solely with natural language when deemed necessary. A value of \texttt{AnnotationStatement "" []} will be ignored by the IBP writer, but is a way of allowing the TBP writer to add whitespace.
 
 \subsection{Interpreter}
 
-A big selling point of Psnodig, is that in addition to being a transpiler, it also comes with an interpreter, which works on the AST. For a program to be transpiled, it only needs to be syntactically correct. However, this does not guarantee that the program works as the user intended. Thus, Psnodig provides users with the ability to test their programs before they are transpiled and later presented, which in many cases can be crucial. \hfill \\
+A big selling point of Psnodig is that in addition to being a transpiler, it also comes with an interpreter which works on the AST. For a program to be transpiled, it only needs to be syntactically correct. However, this does not guarantee that the program works as the we intend. Thus, Psnodig provides users with the ability to test their programs before they are transpiled and later presented, which in many cases can be crucial. \hfill \\
 
-Take the program presented in Listing ?? as an example. The function \\ \texttt{printEvenNumbers} takes two arguments: a list of numbers and the list's length. Then we iterate through this range, and proceed to print every number in the list that is even. However, we check for evenness by doing \texttt{if i \% 2 == 0}, but really we intend to do \texttt{if numbers[i] \% 2 == 0}. The difference is subtle, but by running the program we quickly realise the error when the screen displays 47, 79 and 93 rather than 46 and 22. \hfill \\
+Take the program presented in Listing 4.2 as an example. The function \\ \texttt{printEvenNumbers} takes two arguments: a list of numbers and the list's length. Then we iterate through this range, and proceed to print every number in the list that is even. However, we check for evenness by doing \texttt{if i \% 2 == 0}, when really we intend to do \texttt{if numbers[i] \% 2 == 0}. The difference is subtle, but by running the program we quickly realise the error when the screen displays 47, 79 and 93 rather than 46 and 22. \hfill \\
 
 \begin{lstlisting}[caption={A syntactically correct program with a subtle logical error}, captionpos=b, frame=tlrb]{Name}
 func printEvenNumbers(numbers list, length int) {
@@ -151,13 +160,15 @@ func printEvenNumbers(numbers list, length int) {
 printEvenNumbers([47, 46, 79, 22, 93], 5)
 \end{lstlisting}
 
-As seen from the grammar in Listing 4.1, programs consist of three parts: A list of struct declarations (which can be empty), a list of function declarations (which can also be empty), and lastly, an optional function call. The function call works as the entry point of the interpreter.
+\forsup{Dette programmer er skrevet i Gourmet. Bør jeg heller skrive det i Go/Java, siden vi ikke har introdusert noe Gourmetsyntaks enda?}
+
+As seen from the grammar in Listing 4.1, programs consist of three parts: A list of struct declarations (which can be empty), a list of function declarations (which can also be empty), and lastly, an optional function call. The function call works as the interpreter's entry point.
 
 \subsubsection{Scope}
 
-Psnodig works with both a global and a local scope. All structs and functions are global, and can be accessed from any other functions. For instance, functions can be mutually recursive. Variables, on the other hand, are always local, and a variable declared in function \texttt{f} cannot be accessed in function \texttt{g}, unless passed as an argument. \\
+Psnodig works with both a global and a local scope. All structs and functions are global, and can be accessed from any other functions. For instance, functions can be mutually recursive. Variables, on the other hand, are strictly local, and a variable declared in function \texttt{f} cannot be accessed in function \texttt{g}, unless passed as an argument. \hfill \\
 
-Listing ?? shows two syntactically valid programs, but Listing ?? (a) will yield an error, whilst Listing ?? (b) will eventually return 1. \\
+Listing 4.3 and Listing 4.4 both show syntactically correct programs. However, running the former will yield an error, because \texttt{n} is not available in the scope of \texttt{g}. The latter program will yield the value of {n}, as we pass the variable as an argument to \texttt{g}, which returns the variable straight back. \hfill \\
 
 \begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption=Code with error, captionpos=b, frame=tlrb]{Name}
@@ -188,57 +199,63 @@ f()
 \end{lstlisting}
 \end{minipage}
 
-Psnodig supports nested scopes as indicated in the \texttt{For String Expression Expression [Statement]} structure within the \texttt{Statement} data type. The two \texttt{Expression} data types define a range, whilst the \texttt{String} data type serves as an identifier that binds to all numbers within this specified range (inclusive). \\
+Psnodig supports nested scopes as indicated in the \texttt{For String Expression Expression [Statement]} structure within the \texttt{Statement} data type. The two \texttt{Expression} data types define a range, whilst the \texttt{String} data type serves as an identifier that binds to all numbers within this specified range (inclusive). \hfill \\
 
-The statements are then executed repeatedly for each value in this range, with the identifier reflecting the current value on each iteration. Once the loop terminates, the identifier is automatically unbound, and no longer exists in the context.
+The statements are then executed repeatedly for each value in this range, with the identifier reflecting the current value on each iteration. Once the loop terminates, the identifier is automatically unbound, and no longer exists in any context.
 
-\subsubsection{Peculiarities}
+\subsubsection{Iterating expressions}
 
-As seen, Psnodig prohibits two types of for loops. \texttt{For String Expression [Statement]} is discused in the previous subsection, but we also have \texttt{ForEach String Expression [Statement]}.
+The trained eye will notice that Psnodig prohibits two types of for loops. \texttt{For String Expression [Statement]} is discused in the previous subsection, but we also allow \texttt{ForEach String Expression [Statement]}. This is intended to mimic standard \texttt{For each} loops found in languages like Java and Python. \hfill \\
 
-\forsup{Jeg vil egentlig endre dette til å være ForEach String Iterable [Statement], også begrenser vi Iterable til Variabler og ListIndex}
+One could say that it is too expressive, technically allowing iteration of non-iterables like arithmetic expressions. However, since all iterables also fall under the \texttt{Expression} type, we allow it syntactically, and instead deal with it on the interpreter side.
 
 \subsubsection{Standard Library}
 
-The interpreter provides several built-in functions, which are also found in most programming languages. They are also reflected in the TBP writer. If the function call fails, due to e.g. wrong number of arguments or arguments having the wrong type, the program will stop and the user will receive an explanatory error message. \\
+The interpreter provides several built-in functions, which are also found in many programming languages. They are also reflected in the TBP writer. If a function call fails, due to e.g. wrong number of arguments or arguments having the wrong type, the program will stop and the user will receive an explanatory error message. \hfill \\
 
-\textbf{print($x_{1}$, $..$, $x_{n}$)}, which takes $n \in \mathbb{N}$ arguments. The arguments must be of type \texttt{Expression}, and each argument is printed on their own line in terminal. The function returns the number of arguments passed to it. \\
+\forsup{Bør jeg ha med eksempelkall? f.eks. noe ala print("master ", "thesis") -> displays "master thesis" to the terminal and returns 2.}
 
-\textbf{length($x$)}, which takes one argument. The argument must be either a \texttt{Text}, \texttt{List}, \texttt{HashSet}, or \texttt{HashMap}. The function returns the length of its argument: Number of characters in text, number of elements in list and hashset, and number of mappings in hashmap. \\
+\forsup{Print og append skiller seg fra de andre, da jeg har med en pil som indikerer hva som returneres. Vet ikke om det ser litt rotete/forvirrende ut?}
 
-\textbf{ceil($n$)} and \textbf{floor($n$)}, which take one number $n \in \mathbb{Q}$ as argument. The return value will be rounded up or down to the nearest $n' \in \mathbb{N}$, respectively. \\
+\textbf{print($x_{1}$, $..$, $x_{n}$) $\xrightarrow{}$ n}, which takes $n \in \mathbb{N}$ arguments. The arguments must be of type \texttt{Expression}. Each argument is converted to a string and concatenated, separated by a space, before they are printed to the terminal. The function returns the number of arguments passed to it. \hfill \\
 
-\textbf{min($n_{1}$, $..$, $n_{n}$)} and \textbf{max($n_{1}$, $..$, $n_{n}$)}, which takes $m \in \mathbb{N}$ arguments. The arguments themselves must also be an $n \in \mathbb{N}$. The return value will be the smallest value and the largest value, respectively, amongst the arguments. \\
+\textbf{length($x$)}, which takes one argument. The argument must be of type \texttt{Text}, \texttt{List}, \texttt{HashSet}, or \texttt{HashMap}. The function returns the length of its argument: Number of characters in the text, number of elements in the list or hashset, or number of mappings in the hashmap. \hfill \\
 
-\textbf{append($x$, $xs$)}, which takes two arguments. The first argument must be an \texttt{Expression}, and the second argument must be a \texttt{List}. The function will append \texttt{x} to the end of \texttt{xs}, thus modifying the list. The function returns the number 1 if everything went well. \\
+\textbf{ceil($x$)} and \textbf{floor($x$)}, which take one number $x \in \mathbb{Q}$ as argument. The return value will be rounded up or down to the nearest $x' \in \mathbb{N}$, respectively. \hfill \\
 
-\textbf{add($x$, $hs$)} and \textbf{add($k$, $v$, $hm$)}, which is an overloaded function, taking either two or three arguments. In the first case, it adds an \texttt{Expression} $x$ to a \texttt{HashSet} $hs$. In the other case it maps an \texttt{Expression} $k$ to an \texttt{Expression} $v$ in a \texttt{HashSet} $hm$. The function always returns 1 upon success. \\
+\textbf{min($x_{1}$, $..$, $x_{n}$)} and \textbf{max($x_{1}$, $..$, $x_{n}$)}, which takes $n \in \mathbb{N}$ arguments. The arguments themselves must be an $x \in \mathbb{Q}$. The return value will be the smallest value or the largest value, respectively, amongst the arguments. \hfill \\
 
-\textbf{get($k$, $hm$)}, which takes two arguments, an \texttt{Expression} $k$ and a \texttt{HashMap} $hm$. If $k$ is a key in $hm$, the function will return the value that $k$ maps to in $hm$. \\
+\textbf{append($x$, $xs$) $\xrightarrow{}$ 1}, which takes two arguments. The first argument must be an \texttt{Expression}, and the second argument must be a \texttt{List}. The function will append \texttt{x} to the end of \texttt{xs}, thus modifying the list locally. The function returns the number 1 if everything went well. \hfill \\
+
+\textbf{add($x$, $hs$)} and \textbf{add($k$, $v$, $hm$)}, which is an overloaded function, taking either two or three arguments. In the first case, it adds an \texttt{Expression} $x$ to a \texttt{HashSet} $hs$. In the other case it maps an \texttt{Expression} $k$ to an \texttt{Expression} $v$ in a \texttt{HashMap} $hm$. The function returns 1 in both cases upon success. \hfill \\
+
+\textbf{get($k$, $hm$)}, which takes two arguments, an \texttt{Expression} $k$ and a \texttt{HashMap} $hm$. If $k$ is a key in $hm$, the function will return the value that $k$ maps to in $hm$. \hfill \\
 
 \textbf{in($x$, $xs$)}, which takes two arguments, an \texttt{Expression} $x$ and either a \texttt{List}, \texttt{HashSet}, or \texttt{HashMap}. The function will check if $x$ exists in $xs$, and return $True$ or $False$ accordingly.
 
 \subsection{Testing}
 
-Psnodig is not accompanied by any testing framework, but we have done some testing with QuickCheck \hfill \\
+Psnodig is not accompanied by any testing framework, but we have done some testing with QuickCheck. \hfill \\
 
-\forsup{Har ingen tester akkurat nå. Prøvde å teste 'AST -> Gourmet -> AST' tidligere, men la det på is. Kan det være en fin ting å teste?}
+\forsup{Bør dette heller flyttes til et annet sted?}
 
-\forsup{en annen ting som kan være interessant å teste: programmer som transpiler til latex, uten å krasje. opplever noen ganger at jeg har glemt en edge case eller noe, eller til og med glemt å importere et bibliotek. vet ikke helt hvordan denne testen skulle sett ut, men det gir jo grunnlag for å si at det er ``trygt'' å bruke psnodig, og at det er ``komplett'' i konteksten av seg selv}
+\forsup{Har ingen tester i skrivende stund. Forslag til tester: \\1. 'AST -> Gourmet -> AST' \\2. Teste biblioteksfunksjoner}
+
+\forsup{En annen ting som kan være interessant å teste: Transpile programmer til LaTeX uten å krasje. Opplever neon ganger at det er edge caser jeg har glemt som gjør at vi får feil. Vet ikke helt hvordan dette skulle blitt testet, men det gir vel noe grunnlag for å si at det er ``trygt'' å bruke Psnodig? At det er ``komplett'' på et vis (alle gyldige programmer kan bli transpilet)}
 
 \section{Gourmet}
 
-To make sure Psnodig works at all, we depend on having at least one input target and one output target. When it comes to input language, we have two plausible alternatives: Use an existing programming language, or design a new one. We decided to opt for the latter. \hfill \\
+To make sure Psnodig works at all, we depend on having at least one input target and one output target. When it comes to input language, we have two plausible alternatives: Use an existing programming language, or design a new one. We opted for the latter. \hfill \\
 
 In the context of Psnodig, we just need to build a parser that can translate programs in the source language to the intermediate representation. There are several reasons as to why designing a new language for the purpose of proof of concept is a good choice. \hfill \\
 
-For one, it demonstrates the general effort to add an entirely new input target for Psnodig. This can motivate others to add their own. Because the  \hfill \\
+For one, it demonstrates the general effort to add an entirely new input target for Psnodig. This can motivate others to add their own. \hfill \\
 
-Another reason is that selecting a single programming language to encompass all needs is not feasible. For instance, the largest university in southern Norway uses Python for its introductory programming course\footnote{Course page for \textit{Introduction to object-oriented programming} at the University of Oslo:~\url{www.uio.no/studier/emner/matnat/ifi/IN1000/}}, whilst the largest university in northern Norway prefers C\footnote{Curriculum for \textit{Introduction to programming and the computer's mode of operation} at the University of Tromsø:~\url{www.bibsys-c.alma.exlibrisgroup.com/leganto/readinglist/lists/10569365600002205?institute=47BIBSYS_UBTO&auth=SAML}}. The largest university in Greece opts for Java~\footnote{Course page for \textit{Introduction to Computer Science} at the University of Athens:~\url{www.dept.aueb.gr/en/dmst/content/introduction-computer-science}}, and Harvard's renowned CS50 course introduces students to both JavaScript and SQL\footnote{Course page for \textit{Introduction to Computer Science} at the University of Harvard:~\url{www.pll.harvard.edu/course/cs50-introduction-computer-science}}. \hfill \\
+Another reason is that selecting a single programming language to encompass all needs is not feasible. For instance, the largest university in southern Norway uses Python for its introductory programming course,~\footnote{Course page for \textit{Introduction to object-oriented programming} at the University of Oslo:~\url{www.uio.no/studier/emner/matnat/ifi/IN1000/}} whilst the largest university in northern Norway prefers C.~\footnote{Curriculum for \textit{Introduction to programming and the computer's mode of operation} at the University of Tromsø:~\url{www.bibsys-c.alma.exlibrisgroup.com/leganto/readinglist/lists/10569365600002205?institute=47BIBSYS_UBTO&auth=SAML}} The largest university in Greece opts for Java,~\footnote{Course page for \textit{Introduction to Computer Science} at the University of Athens:~\url{www.dept.aueb.gr/en/dmst/content/introduction-computer-science}} and Harvard's renowned CS50 course introduces students to both JavaScript and SQL.~\footnote{Course page for \textit{Introduction to Computer Science} at the University of Harvard:~\url{www.pll.harvard.edu/course/cs50-introduction-computer-science}} \hfill \\
 
 \forsup{Lars kommenterte en gang at en fotnote burde ligge på utsiden høyresiden av punktum. Gjelder det også over her? er det bedre med feks ``tekst her og tekst der.1 2'' istedenfor ``tekst her 1 og tekst der 2.''? hvis det ga mening}
 
-What the languages of introductory courses to computer science do have in common, is that they tend to be within the imperative paradigm of computer programming. As such, we did not want to stray too far away from that, and have allowed ourselves to mainly be inspired by the Go programming language. The language started out as a pure subset of Go, hence its name: A gourmet portion of Go.
+What the languages of introductory courses to computer science do have in common, is that they tend to be within the imperative paradigm of computer programming. We did not want to stray too far away from that, and Gourmet's syntax is mainly inspired by imperative programming languages like Go and Python. In fact, Gourmet started out as a pure subset of the former, hence its name: A gourmet portion of Go.
 
 \subsection{Lexical Aspects}
 
@@ -246,21 +263,23 @@ What the languages of introductory courses to computer science do have in common
 
 An identifier in Gourmet is used to reference either a struct, function or variable. Identifiers are also restricted to begin with a letter, followed by an arbitrary number of letters, numbers, and single quotes. \textbf{variable}, \textbf{var1able’} and \textbf{g0urmetVar1able''’'} are all valid Gourmet identifiers, whilst \textbf{1variable} and \textbf{'variable} are both not. Additionally, an identifier can not shadow keywords. \hfill \\
 
-In total, there are 40 keywords in Gourmet, with 14 of them sharing structures with identifiers. They are \textbf{while}, \textbf{if}, \textbf{func}, \textbf{true}, \textbf{false}, \textbf{return}, \textbf{else}, \textbf{for}, \textbf{break}, \textbf{continue}, \textbf{struct}, \textbf{not}, \textbf{map} and \textbf{set}. These keywords are also reserved, which means that we cannot define an identifier \textbf{while} or \textbf{func}. The remaining keywords will be presented in Section ?? \hfill \\
+In total, there are 14 keywords in Gourmet. They are \textbf{while}, \textbf{if}, \textbf{func}, \textbf{true}, \textbf{false}, \textbf{return}, \textbf{else}, \textbf{for}, \textbf{break}, \textbf{continue}, \textbf{struct}, \textbf{not}, \textbf{map} and \textbf{set}. These keywords are also reserved, which means that we cannot define an identifier \textbf{while} or \textbf{func}. The complete overview of reserved names is presented in Listing 5.3 \hfill \\
 
-We can define functions which clashes with library functions in Psnodig, but when trying to run that program, we receive an error message when our program tries to call those functions. This will happen even if we overload our functions with a different number of arguments, thus in reality removing the ambiguity. That means that we cannot run our own \textbf{print} function. However, we can always define a function e.g. \textbf{print’} or \textbf{print1}. \hfill \\
+We are not allowed to define functions that shadow library functions in Psnodig, and functions cannot be defined multiple times. This effectively means that we cannot overload functions with a different number of arguments, technically removing the ambiguity. In other words, we cannot define and use a custom function called \textbf{print}. \hfill \\
+
+However, we can always define a function e.g. \textbf{print’} or \textbf{print1}. Also, this is only relevant for interpreting programs, as creating functions does not break any syntax rules.
 
 \subsubsection{Comments}
 
-As there are no data types for comments in Psnodig, they must be handled entirely by Gourmet. The language supports both single- and multi-line comments, both identical to the ones found in most C-like languages like C itself, Java, Go and more. \hfill \\
+As there are no data types for comments in Psnodig, they must be handled entirely by Gourmet parser. The language supports both single- and multi-line comments, identical to the ones found in most C-like languages like C itself, Go, Java, and more. \hfill \\
 
-Single-line comments begin with a double forward slash \textbf{//}, and extends to the end of that line. Multi-line comments start with a forward slash and a star \textbf{/*}, and end with a star and a forward slash \textbf{*/}. Multi-line comments cannot be nested, which means that the first \textbf{*/} after a \textbf{/*} will end that comment, no matter how many \textbf{\*} preceeds it. \hfill \\
+Single-line comments begin with a double forward slash \textbf{//}, and extend to the end of that line. Multi-line comments start with a forward slash and a star \textbf{/*}, and end with a star and a forward slash \textbf{*/}. Multi-line comments cannot be nested, which means that the first \textbf{*/} after a \textbf{/*} will end that comment, no matter how many \textbf{/*} preceeds it. \hfill \\
 
 \subsubsection{Whitespace}
 
 Whitespace can be defined as spaces, newlines and tabs. Gourmet does not differentiate between either of them, and we can use them in our programs exactly how we wish. \hfill \\
 
-Listing 4.1, Listing 4.2 and Listing 4.3 show a semantically identical program. We define a function \textbf{f} which again defines \textbf{a} to be a list with two elements, before returning it. Lastly, the fuction is called. All three programs will be successfully parsed, and have the same internal representation in Psnodig. \hfill \\
+Listing 4.5, Listing 4.6 and Listing 4.7 show three identical programs, besides the use of whitespace. We define a function \textbf{f} which again defines \textbf{a} to be a list with two elements, before returning \textbf{a}. Lastly, the fuction is called. All three programs will be parsed successfully, and have the same internal representation in Psnodig. \hfill \\
 
 \begin{lstlisting}[caption={f with a standard amount of whitespace}, captionpos=b, frame=tlrb]
     func f() {
@@ -287,19 +306,19 @@ Listing 4.1, Listing 4.2 and Listing 4.3 show a semantically identical program. 
     funcf(){a:=[1,2]returna}f()
 \end{lstlisting}
 
-\forsup{har tatt mye inspirasjon herfra: \url{https://github.uio.no/compilerconstruction-inf5110/compila/blob/master/doc/languagespec/compila.pdf} uten å kildeføre noe. her er jeg veldig usikker på hva jeg skal gjøre! har jeg kopiert for mye? KAN jeg i det hele tatt kildeføre noe slikt?}
+\forsup{Jeg har tatt mye inspirasjon herfra: \url{https://github.uio.no/compilerconstruction-inf5110/compila/blob/master/doc/languagespec/compila.pdf} uten å kildeføre noe. her er jeg veldig usikker på hva jeg skal gjøre! Har jeg kopiert for mye? Finnes det en ryddig måte å kildeføre noe slikt?}
 
 \subsection{Types}
 
 Gourmet is dynamically typed, which means that we do not have to specify the type of variables and return type of functions. In fact, Gourmet does not even \textit{allow} it. When defining structs and function arguments, however, we have to provide type hints on the form \textbf{name \textit{type}}. \hfill \\
 
-The reason behind this choice is solely to improve code readability. When defining a variable, the value will always be present on the right hand side. When working with function arguments, however, we can never be entirely sure what a user decides to pass. With type hints, their ``intended use'' instantly becomes clear. \hfill \\
+The reason behind this choice is solely to improve code readability. When defining a variable, the value will be clearly present on the right hand side. When working with function arguments, however, we can never be entirely sure what the caller may pass. With type hints, at least we have a grasp of the arguments' \textit{intended} use. \hfill \\
 
-There are, however, four base types that all values will have: \textbf{Boolean}, \textbf{Number} and \textbf{Text}, and \textbf{nil}. A boolean is either true or false, a number is an arbitrarily large number, and a text is an arbitrarily combination of letters within a pair of double quotes. Nil indicates the absence of a value, and is mostly assigned as a placeholder. \hfill \\
+There are, however, five base types that any value will have: \textbf{Boolean}, \textbf{Number}, \textbf{Decimal}, \textbf{Text}, and \textbf{Nil}. A boolean value is either true or false, a number value is an  $n \in \mathbb{N}$, a decimal value is a $q \in \mathbb{Q}$, and a text value is an arbitrary combination of letters within a pair of double quotes. Nil indicates the absence of a value, and is usually serves as a placeholder. \hfill \\
 
-Essentially, types associate data values into classes and provide rules for how these classes should interact[kilde]. Sometimes - to solve specific problems - the base types Gourmet offers might not suffice. Therefore, we can create our own types through structs. Structs in Gourmet work exactly the same way they do in languages like C and Go, containing instance variables, but no methods or constructors, like in languages like Python and Java. \hfill \\
+Essentially, types associate data values into classes and provide rules for how these classes should interact~\cite{pierce2002types, LYAH}. Sometimes, the base types Gourmet offers might not suffice. Therefore, we can create our own types through structs. Structs in Gourmet work exactly the same way they do in languages like C and Go, containing instance variables, but no methods or constructors, contrary to languages like Python and Java. \hfill \\
 
-Listing 4.4 shows how we can create a struct for modelling a tree data structure, and Listing 4.5 shows how they can be initialised. \hfill \\
+Listing 4.8 shows how we can create a struct for modelling a tree data structure, and Listing 4.9 shows how they can be initialised. \hfill \\
 
 \begin{lstlisting}[caption={A Gourmet struct Tree, with instance variables value, left and right}, captionpos=b, frame=tlrb]
     struct Tree {
@@ -322,19 +341,19 @@ Listing 4.4 shows how we can create a struct for modelling a tree data structure
 
 \subsubsection{Grammar}
 
-Gourmet's EBNF grammar is presented in Figure ??. EBNF (short for Extended Backus-Naur form) is a notation for expressing a programming language's grammar. It is an extension of BNF (short for Backus-Naur form) that was developed in the 1960s to describe the syntax of the ALGOL programming language [kilde]. We could have used the original BNF notation, but EBNF allows us to present it more succinctly. \hfill \\
+Gourmet's EBNF grammar is presented in Figure 4.1. EBNF (short for Extended Backus-Naur form) is a notation for expressing a programming language's grammar. It is an extension of BNF (short for Backus-Naur form) that was developed in the 1960s to describe the syntax of the ALGOL programming language~\cite{feynman2016ebnf}. We could have used the original BNF notation, but EBNF allows us to present it more succinctly. \hfill \\
 
 In this variant of EBNF, we use the following meta symbols:
 
 \begin{lstlisting}
-    -> { } [ ] " ( ) |
+    -> { } [ ] " |
 \end{lstlisting}
 
 Arrows indicate the application of a rule. Curly brackets indicate repetition of 0 or more times (much like the reflexive arrow in Figure 2.1). Square brackets indicate binary presentness. Vertical bars indicate option. Anything wrapped in double quotes is a keyword. \hfill \\
 
-Non-terminals are written in upper case. There are also four terms written in upper case, that do not have production rules: \textbf{NAME}, \textbf{TEXT}, \textbf{NUMBER}, \textbf{STRING\_LITERAL}. NAME is an identifier, already described in Section 4.3.1.1. TEXT is any combination of UFT-8 symbols. It is only present once, and is intended for ``hiding'' code under an abstracting layer of natural language. NUMBER is any combination of whole numbers. STRING\_LITERAL is similar to TEXT, but additionally it is wrapped in double quotes. \hfill \\
+Non-terminals are written in upper case. There are also five terms written in upper case, that do not have production rules: \textbf{NAME}, \textbf{TEXT}, \textbf{NUMBER}, \textbf{DECIMAL}, \textbf{STRING\_LITERAL}. NAME is an identifier, already described in Section 4.3.1.1. TEXT is any combination of UFT-8 symbols. It is only present once, and is intended for ``hiding'' code under an abstracting layer of natural language. NUMBER is any $n \in \mathbb{N}$. DECIMAL is any $q \in \mathbb{Q}$. STRING\_LITERAL is similar to TEXT, but additionally it is wrapped in double quotes. \hfill \\
 
-\forsup{Bør jeg forklare dette mer? F.eks. dette med terminals og non-terminals osv.}
+\forsup{Bør jeg forklare dette mer? F.eks. dette med terminals og non-terminals osv, production rules etc.}
 
 \begin{figure}
     \begin{subfigure}[ht]{1\linewidth}
@@ -405,9 +424,10 @@ STRUCT           -> NAME "(" EXPLIST ")"
 STRUCTFIELD      -> EXPRESSION "." EXPRESSION
 
 VALUE            -> "nil" | "true" | "false" | NUMBER
-                    | STRING_LITERAL | "[" EXPLIST "]"
+                    | DECIMAL | STRING_LITERAL
                     | "map" "{" [ PAIR { "," PAIR } ] "}"
                     | "set" "{" EXPLIST "}"
+                    | "[" EXPLIST "]"
 
 PAIR             -> EXPRESSION ":" EXPRESSION
 
@@ -426,7 +446,7 @@ EXPLIST          -> [ EXPRESSION { "," EXPRESSION } ]
 The precedence of Gourmet operators is ranked in the following order, from highest to lowest:
 
 \begin{enumerate}
-    \item $*$ and $/$ and $\%$
+    \item $*$, $/$ and $\%$
     \item $+$ and $-$
     \item $<$, $<=$, $>$ and $>=$
     \item $==$ and $!=$
@@ -435,7 +455,7 @@ The precedence of Gourmet operators is ranked in the following order, from highe
     \item not
 \end{enumerate}
 
-This means that if we wish to calculate the sum of the tree values from Listing 4.5, we cannot write \texttt{tree.value + tree'.value + tree''.value}, because the parser will parse \texttt{(p.(value + p').(value + p'')).value}. Therefore, we have to include parentheses explicitly: \texttt{(tree.value) + (tree'.value) + (tree''.value)}. \hfill \\
+This means that if we wish to calculate the sum of the tree values from Listing 4.9, we cannot write \texttt{tree.value + tree'.value + tree''.value}, because the parser will parse \texttt{(p.(value + p').(value + p'')).value}. Therefore, we have to include parentheses explicitly: \texttt{(tree.value) + (tree'.value) + (tree''.value)}. \hfill \\
 
 All binary operations are left-associative.
 
@@ -445,47 +465,63 @@ Our TBP writer takes an internal representation of Psnodig and produces a LaTeX 
 
 \forsup{Akkurat nå håndterer vi ikke Input, Output og Caption. Hvordan dette gjøres er nok ikke så farlig. Må bestemme om dette skal bakes inn i Psnodig, eller om vi f.eks. skal hente det fra kommandolinjen idet noen kjører ``stack run -- tbp program.gt''}
 
-Structs and the initial function call are not converted to pseudocode. For one, we believe that function calls are rarely cruical to the algorithm itself, and structs will always be implementation specific. \hfill \\
-
-\forsup{jeg sverger jeg hadde en til grunn}
+Structs and the initial function call are not converted to pseudocode. For one, we believe that function calls are rarely cruical to the algorithm itself, and structs will always be implementation specific. The second reason is that there does not seem to be an obvious way of transpiling them in a way that makes sense.
 
 \subsection{Algorithm2e}
 
-\forsup{Bør jeg skrive en eller annen intro om pakken?}
+\forsup{Bør jeg skrive en liten intro om pakken, f.eks. historie og sånt?}
 
-Algorithm2e allows us to define our own keywords with the \texttt{\textbackslash SetKw\{\}\{\}} command. These are macros, where if we define \texttt{\textbackslash SetKw\{KwBreak\}\{break\}}, we can write \texttt{\textbackslash KwBreak}, and \texttt{break} will be printed. \hfill \\
+Algorithm2e allows us to define our own keywords with the \texttt{\textbackslash SetKw\{\}\{\}} command. These are macros, so if we define \texttt{\textbackslash SetKw\{KwBreak\}\{break\}}, we can write \texttt{\textbackslash KwBreak}, and \texttt{break} will be printed in a bold font. \hfill \\
 
-There are also more specific macros, like \texttt{\textbackslash SetKwProg\{proc\}\{Procedure\}\{is\}\{end\}}. This is used to initialise programs, and denotes a special syntax for the program. Listing ?? (a) shows an example program, and Listing ?? (b) shows the subsequent compiled result. For our TBP writer, we decide to ignore the last two parameters, because we do not believe they add enough value to the final result. \hfill \\
+There are also more specific macros, like \texttt{\textbackslash SetKwProg\{proc\}\{Procedure\}\{is\}\\\{end\}}. This is used to initialise programs, and denotes a special syntax for the program. Listing 4.10 shows an example program, and Figure 4.2 shows the subsequent compiled result. For our TBP writer, we decide to ignore the last two parameters of \texttt{SetKwProg}, because we do not believe they add enough value to the final result. \hfill \\
 
-\forsup{fiks eksempel til den over.}
+\begin{lstlisting}[caption={Example program with Algorithm2e to show macros in action}, captionpos=b, frame=trbl]
+    ...
+    \SetKwProg{proc}{Procedure}{}{}
+    \SetKwFunction{ExampleProgram}{ExampleProgram}
+    ...
+    \begin{document}    
+    \begin{algorithm}[H]
+      \KwIn{Nothing}
+      \KwOut{The number 1}
+      \proc{$\$$\ExampleProgram()$\$$}{
+        \Return 1
+      }
+      \caption{Example program}
+    \end{algorithm}
+    \end{document}
+\end{lstlisting}
 
-Another special macro is \texttt{\textbackslash SetKwFunction\{f\}\{f\}}. This allows us to write e.g. \texttt{\textbackslash f\{arg1, arg2, arg3\}}, which looks like displays \f{arg1, arg2, arg3}. \hfill \\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.6]{assets/exampleProgramAlgorithm2e.png}
+    \caption{The result of compiling Listing 4.10}
+    \label{fig:algorithm2e_mini_example}
+\end{figure}
+
+Another special macro is \texttt{\textbackslash SetKwFunction\{f\}\{f\}}. This allows us to write e.g. \texttt{\textbackslash f\{arg1, arg2, arg3\}}, which displays \f{arg1, arg2, arg3} in the compiled version. \hfill \\
 
 Since we are still in a LaTeX environment, and backslashes are used for macros in standard LaTeX too, we have to be careful. We are not allowed to rename internal macros. For instance, \texttt{\textbackslash m} is already a macro in LaTeX, thus attempting to compile a file with \texttt{\textbackslash SetKwFunction\{m\}\{m\}} will lead to multiple errors and ruin the final output.
 
 \subsection{Compatibility with Psnodig}
 
-As previously mentioned in Section ??, all Psnodig library functions taken into consideration by our TBP writer. The function call \texttt{length(list)} is transpiled with the cardinality symbols to $\abs{list}$. The function call \texttt{append(x, xs)} is transpiled with natural language, to \texttt{append x to xs}, to avoid ambiguity. \\
+As previously mentioned in Section 4.2.2.3, all Psnodig library functions taken into consideration by our TBP writer. The function call \texttt{length(list)} is transpiled with the cardinality symbols to \hspace{.01cm} $\abs{list}$. The function call \texttt{append(x, xs)} is transpiled with natural language to \texttt{append x to xs}, to avoid ambiguity. \hfill \\
 
-Mathematical expressions are also taken into consideration. For instance, the Expression \texttt{BinaryExp Division (Constant (Number 2)) (Constant (Number 1))} will show $\frac{2}{1}$, rather than \texttt{2/1}. Similarly, an expression with multiplication will be displayed as \texttt{n $\cdot$ n} rather than \texttt{n * n}. \\
+Mathematical expressions are also taken into account. For instance, the an expression of value \texttt{BinaryExp Division (Constant (Number 2)) (Constant (Number 1))} will show $\frac{2}{1}$, rather than something like \texttt{2/1}. Similarly, an expression with multiplication will be displayed as \texttt{m $\cdot$ n} rather than \texttt{m * n}. To work with mathematical symbols in LaTeX we use the packages \textbf{amsmath} and \textbf{commath}. \hfill \\
 
-To work with mathematical symbols in LaTeX we use the packages \textbf{amsmath} and \textbf{commath}. \\
-
-We also declare some macros to match the syntax of Psnodig. For instance, all programs come with \texttt{\textbackslash SetKw\{Return\}\{Return\}} and \texttt{\textbackslash SetKw\{False\}\{false\}}. Code like \texttt{return 5} or \texttt{v := false} will be presented with the keywords in boldface. \\
-
-\forsup{Before a program is transpiled to TBP, another program is ran to see which keywords are used, and only these are imported in the resulting LaTeX file. So, unless the program actually contains a \texttt{Return} expression, the macro will not be included. This makes the program less bloated, and easier to navigate if the user wishes to modify something themselves.}
+We also declare some macros to match the syntax of Psnodig. Before our programs are transpiled to TBP, we scan it for keywords, which are then imported in the LaTeX file. If our program contains code like \texttt{v := false}, the LaTeX file will include \texttt{\textbackslash SetKw\{False\}\{false\}}, and we will apply \texttt{\textbackslash KwFalse} rather than just ``false''.
 
 \subsection{Output}
 
-Transpiling a program to TBP yields two files: a corresponding LaTeX file, and a PDF version of said LaTeX file. \\
+If we run \texttt{psnodig --tbp program} in our command line, and the program is syntactically correct, we receive a corresponding LaTeX file. If we add a flag \texttt{--pdf}, we also get a PDF of the compiled LaTeX file. \hfill \\
 
-Because the LaTeX file is built from Psnodig's internal representation, and not directly from the source program, formatting is not taken into account. This means that a program like
+Because the LaTeX file is built from Psnodig's internal representation, and not directly from the source program, formatting is not taken into account. This means that a program like \hfill \\
 
-\texttt{ func f()\{v:=5 returnv\}f() } \\
+\texttt{ func f()\{v:=5 returnv\} } \hfill \\
 
-will not be transpiled to \\
+will not be transpiled to \hfill \\
 
-\texttt{ \textbackslash proc\{\$\textbackslash f()\$\}\{\$\textbackslash texttt\{v\}\textbackslash gets5\$\textbackslash ; \textbackslash Return\$v\$\textbackslash;\} } \\
+\texttt{ \textbackslash proc\{\$\textbackslash f()\$\}\{\$\textbackslash texttt\{v\}\textbackslash gets5\$\textbackslash ; \textbackslash Return\$v\$\textbackslash;\} } \hfill \\
 
 but instead
 
@@ -496,62 +532,57 @@ but instead
     }
 \end{verbatim}
 
-even though they would produce the same PDF. The LaTeX files also include \texttt{ \textbackslash SetKwProg\{proc\}\{Procedure\}\{\}\{\} } and \texttt{ \textbackslash SetKwFunction\{f\}\{f\} }. We include the \texttt{linesnumbered}- and \texttt{ruled} parameters from algorithm2e, purely for aesthetic reasons. Listing ?? (a) shows the program we just mentioned with these parameters, whilst Listing ?? (b) shows the same program without the parameters. \\
+even though the compiled versions produce the same PDF. The LaTeX files will also include \texttt{\textbackslash SetKwProg\{proc\}\{Procedure\}\{\}\{\}} and \texttt{\textbackslash SetKwFunction\{f\}\{f\}}. We include the \texttt{linesnumbered}- and \texttt{ruled} parameters with algorithm2e, purely for aesthetic reasons. Figure 4.3 (a) shows the program we just mentioned \textit{with} these parameters, whilst Figure 4.3 (b) shows the same program \textit{without} them. \hfill \\
 
 \begin{figure}[ht]
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
   \includegraphics[width=.9\linewidth]{assets/return5pretty.png}
-  \caption{f with extra parameters}
-  \label{fig:sub1}
+  \caption{f with linesnumbered and ruled}
+  \label{fig:algoUgly}
 \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
   \centering
   \includegraphics[width=.9\linewidth]{assets/return5ugly.png}
-  \caption{f without extra parameters}
-  \label{fig:sub2}
+  \caption{f without plain Algorithm2e}
+  \label{fig:algoPretty}
 \end{subfigure}
-\caption{TBP of an algorithm f, with and without extra visual parameters}
-\label{fig:test}
+\caption{TBP of an algorithm f, with and without including linesnumbered and ruled from the Algorithm2e package}
+\label{fig:algoWithAndWithoutParams}
 \end{figure}
-
-\forsup{If, for some reason, we do not want a PDF to accompany our LaTeX file, we can put an extra flag when calling the program. The flag is ``--nopdf'', and the whole command would be ``psnodig --tbp --nopdf program.gt''.}
-
-\forsup{Burde jeg skrive noe om flagg og sånt i Design av Psnodig?}
-
 
 \section{IBP Writer}
 
-Our IBP writer works much like the TBP writer: An internal representation of Psnodig is transpiled to a LaTeX file. The flowcharts are created with the TikZ package. \\
+Our IBP writer works much like the TBP writer: An internal representation of Psnodig is transpiled to a LaTeX file. The flowcharts are created with the TikZ package. \hfill \\
 
-Just like the TBP writer, our IBP writer only transpiles the topmost function, ignoring structs and the initial function call. Our reasoning is the same as earlier. To transpile a program to IBP, we run \texttt{psnodig --ibp <program>} in the command line.
+Just like the TBP writer, our IBP writer only transpiles the topmost function, ignoring structs and the initial function call. Our reasoning is the same as earlier.
 
 \subsection{TikZ}
 
-TikZ is a massive package. We actually used TikZ to create the FSA example in Section 2.1.2. \\
+TikZ is an enormous package, which can be used for just about anything related to drawing in LaTeX. In fact, we actually used TikZ to create the FSA example in Figure 2.1. \hfill \\
 
-\forsup{Bør jeg skrive en eller annen intro om pakken?}
+\forsup{Bør jeg skrive en intro om denne pakken også?}
 
-Our flowcharts mainly consist of three macros: \texttt{\textbackslash tikzstyle}, \texttt{\textbackslash node}, and \texttt{\textbackslash edge}. \texttt{tikzstyle} lets us choose what our nodes look like, \texttt{ndode} lets us draw the nodes we want, and \texttt{edge} lets us add an edge between nodes. \\
+Our flowcharts mainly consist of three macros: \texttt{\textbackslash tikzstyle}, \texttt{\textbackslash node}, and \texttt{\textbackslash edge}. \texttt{tikzstyle} lets us choose what our nodes look like, \texttt{ndode} lets us draw the nodes, and \texttt{edge} lets us add edges between nodes. \hfill \\
 
-Each node in our flowcharts represents a statement, except the top one, which is the function name. The visual design is simple: the top node and all nodes of return statements are dark rectangles with rounded edges. Decision nodes, where the program diverges, are yellow diamonds. These are while-, for- and if-statements. The remaining statements are purple rectangles. The edges are thin arrows. \\
+Each node in our flowcharts represents a statement, except the top one, which is the function name. The visual design is simple: the top node and all nodes of return statements are dark rectangles with rounded edges. Decision nodes, where the program diverges, are yellow rhombuses. This includes while-, for- and if-statements. The remaining statements are purple rectangles. Edges are presented as thin arrows. \hfill \\
 
-Tikzstyles are written on the form
+Tikzstyles are written more or less on the form
 
 \begin{verbatim}
     \tikzstyle {style name} =
-        [ shape
-        , minimum width = x cm
-        , minimum height = y cm
+        [ <shape>
+        , minimum width = <x> cm
+        , minimum height = <y> cm
         , text <position>
-        , draw = colour
-        , text = colour'
-        , fill = colour''
+        , draw = <colour>
+        , text = <colour'>
+        , fill = <colour''>
         ]
 \end{verbatim}
 
-The style name will be referenced later by nodes. The shape can be a rectangle, circle or coordinate, but we can import more libraries to get shapes like e.g. diamonds. The three colours refer to the node's border-, text- and background colours, respectively. We have also opted to center all text. \\
+The style name will be referenced later by nodes. The standard shapes are rectangle, circle or coordinate, however we can import more libraries to get shapes like e.g. diamonds. The three colours refer to the node's border-, text- and background colours, respectively. We have also opted to center all text. \hfill \\
 
 Nodes are written on the form
 
@@ -561,7 +592,7 @@ Nodes are written on the form
           {text displayed on node}
 \end{verbatim}
 
-All nodes should have a unique name, so that they can be referenced correctly later. The square brackets denote metadata. For instance, how the node should look like (by referencing a tikzstyle), or the nodes positioning relative to other nodes. The curly brackets is the text displayed within the node area. \\
+All nodes should have a unique name, so that they can be referenced correctly later. The square brackets denote metadata, like what the node should look like (by referencing a tikzstyle), or the node's positioning relative to other nodes. The curly brackets is the text displayed within the node body. \hfill \\
 
 Edges are written on the form
 
@@ -571,17 +602,17 @@ Edges are written on the form
 
 The biggest issue with the TikZ package, is that we first have to write all of our nodes before adding edges between them. \forsup{This means that we must save all statements in a graph before printing them.}
 
-When working with large control flow statements, we have to deal with multiple else-branches. Rather than following each other vertically, they are placed horizontally. \forsup{We calculate a reasonable distance, and place the nodes evenly}. An issue is that, nodes with a lot of text might interfere with each other. \\
+When working with large control flow statements, we have to deal with multiple else-branches. Rather than following each other vertically, they are placed horizontally. \forsup{We calculate an even distance, and place the nodes adjacent to each other with this distance}. An issue is that nodes with a lot of text might interfere with each other. \hfill \\
 
 \forsup{Eksempler?}
 
-Additionally, having multiple straight edges from the same source might interfere with each of the edge labels. Thus, we might also have to change the way we draw edges, for instance like this
+Additionally, having multiple straight edges from the same source might interfere with edge labels. Thus, we might also have to change the way we draw edges. An option is to change \texttt{--} to \texttt{|-} like
 
 \begin{lstlisting}
     \draw [edge] (node) |- (node');
 \end{lstlisting}
 
-This will curve the edge between \texttt{node} and \texttt{node'}, making the flowchart clearer. This is, however, a difficult task to carry out since we never know how programs turn out. Therefore it seems natural to opt for the easiest choice available and instead, unfortunately, force the authors of tweaking the resulting LaTeX on their own. \\
+This will curve the edge between \texttt{node} and \texttt{node'}, making the flowchart clearer. However, this is a difficult task to carry out since we never know how programs turn out beforehand. Therefore it seems natural to opt for the easiest choice available and instead, unfortunately, force the authors to tweak the resulting LaTeX on their own if they are dissatisfied.
 
 \subsection{Compatibility with Psnodig}
 
@@ -589,7 +620,9 @@ This will curve the edge between \texttt{node} and \texttt{node'}, making the fl
 
 \subsection{Output}
 
-Just like TBP, transpiling a program to IBP yields both a LaTeX file and a PDF. Listing ?? shows the resulting LaTeX if we run \texttt{psnodig --ibp program} on the program from Section 4.4.3. It also shows how we position nodes vertically. \hfill \\
+Working with IBP in the command line works precisely like it does with TBP. We run \texttt{psnodig --ibp program} to transpile the program and receive a corresponding LaTeX file, given that the program is syntactically correct. If we also wish for the compiled result, we add a \texttt{--pdf} flag. \hfill \\
+
+Listing 4.11 shows the (most important parts of the) LaTeX file we receive by transpiling the program from Section 4.4.3. We see how every node has a unique ID, reference a tikzstyle, and how they are explicitly placed beneath each other. \hfill \\
 
 \begin{lstlisting}[caption={The LaTeX from transpiling a program to IBP}, captionpos=b, frame=trbl]
     \node (0) [startstop] {f()};
