@@ -1,0 +1,67 @@
+func Partition(A list, low int, high int) {
+    @{p := ChoosePivot(A, low, high)}{
+        p := (low+high)/2
+    }
+    @{swap A[p] with A[high]}{
+        tmp := A[p]
+        A[p] := A[high]
+        A[high] := tmp
+    }
+
+    pivot := A[high]
+    left := low
+    right := high - 1
+
+    while left <= right {
+        while (left <= right) && (A[left] <= pivot) {
+            left := left + 1
+        }
+
+        while (right >= left) && (A[right] >= pivot) {
+            right := right - 1
+        }
+
+        if left < right {
+            @{swap A[left] and A[right]}{
+                tmp := A[left]
+                A[left] := A[right]
+                A[right] := tmp
+            }
+        }
+    }
+
+    @{swap A[left] and A[high]}{
+        tmp := A[left]
+        A[left] := A[high]
+        A[high] := tmp
+    }
+    return A
+}
+
+func QuickSort(A list, low int, high int) {
+    if low >= high {
+        return A
+    }
+    A := Partition(A, low, high)
+    p := low
+    @{find pivot index} {
+        for i := low, high {
+            if A[i] == A[p] {
+                p := i
+            }
+        }
+    }
+    A := QuickSort(A, low, p-1)
+    A := QuickSort(A, p+1, high)
+    return A
+}
+
+func f() {
+    a := [64, 34, 25, 12, 22, 11, 90]
+    print(a)
+    a := QuickSort(a, 0, 6)
+    print(a)
+    return 1
+}
+
+f()

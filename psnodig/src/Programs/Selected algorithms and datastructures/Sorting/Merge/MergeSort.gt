@@ -1,0 +1,64 @@
+func Merge(A1 list, A2 list, A list) {
+    i := 0
+    j := 0
+
+    while (i < length(A1)) && (j < length(A2)) {
+        if A1[i] < A2[j] {
+            A[i + j] := A1[i]
+            i := i + 1
+        } else {
+            A[i + j] := A2[j]
+            j := j + 1
+        }
+    }
+
+    while i < length(A1) {
+        A[i + j] := A1[i]
+        i := i + 1
+    }
+
+    while j < length(A2) {
+        A[i + j] := A2[j]
+        j := j + 1
+    }
+
+    return A
+}
+
+func SplitArray(A list, from int, to int) {
+    k := []
+    for i := from, to {
+        append(A[i], k)
+    }
+    return k
+}
+
+func MergeSort(A list) {
+    # n := length(A)
+    if n <= 1 {
+        return A
+    }
+
+    i := floor(n/2)
+    @{A1 = MergeSort(A[0 .. i-1])}{
+        A1 := MergeSort(SplitArray(A, 0, i-1))
+    }
+    @{A2 = MergeSort(A[i .. n-1])}{
+        A2 := MergeSort(SplitArray(A, i, n-1))
+    }
+
+    return Merge(A1, A2, A)
+}
+
+func f() {
+    a := []
+    for i := 20, 0 {
+        append(i, a)
+    }
+    print(a)
+    a := MergeSort(a)
+    print(a)
+    return 1
+}
+
+f()

@@ -1,0 +1,53 @@
+struct Tree {
+    value int,
+    left Tree,
+    right Tree
+}
+
+func FindMin(root Tree) {
+    if (root.left) == nil {
+        return (root.value)
+    }
+
+    return FindMin(root.left)
+}
+
+func Remove(node Tree, val int) {
+    if node == nil {
+        return nil
+    }
+    else if (node.value) < val {
+        node.right := Remove(node.right, val)
+        return node
+    }
+    else if (node.value) > val {
+        node.left := Remove(node.left, val)
+        return node
+    }
+
+    if (node.left) == nil {
+        return node.right
+    }
+    else if (node.right) == nil {
+        return node.left
+    }
+
+    node' := FindMax(node.left)
+    node.value := node'.value
+    node.left := Remove(node.left, node.value)
+    return node
+}
+
+func f(t Tree) {
+    print("\nRemoving 10")
+    print(Remove(t, 10))
+    print("\nRemoving everything")
+    k := Remove(t, 1)
+    k' := Remove(k, 7)
+    k'' := Remove(k', 2)
+    k''' := Remove(k'', 5)
+    print(k''')
+    return 1
+}
+
+f(struct Tree(5, struct Tree(2, struct Tree(1, nil, nil), nil), struct Tree(7, nil, nil)))

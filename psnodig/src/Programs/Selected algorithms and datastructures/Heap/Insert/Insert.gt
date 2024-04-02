@@ -1,0 +1,21 @@
+func Insert(A list, x int) {
+    @{A[n] pil x}{ append(x, A) }
+    # n := length(A) - 1
+    i := n
+    while (0 < i) && (A[i] < A[floor((i-1)/2)]) {
+        @{swap A[i] and A[floor((i-1)/2)]}{
+            tmp := A[floor((i-1)/2)]
+            A[floor((i-1)/2)] := A[i]
+            A[i] := tmp
+        }
+        i := floor((i-1)/2)
+    }
+    return A
+}
+
+func f(A list) {
+    print(Insert(A, 2))
+    return 1
+}
+
+f([1, 3, 4, 5, 6, 7, 8])

@@ -1,0 +1,31 @@
+struct Tree {
+    value int,
+    height int,
+    left Tree,
+    right Tree
+}
+
+func RightRotate(z Tree) {
+    y := z.left
+    T' := y.right
+
+    y.right := z
+    z.left := T'
+
+    z.height := 1 + max(Height(z.left), Height(z.right))
+    y.height := 1 + max(Height(y.left), Height(y.right))
+
+    return y
+}
+
+func Height(t Tree) {
+    if t == nil { return -1 }
+    return 1 + max(Height(t.left), Height(t.right))
+}
+
+func f(t Tree) {
+    print(RightRotate(t))
+    return 1
+}
+
+f(struct Tree(5, 1, struct Tree(2, 0, nil, nil), struct Tree(20, 0, nil, nil)))

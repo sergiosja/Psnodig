@@ -1,0 +1,40 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{BubbleSort}{BubbleSort}
+\SetKwFunction{length}{length}
+\SetKwFunction{print}{print}
+\SetKwArray{A}{A}
+\SetKw{KwNil}{Nil}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\BubbleSort(\A)$}{
+	\text{dette vil jeg skal være med i det kompilerte outputet men !!} \;
+	
+	
+	\For{$i \gets 0$ \KwTo $n - 2$}{
+		\For{$j \gets 0$ \KwTo $n - i - 2$}{
+			\uIf{$\A[j] > \A[j + 1]$}{
+				\text{swap A[j] with A[j+1]} \;
+			}
+		}
+	}
+	
+	\Return $A$ \;
+}\caption{BubbleSort}
+\end{algorithm}
+
+\end{document}

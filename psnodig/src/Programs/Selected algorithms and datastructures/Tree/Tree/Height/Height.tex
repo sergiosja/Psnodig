@@ -1,0 +1,48 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Height}{Height}
+\SetKwFunction{f}{f}
+\SetKwFunction{max}{max}
+\SetKwFunction{print}{print}
+\SetKwFunction{Tree}{Tree}
+\SetKwArray{h}{h}
+\SetKw{KwNil}{nil}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\Height(node, a, b)$}{
+	h $\gets$ $-1$ \;
+	\uIf{node $=$ \KwNil}{
+		\Return h \;
+	}
+	\For{$v' \in node_{children} $}{
+		h $\gets$ max(\h, Height(v')) \;
+	}
+	\Return $1$ $+$ h \;
+}\caption{Height}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\f()$}{
+	t $\gets$ \Tree($5$, \KwNil, [\Tree($5$, \KwNil, [\Tree($5$, \KwNil, [])])]) \;
+	print(Height(t)) \;
+	\Return $1$ \;
+}\caption{f}
+\end{algorithm}
+
+\end{document}

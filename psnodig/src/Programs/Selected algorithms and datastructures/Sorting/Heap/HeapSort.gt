@@ -1,0 +1,63 @@
+func BubbleDown(A list, i int, n int) {
+    largest := i
+    left := 2 * i + 1
+    right := 2 * i + 2
+
+    if (left < n) && (A[largest] < A[left]) {
+        @{swap largest and left}{
+            tmp := largest
+            largest := left
+            left := tmp
+        }
+    }
+
+    if (right < n) && (A[largest] < A[right]) {
+        @{swap largest and right}{
+            tmp := largest
+            largest := right
+            right := tmp
+        }
+    }
+
+    if i != largest {
+        @{swap A[largest] and A[i]}{
+            tmp := A[largest]
+            A[largest] := A[i]
+            A[i] := tmp
+        }
+        A := BubbleDown(A, largest, n)
+    }
+    return A
+}
+
+func BuildMaxHeap(A list) {
+    # n := length(A)
+    for i := floor(n/2), 1 {
+        A := BubbleDown(A, i, n)
+    }
+    return A
+}
+
+func HeapSort(A list) {
+    # n := length(A)
+
+    print("start:", A)
+    print("----------")
+
+    A := BuildMaxHeap(A)
+    print(A)
+    for i := n - 1, 1 {
+        @{swap A[0] and A[i]}{
+            tmp := A[0]
+            A[0] := A[i]
+            A[i] := tmp
+        }
+        A := BubbleDown(A, 0, i)
+    }
+
+    print("----------")
+    print("ferdig:", A)
+    return A
+}
+
+HeapSort([64, 34, 25, 12, 22, 11, 90])

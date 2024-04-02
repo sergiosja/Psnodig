@@ -1,0 +1,21 @@
+func BubbleSort(A list) {
+    # n := length(A)
+    # print(A)
+    for i := 0, n - 2 {
+        for j := 0, n - i - 2 {
+            if A[j] > A[j+1] {
+                @{swap A[j] with A[j+1]}{
+                    tmp := A[j]
+                    A[j] := A[j+1]
+                    A[j+1] := tmp
+                }
+            }
+        }
+        # print(A)
+    }
+    # print("ferdig:", A)
+
+    return A
+}
+
+BubbleSort([6, 5, 4, 3, 2, 1, 0])

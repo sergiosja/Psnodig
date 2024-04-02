@@ -1,0 +1,26 @@
+struct Tree {
+    value int,
+    left Tree,
+    right Tree
+}
+
+func Insert(node Tree, val int) {
+    if node == nil {
+        node := struct Tree(val, nil, nil)
+    }
+    else if val < (node.value) {
+        node.left := Insert(node.left, val)
+    }
+    else if val > (node.value) {
+        node.right := Insert(node.right, val)
+    }
+
+    return node
+}
+
+func f(t Tree) {
+    print(Insert(t, 10))
+    return 1
+}
+
+f(struct Tree(5, struct Tree(2, nil, nil), struct Tree(7, nil, nil)))

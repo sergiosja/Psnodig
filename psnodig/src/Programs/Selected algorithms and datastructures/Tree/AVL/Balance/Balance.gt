@@ -1,0 +1,67 @@
+struct Tree {
+    value int,
+    height int,
+    left Tree,
+    right Tree
+}
+
+func Balance(v Tree) {
+    if BalanceFactor(v) < -1 {
+        if BalanceFactor(v.right) > 0 {
+            v.right := RightRotate(v.right)
+        }
+        return LeftRotate(v)
+    }
+
+    if BalanceFactor(v) > 1 {
+        if BalanceFactor(v.left) < 0 {
+            v.left := RotateLeft(v.left)
+        }
+        return RightRotate(v)
+    }
+
+    return v
+}
+
+func LeftRotate(z Tree) {
+    y := z.right
+    T' := y.left
+
+    y.left := z
+    z.right := T'
+
+    z.height := 1 + max(Height(z.left), Height(z.right))
+    y.height := 1 + max(Height(y.left), Height(y.right))
+
+    return y
+}
+
+func RightRotate(z Tree) {
+    y := z.left
+    T' := y.right
+
+    y.right := z
+    z.left := T'
+
+    z.height := 1 + max(Height(z.left), Height(z.right))
+    y.height := 1 + max(Height(y.left), Height(y.right))
+
+    return y
+}
+
+func BalanceFactor(t Tree) {
+    if t == nil { return 0 }
+    return Height(t.left) - Height(t.right)
+}
+
+func Height(t Tree) {
+    if t == nil { return -1 }
+    return 1 + max(Height(t.left), Height(t.right))
+}
+
+func f(t Tree) {
+    print(Balance(t))
+    return 1
+}
+
+f(struct Tree(5, 1, nil, struct Tree(20, 0, struct Tree(8, 0, nil, nil), nil)))

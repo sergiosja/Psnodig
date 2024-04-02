@@ -1,0 +1,80 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Merge}{Merge}
+\SetKwFunction{MergeSort}{MergeSort}
+\SetKwFunction{SplitArray}{SplitArray}
+\SetKwFunction{append}{append}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKwArray{A}{A}
+\SetKwArray{A1}{A1}
+\SetKwArray{A2}{A2}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\Merge(\A1, \A2, \A)$}{
+	$\var{i} \gets 0$ \;
+	$\var{j} \gets 0$ \;
+	\While{$i < \abs{A1} \land j < \abs{A2}$}{
+		\uIf{$\A1{i} < \A2{j}$}{
+			$\A{i + j}\gets \A1{i}$ \;
+			$\var{i} \gets i + 1$ \;
+		}
+		\uElse{
+			$\A{i + j}\gets \A2{j}$ \;
+			$\var{j} \gets j + 1$ \;
+		}
+	}
+	\While{$i < \abs{A1}$}{
+		$\A{i + j}\gets \A1{i}$ \;
+		$\var{i} \gets i + 1$ \;
+	}
+	\While{$j < \abs{A2}$}{
+		$\A{i + j}\gets \A2{j}$ \;
+		$\var{j} \gets j + 1$ \;
+	}
+	\Return $A$ \;
+}\caption{Merge}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\SplitArray(\A, from, to)$}{
+	$\var{k} \gets Array$ \;
+	\For{$i \gets from$ \KwTo $to$}{
+		\append(k, \A{i}) \;
+	}
+	\Return $k$ \;
+}\caption{SplitArray}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\MergeSort(\A)$}{
+	
+	\uIf{$n \leq 1$}{
+		\Return $A$ \;
+	}
+	$\var{i} \gets \lfloor \frac{n}{2}\rfloor$ \;
+	\text{A1 = MergeSort(A[0..i-1])} \;
+	\text{A2 = MergeSort(A[i..n-1])} \;
+	\Return $\Merge(A1, A2, A)$ \;
+}\caption{MergeSort}
+\end{algorithm}
+
+\end{document}

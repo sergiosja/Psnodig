@@ -1,0 +1,67 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{BubbleDown}{BubbleDown}
+\SetKwFunction{BuildMaxHeap}{BuildMaxHeap}
+\SetKwFunction{HeapSort}{HeapSort}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{largest}{largest}
+\SetKwFunction{length}{length}
+\SetKwArray{A}{A}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\BubbleDown(\A, i, n)$}{
+	$\var{largest} \gets i$ \;
+	$\var{left} \gets 2 * i + 1$ \;
+	$\var{right} \gets 2 * i + 2$ \;
+	\uIf{$left < n \land \A{largest} < \A{left}$}{
+		\text{swap A[largest] and A[left]} \;
+	}
+	\uIf{$right < n \land \A{largest} < \A{right}$}{
+		\text{swap A[largest] and A[right]} \;
+	}
+	\uIf{$i \neq largest$}{
+		\text{swap A[largest] and A[i]} \;
+		\BubbleDown(A, \largest, n) \;
+	}
+}\caption{BubbleDown}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\BuildMaxHeap(\A)$}{
+	
+	\For{$i \gets \lfloor \frac{n}{2}\rfloor$ \KwTo $0$}{
+		\BubbleDown(A, i, n) \;
+	}
+}\caption{BuildMaxHeap}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\HeapSort(\A)$}{
+	
+	\BuildMaxHeap(A, n) \;
+	\For{$i \gets n - 1$ \KwTo $0$}{
+		\text{swap A[0] and A[i]} \;
+		\BubbleDown(A, 0, i) \;
+	}
+}\caption{HeapSort}
+\end{algorithm}
+
+\end{document}

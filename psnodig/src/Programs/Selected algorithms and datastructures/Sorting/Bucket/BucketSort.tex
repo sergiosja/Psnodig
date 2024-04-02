@@ -1,0 +1,53 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{BucketSort}{BucketSort}
+\SetKwFunction{InsertionSort}{InsertionSort}
+\SetKwFunction{append}{append}
+\SetKwFunction{f}{f}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKwFunction{print}{print}
+
+\SetKw{Kwto}{to}\SetKw{KwNil}{Nil}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\BucketSort(A)$}{
+	
+	\text{B $\gets$ Array of N empty lists} \;
+	
+	\For{$i \gets 0$ \KwTo $n - 1$}{
+		\text{associate k with A[i]} \;
+		append A[i] to B[k] \;
+	}
+	\text{} \;
+	
+	\For{$i \gets 0$ \KwTo $N' - 1$}{
+		$B[i] \gets \InsertionSort{B[i]}$ \;
+	}
+	\text{} \;
+	$\texttt{j} \gets 0$ \;
+	\For{$k \gets 0$ \KwTo $N - 1$}{
+		\For{$x \in B[k]$}{
+			$A[j] \gets x$ \;
+			$\texttt{j} \gets j + 1$ \;
+		}
+	}
+	\Return $A$ \;
+}\caption{BucketSort}
+\end{algorithm}
+
+\end{document}

@@ -1,0 +1,25 @@
+struct Tree {
+    value int,
+    left Tree,
+    right Tree
+}
+
+func FindMax(root Tree) {
+    if root == nil {
+        return nil
+    }
+
+    if (root.right) == nil {
+        return root
+    }
+
+    return FindMax(root.right)
+}
+
+func f() {
+    t := struct Tree(5, nil, struct Tree(6, nil, struct Tree(7, struct Tree(1, nil, nil), struct Tree(8, nil, struct Tree(9, nil, nil)))))
+    print(FindMax(t))
+    return 1
+}
+
+f()

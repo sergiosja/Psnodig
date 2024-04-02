@@ -1,0 +1,57 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Remove}{Remove}
+\SetKwFunction{f}{f}
+\SetKwFunction{length}{length}
+\SetKwFunction{print}{print}
+\SetKwArray{A}{A}
+\SetKwArray{i}{i}
+\SetKwArray{j}{j}
+\SetKw{KwNil}{Nil}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\Remove(\A)$}{
+	
+	$\var{x} \gets \A[0]$ \;
+	$\A[0] \gets \A[n - 1]$ \;
+	$\var{i} \gets 0$ \;
+	\While{$2 \cdot i + 2 < n - 1$}{
+		\text{j $\gets$ if A[2$\cdot$i+1] $<=$ A[2$\cdot$i+2] then 2$\cdot$i+1 else 2$\cdot$i+2} \;
+		\uIf{$\A[j] \leq \A[i]$}{
+			\text{swap A[j] and A[i]} \;
+			$\var{i} \gets j$ \;
+			\KwContinue \;
+		}
+		\KwBreak \;
+	}
+	\uIf{$2 \cdot i + 1 < n - 1 \land \A[2 \cdot i + 1] \leq \A[i]$}{
+		\text{swap A[i] and A[2$\cdot$i + 1]} \;
+	}
+	\Return $x$ \;
+}\caption{Remove}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\f(\A)$}{
+	\print(\Remove(\A)) \;
+	\Return $1$ \;
+}\caption{f}
+\end{algorithm}
+
+\end{document}

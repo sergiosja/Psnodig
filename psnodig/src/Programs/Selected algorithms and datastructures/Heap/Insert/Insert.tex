@@ -1,0 +1,48 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Insert}{Insert}
+\SetKwFunction{append}{append}
+\SetKwFunction{f}{f}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKwFunction{print}{print}
+\SetKwArray{A}{A}
+\SetKw{KwNil}{Nil}
+\SetKw{KwContinue}{continue}
+\SetKw{KwBreak}{break}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\SetKw{KwNot}{not}
+\SetKw{KwTo}{to}
+\newcommand{\var}{\texttt}
+\DontPrintSemicolon
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\Insert(\A, x)$}{
+	\text{A[n] pil x} \;
+	
+	$\var{i} \gets n$ \;
+	\While{$0 < i \land \A[i] < \A[\lfloor \frac{i - 1}{2}\rfloor]$}{
+		\text{swap A[i] and A[floor((i-1)/2)]} \;
+		$\var{i} \gets \lfloor \frac{i - 1}{2}\rfloor$ \;
+	}
+	\Return $A$ \;
+}\caption{Insert}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\KwIn{Input}
+\KwOut{Output}
+\proc{$\f(\A)$}{
+	\print(\Insert(\A, 2)) \;
+	\Return $1$ \;
+}\caption{f}
+\end{algorithm}
+
+\end{document}

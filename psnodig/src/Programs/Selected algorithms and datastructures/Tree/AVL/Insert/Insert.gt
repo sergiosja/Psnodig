@@ -1,0 +1,87 @@
+struct Tree {
+    value int,
+    height int,
+    left Tree,
+    right Tree
+}
+
+func Insert(root Tree, value int) {
+    if root == nil {
+        return struct Tree(value, 0, nil, nil)
+    }
+    if (root.value) > value {
+        root.left := Insert(root.left, value)
+    }
+    else {
+        root.right := Insert(root.right, value)
+    }
+    root.height := Height(root)
+    return Balance(root)
+}
+
+func Height(root Tree) {
+    if root == nil {
+        return -1
+    }
+    return 1 + max(Height(root.left), Height(root.right))
+}
+
+func Balance(root Tree) {
+    if BalanceFactor(root) < -1 {
+        if BalanceFactor(root.right) > 0 {
+            root.right := RightRotate(root.right)
+        }
+        return LeftRotate(root)
+    }
+    if BalanceFactor(root) > 1 {
+        if BalanceFactor(root.left) < 0 {
+            root.left := LeftRotate(root.left)
+        }
+        return RightRotate(root)
+    }
+    return root
+}
+
+func BalanceFactor(root Tree) {
+    if root == nil {
+        return 0
+    }
+    return Height(root.left) - Height(root.right)
+}
+
+func LeftRotate(root Tree) {
+    newroot := root.right
+    tmp := newroot.left
+
+    root.right := tmp
+    root.height := Height(root)
+
+    newroot.left := root
+    newroot.height := Height(newroot)
+
+    return newroot
+}
+
+func RightRotate(root Tree) {
+    newroot := root.left
+    tmp := newroot.right
+
+    root.left := tmp
+    root.height := Height(root)
+
+    newroot.right := root
+    newroot.height := Height(newroot)
+
+    return newroot
+}
+
+func f() {
+    a := nil
+    for i := 1, 6 {
+        a := Insert(a, i)
+    }
+    print(a)
+    return 1
+}
+
+f()

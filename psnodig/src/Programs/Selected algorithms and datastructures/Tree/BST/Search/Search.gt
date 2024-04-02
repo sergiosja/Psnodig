@@ -1,0 +1,28 @@
+struct Tree {
+    value int,
+    left Tree,
+    right Tree
+}
+
+func Search(node Tree, val int) {
+    if node == nil {
+        return false
+    }
+    else if (node.value) == val {
+        return true
+    }
+    else if (node.value) < val {
+        return Search(node.right, val)
+    }
+    else if (node.value) > val {
+        return Search(node.left, val)
+    }
+}
+
+func f(t Tree) {
+    print(Search(t, 10))
+    print(Search(t, 1))
+    return 1
+}
+
+f(struct Tree(5, struct Tree(2, struct Tree(1, nil, nil), nil), struct Tree(7, nil, nil)))

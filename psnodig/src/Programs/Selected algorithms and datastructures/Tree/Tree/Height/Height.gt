@@ -1,0 +1,26 @@
+struct Tree {
+    value int,
+    parent Tree,
+    children list
+}
+
+func Height(node Tree) {
+    h := -1
+    if node == nil {
+        return h
+    }
+
+    for v' := node.children {
+        h := max(h, Height(v'))
+    }
+
+    return 1 + h
+}
+
+func f() {
+    t := struct Tree(5, nil, [struct Tree(5, nil, [struct Tree(5, nil, [])])])
+    print(Height(t))
+    return 1
+}
+
+f()

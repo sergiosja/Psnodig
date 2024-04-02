@@ -1,0 +1,24 @@
+struct Tree {
+    value int,
+    left Tree,
+    right Tree
+}
+
+func FindMin(root Tree) {
+    if root == nil {
+        return nil
+    }
+
+    if (root.left) == nil {
+        return root
+    }
+
+    return FindMin(root.left)
+}
+
+func f(t Tree) {
+    print(FindMin(t))
+    return 1
+}
+
+f(struct Tree(5, struct Tree(2, struct Tree(1, nil, nil), nil), struct Tree(20, nil, nil)))
