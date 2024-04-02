@@ -38,7 +38,6 @@ main = do
         ["tbp", filename] -> do -- should run 'pdf' if user wants pdf too
             p <- readFile filename
             transpile p filename
-            callCommand "/Users/sergey/Documents/Master/psnodig/src/Programs/cleanup.sh"
         ["ibp", filename] -> do
             p <- readFile filename
             p2f p

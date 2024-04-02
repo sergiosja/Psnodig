@@ -1,8 +1,5 @@
 module Gourmet.GourmetWriter (writeGourmet) where
 
--- writeGourmet :: Int
--- writeGourmet = 1
-
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Control.Monad.Writer
@@ -14,6 +11,11 @@ type GourmetWriter = Writer String
 
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
+
+writeArgs :: [Expression] -> String -> GourmetWriter ()
+writeArgs [] b = tell b
+writeArgs [x] b = writeExp x >> tell b
+writeArgs (x:y:ys) b = writeExp x >> tell ", " >> writeArgs (y:ys) b
 
 -- Writer
 
@@ -35,40 +37,23 @@ writeStructField (StructField expr1 expr2) =
 writeStruct :: Struct -> GourmetWriter ()
 writeStruct (Struct name args) = do
     tell $ "struct " ++ name ++ "("
-    case length args of
-        0 -> tell ")"
-        1 -> do
-            writeExp $ head args
-            tell ")"
-        _ -> do
-            mapM_ (\a -> (writeExp a) >> tell ", " ) (init args)
-            (writeExp (last args)) >> tell ")"
+    writeArgs args ")"
 
 -- Values
 
 writeValue :: Value -> GourmetWriter ()
 writeValue (Nil) = tell "nil"
 writeValue (Boolean bool) =
-    tell $ if bool == True then "true" else "false" -- kanskje $ ikke nødvendig
+    tell $ if bool == True then "true" else "false"
 writeValue (Number n) = tell $ show n
+writeValue (Decimal d) = tell $ show d
 writeValue (Text str) = tell str
 writeValue (List exprs) = do
     tell "["
-    case length exprs of
-        0 -> tell "]"
-        1 -> (writeExp $ head exprs) >> tell "]"
-        _ -> do
-            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init exprs)
-            (writeExp $ last exprs) >> tell "]"
+    writeArgs exprs "]"
 writeValue (HashSet exprs) = do
     tell "set{"
-    let set = Set.toList exprs
-    case length exprs of
-        0 -> tell "}"
-        1 -> (writeExp $ head set) >> tell "}"
-        _ -> do
-            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init set)
-            (writeExp $ last set) >> tell "}"
+    writeArgs (Set.toList exprs) "}"
 writeValue (HashMap hmap) = do
     tell "map{"
     let pairs = Map.toList hmap
@@ -108,12 +93,7 @@ writeExp (StructFieldExp structField) =
 writeFunctionCall :: FunctionCall -> GourmetWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
     tell $ funcname ++ "("
-    case length args of
-        0 -> tell ")"
-        1 -> (writeExp $ head args) >> tell ")"
-        _ -> do
-            mapM_ (\arg -> (writeExp arg) >> tell ", ") (init args)
-            (writeExp $ last args) >> tell ")"
+    writeArgs args ")"
 
 writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
 writeAssignmentTarget (VariableTarget var) = tell var

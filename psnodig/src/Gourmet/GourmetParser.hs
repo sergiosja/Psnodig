@@ -14,12 +14,15 @@ lexer = Token.makeTokenParser emptyDef {
     Token.identStart = letter,
     Token.identLetter = alphaNum <|> char '\'',
     Token.reservedOpNames =
-        [ ":=", "+", "-", "*", "/", "<", ">", "=="   -- 8
-        , "!=", "while", "{", "}", "if", "func", "(" -- 7 | 15
-        , ")", ">=", "<=", "true", "false", "return" -- 6 | 21
-        , "[", "]", "else", "&&", "||", "!", "for"   -- 7 | 28
-        , ",", ":", "#", "@", "break", "continue"    -- 6 | 34
-        , "struct", "not", "%", "map", "set", "."    -- 6 | 40
+        [ ":=", "+", "-", "*", "/", "<", ">", "=="
+        , "!=", "{", "}", "(", ")", ">=", "<="
+        , "[", "]", "&&", "||", "!", ",", ":", "#"
+        , "@", "%", "."
+        ],
+    Token.reservedNames =
+        [ "while", "if", "func", "true", "false"
+        , "return", "else", "for", "break", "set"
+        , "map", "not", "struct", "continue"
         ],
     Token.commentStart = "/*",
     Token.commentEnd = "*/",
@@ -30,6 +33,9 @@ lexer = Token.makeTokenParser emptyDef {
 identifier :: Parser String
 identifier = Token.identifier lexer
 
+reserved :: String -> Parser ()
+reserved = Token.reserved lexer
+
 reservedOp :: String -> Parser ()
 reservedOp = Token.reservedOp lexer
 
@@ -38,6 +44,9 @@ whiteSpace = Token.whiteSpace lexer
 
 integer :: Parser Integer
 integer = Token.integer lexer
+
+decimal :: Parser Double
+decimal = Token.float lexer
 
 stringLiteral :: Parser String
 stringLiteral = Token.stringLiteral lexer
@@ -88,6 +97,7 @@ parseValue = choice
     , try parseHashSet
     , try parseNil
     , try parseBool
+    , try parseDecimal
     , try parseNumber
     , try parseText
     , try parseList
@@ -98,6 +108,7 @@ parseValue = choice
         parseBool =
             Boolean <$> (reservedOp "true" *> pure True
                     <|> reservedOp "false" *> pure False)
+        parseDecimal = Decimal <$> decimal
         parseNumber = Number <$> integer
         parseText = Text <$> stringLiteral
         parseList =
@@ -208,7 +219,7 @@ parseArgument =
 parseFunction :: Parser Function
 parseFunction =
     Function
-        <$> (reservedOp "func" *> identifier) <* reservedOp "("
+        <$> (reserved "func" *> identifier) <* reservedOp "("
         <*> parseArgument `sepBy` comma
         <* reservedOp ")" <* reservedOp "{"
         <*> parseStmt `endBy` whiteSpace <* reservedOp "}"

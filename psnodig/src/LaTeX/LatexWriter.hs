@@ -6,22 +6,13 @@ import Control.Monad.Reader
 import Control.Monad.Writer
 import Syntax
 
-type Environment = ([String], [String], [String])
+type Environment = ([String], [String])
 type LatexWriter = ReaderT Environment (Writer String)
 
 -- Helper funcs
 
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
-
-fst' :: (a, b, c) -> a
-fst' (x, _, _) = x
-
-snd' :: (a, b, c) -> b
-snd' (_, y, _) = y
-
-thrd' :: (a, b, c) -> c
-thrd' (_, _, z) = z
 
 -- Structs
 
@@ -46,8 +37,9 @@ writeStruct (Struct name args) = do
 writeValue :: Value -> LatexWriter ()
 writeValue (Nil) = tell "\\KwNil"
 writeValue (Boolean bool) =
-    tell $ if bool == True then "\\top" else "\\bot" -- kanskje $ ikke nødvendig -- alt \\KwTrue \\KwFalse
+    tell $ if bool == True then "\\KwTrue" else "\\KwFalse"
 writeValue (Number n) = tell $ show n
+writeValue (Decimal d) = tell $ show d
 writeValue (Text str) = tell str
 writeValue (List exprs) = do
     tell "["
@@ -95,15 +87,14 @@ writeExp (BinaryExp op exp1 exp2) = do
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
 writeExp (ListIndex name indexes) = do
-    tell $ "\\" ++ name
+    tell name
     mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes
 writeExp (Not expr) = do
     case expr of
-        (CallExp (FunctionCall "contains" args)) -> do
-            lists <- asks thrd' -- check fst' & snd' too?
-            writeExp $ last args
+        (CallExp (FunctionCall "in" args)) -> do
+            writeExp $ head args
             tell $ " \\notin "
-            writeExp $ collectionVariableNotation (head args) lists
+            writeExp $ last args
         _ -> do
             tell "\\KwNot \\: "
             writeExp expr
@@ -114,32 +105,25 @@ writeExp (StructFieldExp structField) =
 
 -- Function related
 
-collectionVariableNotation :: Expression -> [String] -> Expression
-collectionVariableNotation expr collection =
-    case expr of
-        (VariableExp x) -> if elem x collection then (VariableExp ("\\" ++ x)) else (VariableExp x)
-        _ -> expr
-
 writeFunctionCall :: FunctionCall -> LatexWriter ()
 writeFunctionCall (FunctionCall funcname args) = do
-    lists <- asks thrd' -- check fst' & snd' too?
     case funcname of
         "length" -> do
             tell "\\abs{"
-            writeExp $ collectionVariableNotation (head args) lists
+            writeExp $ head args
             tell "}"
         "ceil" -> do
             tell "\\lceil "
-            writeExp $ collectionVariableNotation (head args) lists
+            writeExp $ head args
             tell "\\rceil"
         "floor" -> do
             tell "\\lfloor "
-            writeExp $ collectionVariableNotation (head args) lists
+            writeExp $ head args
             tell "\\rfloor"
-        "contains" -> do
+        "in" -> do
             writeExp $ last args
             tell $ " \\in "
-            writeExp $ collectionVariableNotation (head args) lists
+            writeExp $ head args
         "append" -> do
             tell "append "
             writeExp $ args !! 0
@@ -159,19 +143,14 @@ writeFunctionCall (FunctionCall funcname args) = do
             tell $ "\\" ++ funcname ++ "{"
             case length args of
                 0 -> tell "}"
-                1 -> (writeExp $ collectionVariableNotation (head args) lists) >> tell "}"
+                1 -> (writeExp $ head args) >> tell "}"
                 _ -> do
-                    mapM_ (\arg -> (writeExp $ collectionVariableNotation arg lists) >> tell ", ") (init args)
-                    (writeExp $ collectionVariableNotation (last args) lists) >> tell "}"
+                    mapM_ (\arg -> (writeExp $ arg) >> tell ", ") (init args)
+                    (writeExp $ last args) >> tell "}"
 
 getArgumentNames ::  [Argument] -> [String]
 getArgumentNames args = map getArgName args
-    where
-        getArgName (Argument name t) = case t of
-            "bool" -> name
-            "int" -> name
-            "string" -> name
-            _ -> "\\" ++ name
+    where getArgName (Argument name _) = name
 
 writeFunc :: Function -> LatexWriter ()
 writeFunc (Function funcname args stmts) = do
@@ -241,7 +220,7 @@ writeStmt Continue _ =
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
 writeAssignmentTarget (VariableTarget var) = tell $ "$\\texttt{" ++ var ++ "} "
 writeAssignmentTarget (ListIndexTarget var indexes) = do
-    tell $ "$\\" ++ var
+    tell $ "$" ++ var
     mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes >> tell " "
 writeAssignmentTarget (StructFieldTarget struct) = do
     tell "$"
@@ -290,30 +269,19 @@ transpileOp op = tell $ case op of
 
 writeStaticFunctions :: LatexWriter ()
 writeStaticFunctions = do
-    funcs <- asks snd'
+    funcs <- asks fst
     mapM_ (\f -> tell $ "\\SetKwFunction{" ++ f ++ "}{" ++ f ++ "}\n") funcs
-    structs <- asks fst'
-    mapM_ (\s -> tell $ "\\SetKwFunction{" ++ s ++ "}{" ++ s ++ "}\n") structs
 
-writeStaticLists :: LatexWriter ()
-writeStaticLists = do
-    lists <- asks thrd'
-    mapM_ (\a -> tell $ "\\SetKwArray{" ++ a ++ "}{" ++ a ++ "}\n") lists
-
--- Need a way to set some flags here, to see what is used instead of adding all these macros.
--- A string like `0000000000`, where each bit symbolises a keyword.
--- E.g. `0001010001` means we have to add SetKw for nil, false and return.
-
--- Not sure how tricky this actually is with Haskell.
--- Start with int 0. If break, add 1000. if continue, add 10. if false, add 1.
--- In the end we end up with 1101. This could be a way.
+writeStaticKeywords :: LatexWriter ()
+writeStaticKeywords = do
+    keywords <- asks snd
+    mapM_ (\k -> tell $ "\\SetKw{Kw" ++ take 1 k ++ tail k ++ "}{" ++ k ++ "}") keywords
 
 constantConfig :: LatexWriter ()
 constantConfig = do
     tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
-    writeStaticFunctions
-    writeStaticLists
-    tell "\\SetKw{KwNil}{Nil}\n\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\DontPrintSemicolon\n\\begin{document}\n\n"
+    writeStaticFunctions >> tell "\n" >> writeStaticKeywords
+    tell "\\SetKw{KwNil}{Nil}\n\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n"
 
 funcStart :: LatexWriter ()
 funcStart =

@@ -1,8 +1,3 @@
--- module Interpreter(f) where
-
--- f :: Int
--- f = 1
-
 module Interpreter (
       ExecutionState(..)
       , RuntimeError(RuntimeErrorWithOutput)
@@ -12,16 +7,17 @@ module Interpreter (
 import Syntax
 import Control.Monad.State
 import Control.Monad.Except
-import Control.Monad (void, liftM2)
 import Data.List (find, intercalate)
 import Data.Either (isRight)
+import Data.Maybe (mapMaybe)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 type StructDecls = Map.Map String [String]
-type FuncEnv = [(String, Function)] -- bruke map heller?
-type Scope = [(String, Value)]
-type ScopeStack = [[Scope]]
+type FuncEnv = Map.Map String Function
+type Scope = [[(String, Value)]]
+-- type Scope = [Map.Map String Value]
+type ScopeStack = [Scope]
 
 -- type Binding = (String, Value)
 -- type BindingStack = [Binding]
@@ -33,7 +29,7 @@ data ExecutionState = ExecutionState
     , funcEnv     :: FuncEnv
     , scopeStack  :: ScopeStack
     , output      :: [String]
-} deriving (Show)
+    }
 
 data RuntimeError =
       VariableNotFound String
@@ -45,9 +41,9 @@ data RuntimeError =
     | NoReturnError String
     | Error String
     | RuntimeErrorWithOutput [String] RuntimeError
-    deriving (Eq, Show)
+    deriving (Show)
 
-type Psnodig a = StateT ExecutionState (ExceptT RuntimeError IO) a
+type Psnodig = StateT ExecutionState (ExceptT RuntimeError IO)
 
 
 -- Scoping and binding
@@ -93,7 +89,7 @@ bindVar var value = do
 
 updateVar :: [[(String, Value)]] -> String -> Value -> [[(String, Value)]]
 updateVar [] var value = [[(var, value)]]
-updateVar scopes@(scope : rest) var value =
+updateVar scopes@(scope : _) var value =
     let updatedScopes@(currScope : restScopes) = updateAllScopes scopes var value
     in if varInScope var scope then updatedScopes else (((var, value) : currScope) : restScopes)
 
@@ -158,14 +154,15 @@ updateScopes (scope:rest) listName newList =
         (scope :) <$> updateScopes rest listName newList
 
 lookupFunc :: String -> Psnodig (Maybe Function)
-lookupFunc func = do
+lookupFunc funcName = do
     ExecutionState { funcEnv = env } <- get
-    return $ lookup func env
+    return $ Map.lookup funcName env
 
 bindFunc :: String -> Function -> Psnodig ()
 bindFunc name func = do
-    currScope@(ExecutionState { funcEnv = env }) <- get
-    put currScope { funcEnv = (name, func):env }
+    env <- get
+    let newFuncEnv = Map.insert name func (funcEnv env)
+    put env { funcEnv = newFuncEnv }
 
 
 -- Structs
@@ -409,32 +406,58 @@ operate op expr1 expr2 = do
 
 operate' :: Operator -> Value -> Value -> Either String Value
 operate' Plus (Number x) (Number y) = Right $ Number $ x + y
+operate' Plus (Decimal x) (Number y) = Right $ Decimal $ x + (fromInteger y)
+operate' Plus (Number x) (Decimal y) = Right $ Decimal $ (fromInteger x) + y
 operate' Plus (Text s1) (Text s2) = Right $ Text $ s1 ++ s2
+
 operate' Minus (Number x) (Number y) = Right $ Number $ x - y
+operate' Minus (Decimal x) (Number y) = Right $ Decimal $ x - (fromInteger y)
+operate' Minus (Number x) (Decimal y) = Right $ Decimal $ (fromInteger x) - y
+
 operate' Times (Number x) (Number y) = Right $ Number $ x * y
-operate' Division (Number _) (Number 0) = Left "Division by zero!"
--- should probs fix floats/doubles too
+operate' Times (Decimal x) (Number y) = Right $ Decimal $ x * (fromInteger y)
+operate' Times (Number x) (Decimal y) = Right $ Decimal $ (fromInteger x) * y
+
+operate' Division _ (Number 0) = Left "Division by zero!"
+operate' Division _ (Decimal 0.0) = Left "Division by zero!"
 operate' Division (Number x) (Number y) = Right $ Number $ div x y
-operate' Modulo (Number _) (Number 0) = Left "Modulo by zero!"
+operate' Division (Decimal x) (Number y) = Right $ Decimal $ x / (fromInteger y)
+operate' Division (Number x) (Decimal y) = Right $ Decimal $ (fromInteger x) / y
+
+operate' Modulo _ (Number 0) = Left "Modulo by zero!"
 operate' Modulo (Number x) (Number y) = Right $ Number $ mod x y
+operate' Modulo (Decimal _) _ = Left "Avoid using modulo with decimals!"
+operate' Modulo _ (Decimal _) = Left "Avoid using modulo with decimals!"
 
 operate' LessThan (Number x) (Number y) = Right $ Boolean $ x < y
+operate' LessThan (Decimal x) (Number y) = Right $ Boolean $ x < (fromInteger y)
+operate' LessThan (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) < y
+
 operate' LessThanEqual (Number x) (Number y) = Right $ Boolean $ x <= y
+operate' LessThanEqual (Decimal x) (Number y) = Right $ Boolean $ x <= (fromInteger y)
+operate' LessThanEqual (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) <= y
+
 operate' GreaterThan (Number x) (Number y) = Right $ Boolean $ x > y
+operate' GreaterThan (Decimal x) (Number y) = Right $ Boolean $ x > (fromInteger y)
+operate' GreaterThan (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) > y
+
 operate' GreaterThanEqual (Number x) (Number y) = Right $ Boolean $ x >= y
+operate' GreaterThanEqual (Decimal x) (Number y) = Right $ Boolean $ x >= (fromInteger y)
+operate' GreaterThanEqual (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) >= y
 
 operate' Equal (Number x) (Number y) = Right $ Boolean $ x == y
+operate' Equal (Decimal x) (Number y) = Right $ Boolean $ x == (fromInteger y)
+operate' Equal (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) == y
 operate' Equal Nil Nil = Right $ Boolean True
 operate' Equal (Text t1) (Text t2) = Right $ Boolean $ t1 == t2
 operate' Equal _ _ = Right $ Boolean False
 
 operate' NotEqual (Number x) (Number y) = Right $ Boolean $ x /= y
+operate' NotEqual (Decimal x) (Number y) = Right $ Boolean $ x /= (fromInteger y)
+operate' NotEqual (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) /= y
 operate' NotEqual Nil Nil = Right $ Boolean False
 operate' NotEqual (Text t1) (Text t2) = Right $ Boolean $ t1 /= t2
 operate' NotEqual _ _ = Right $ Boolean False
-
--- operate' And x y = return $ Boolean $ (bval x) && (bval y)
--- operate' Or x y = return $ Boolean $ (bval x) || (bval y)
 
 operate' op x y = Left $ "Incompatible operands! Tried to apply " ++
     (show op) ++ " to " ++ (show x) ++ " and " ++ (show y) ++ "!"
@@ -492,7 +515,7 @@ evalStmt (If expr thenStmts maybeElse) = do
             Nothing -> return (Left ())
 
 evalStmt (ForEach ident expr stmts) = do
-    maybeIterable <- toIterable expr
+    maybeIterable <- evalExpr expr >>= toIterable
     case maybeIterable of
         Just values -> foldM (executeForEachLoopScope ident stmts) (Left ()) values
         Nothing -> throwError' $ BadArgument "Collection argument is not an iterable. If this is a function call, dereference it before applying as a collection."
@@ -560,36 +583,43 @@ forRange x y = if x <= y then [x..y] else [x,x-1..y]
 
 -- Functions
 
--- må legge til feks add to hashmap, add to set osv.
--- min, max
 callFunction :: FunctionCall -> Psnodig Value
 callFunction (FunctionCall "floor" args) = do
     when (length args /= 1)
-        $ throwError' $ WrongNumberOfArguments "Function 'floor' takes 1 argument: floor( number )."
+        $ throwError' $ WrongNumberOfArguments "Function 'floor' takes 1 argument: floor( numeric )."
     value <- evalExpr $ head args
     case value of
-        Number n -> return $ value -- fix this obvs
-        _ -> throwError' $ BadArgument "Function 'floor' can only be applied on integers."
+        Number _ -> return $ value
+        Decimal d -> return . Number $ floor d
+        _ -> throwError' $ BadArgument "Function 'floor' can only be applied to numeric values."
 
 callFunction (FunctionCall "ceil" args) = do
     when (length args /= 1)
-        $ throwError' $ WrongNumberOfArguments "Function 'ceil' takes 1 argument: ceil( number )."
+        $ throwError' $ WrongNumberOfArguments "Function 'ceil' takes 1 argument: ceil( numeric )."
     value <- evalExpr $ head args
     case value of
-        Number n -> return $ value -- fix this obvs
-        _ -> throwError' $ BadArgument "Function 'ceil' can only be applied on integers."
+        Number _ -> return $ value
+        Decimal d -> return . Number $ ceiling d
+        _ -> throwError' $ BadArgument "Function 'ceil' can only be applied to numeric values."
 
+-- la disse ta inn en liste med tall også!
 callFunction (FunctionCall "min" args) = do
     values <- mapM evalExpr args
-    if any (not . isNumber) values
-    then throwError' $ BadArgument "All arguments to function 'min' must be integers."
-    else return . Number . minimum . map (\(Number x) -> x) $ values
+    unless (all (\v -> isNumber v || isDecimal v) values) $
+        throwError' $ BadArgument "All arguments to function 'min' must be numeric values."
+    let smallestNumber = minimum $ mapMaybe fromNumber values
+    let smallestDecimal = minimum $ mapMaybe fromDecimal values
+    return $ if (fromInteger smallestNumber) < smallestDecimal
+                then Number smallestNumber else Decimal smallestDecimal
 
 callFunction (FunctionCall "max" args) = do
     values <- mapM evalExpr args
-    if any (not . isNumber) values
-    then throwError' $ BadArgument "All arguments to function 'max' must be integers."
-    else return . Number . maximum . map (\(Number x) -> x) $ values
+    unless (all (\v -> isNumber v || isDecimal v) values) $
+        throwError' $ BadArgument "All arguments to function 'max' must be numeric values."
+    let largestNumber = maximum $ mapMaybe fromNumber values
+    let largestDecimal = maximum $ mapMaybe fromDecimal values
+    return $ if (fromInteger largestNumber) > largestDecimal
+                then Number largestNumber else Decimal largestDecimal
 
 callFunction (FunctionCall "get" args) = do
     when (length args /= 2)
@@ -685,6 +715,12 @@ callFunction (FunctionCall "length" args) = do
         toNum :: [a] -> Psnodig Value
         toNum = return . Number . toInteger . length
 
+callFunction (FunctionCall "toString" args) = do
+    when (length args /= 1)
+        $ throwError' $ WrongNumberOfArguments "Function 'toString' takes 1 argument: toString( value )."
+    str <- (evalExpr $ head args) >>= (flip stringifyValue) False
+    return . Text $ str
+
 callFunction (FunctionCall name args) = do
     maybeFunc <- lookupFunc name
     case maybeFunc of
@@ -709,7 +745,7 @@ applyFunction (Function name args stmts) values = do
 evalProgram :: Program -> Psnodig ()
 evalProgram (Program structs funcs entryPoint) = do
     mapM_ processStructDecls structs
-    mapM_ processFunDecl funcs
+    mapM_ processFunDecl funcs -- don't allow multiple declaratins, and no shadowing library functions!
     case entryPoint of
         Just f -> void $ callFunction f
         Nothing -> throwError $ BadArgument "No function call to run the program."
@@ -719,7 +755,7 @@ evalProgram (Program structs funcs entryPoint) = do
 initialState :: ExecutionState
 initialState = ExecutionState
     { structDecls = Map.empty
-    , funcEnv = []
+    , funcEnv = Map.empty
     , scopeStack = []
     , output = []
     }
@@ -738,32 +774,18 @@ bval :: Value -> Bool
 bval Nil = False
 bval (Boolean False) = False
 bval (Number n) = if n > 0 then True else False
+bval (Decimal d) = if d > 0.0 then True else False
 bval (Text "") = False
 bval (List []) = False
 bval _ = True
 
-toIterable :: Expression -> Psnodig (Maybe [Value])
-toIterable (Constant v) = toIterableValue v
-toIterable (VariableExp var) = do
-    maybeVar <- lookupVar var
-    case maybeVar of
-        Just v -> toIterableValue v
-        Nothing -> return Nothing
-toIterable e@(ListIndex _ _) = do
-    v <- evalExpr e
-    toIterableValue v
-toIterable e@(StructFieldExp _) = do
-    v <- evalExpr e
-    toIterableValue v
-toIterable _ = return Nothing
-
-toIterableValue :: Value -> Psnodig (Maybe [Value])
-toIterableValue (Text t) = return . Just $ map (Text . return) t
-toIterableValue (List exprs) = Just <$> mapM evalExpr exprs
-toIterableValue (HashSet s) = Just <$> mapM evalExpr (Set.toList s)
-toIterableValue (HashMap m) = Just <$> mapM (\(x, _) -> evalExpr x) (Map.toList m) -- can access values by calling the map with keys!
+toIterable :: Value -> Psnodig (Maybe [Value])
+toIterable (Text t) = return . Just $ map (Text . return) t
+toIterable (List exprs) = Just <$> mapM evalExpr exprs
+toIterable (HashSet s) = Just <$> mapM evalExpr (Set.toList s)
+toIterable (HashMap m) = Just <$> mapM (\(x, _) -> evalExpr x) (Map.toList m) -- can access values by calling the map with keys!
                 -- (HashMap m) -> Just <$> mapM (\(x, y) -> liftM2 (,) (evalExpr x) (evalExpr y)) (Map.toList m)
-toIterableValue _ = return Nothing
+toIterable _ = return Nothing
 
 fromNumber :: Value -> Maybe Integer
 fromNumber (Number n) = Just n
@@ -773,29 +795,41 @@ isNumber :: Value -> Bool
 isNumber (Number _) = True
 isNumber _ = False
 
--- deref :: Value -> [Expression]
--- deref (List xs) = xs
+fromDecimal :: Value -> Maybe Double
+fromDecimal (Decimal d) = Just d
+fromDecimal _ = Nothing
+
+isDecimal :: Value -> Bool
+isDecimal (Decimal _) = True
+isDecimal _ = False
 
 stringifyValue :: Value -> Bool -> Psnodig String
-stringifyValue v fromList = case v of
-    Text t -> if fromList then return $ '\"' : t ++ "\"" else return t
-    Nil -> return "\"Nil\""
-    Number n ->  return $ show n
-    Boolean b -> return $ show b
-    HashSet s -> return $ show s
-    HashMap m -> return $ show m
-    List l -> stringifyList l
-    StructVal fields -> return $ show fields -- return $ stringifyStruct fields
+stringifyValue Nil _ = return "\"Nil\""
+stringifyValue (Boolean b) _ = return $ show b
+stringifyValue (Number n) _ = return $ show n
+stringifyValue (Decimal d) _ = return $ show d
+stringifyValue (Text t) b = if b then return $ '\"' : t ++ "\"" else return t
+stringifyValue (List l) _ = stringifyExprIterable "[" l "]"
+stringifyValue (HashSet hs) _ = stringifyExprIterable "(" (Set.toList hs) ")"
+stringifyValue (HashMap hm) _ = stringifyHMap $ Map.toList hm
+stringifyValue (StructVal sf) _ = stringifyStruct sf
 
--- stringifyStruct :: [(String, Value)] -> String
--- stringifyStruct fields =
-    -- intercalate ", " $ map (\(k, v) -> k ++ " -> " ++ show v) fields
-
-stringifyList :: [Expression] -> Psnodig String
-stringifyList list = do
+stringifyExprIterable :: String -> [Expression] -> String -> Psnodig String
+stringifyExprIterable l list r = do
     vals <- mapM evalExpr list
     strList <- mapM (flip stringifyValue True) vals
-    return $ "[" ++ intercalate ", " strList ++ "]"
+    return $ l ++ intercalate ", " strList ++ r
+
+stringifyHMap :: [(Expression, Expression)] -> Psnodig String
+stringifyHMap exprs = return "ok"
+    -- vals <- mapM (\(x, y) -> (evalExpr x, evalExpr y)) exprs
+    -- strPairList <- mapM (\(x, y) -> stringifyValue x ++ ": " ++ stringifyValue y) vals
+    -- return $ "{" ++ intercalate ", " strPairList ++ "}"
+
+stringifyStruct :: [(String, Value)] -> Psnodig String
+stringifyStruct _ = return "ok"
+-- -- stringifyStruct fields =
+--     -- intercalate ", " $ map (\(k, v) -> k ++ " -> " ++ show v) fields
 
 evalNestedIndex :: Value -> [Expression] -> Psnodig Value
 evalNestedIndex val [] = return val

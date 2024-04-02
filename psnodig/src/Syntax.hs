@@ -76,8 +76,6 @@ data Expression =
     | Not Expression
     | StructExpr Struct
     | StructFieldExp StructField
-    | LocalStructField [(String, Value)] -- for structs within lists, sets etc. shall not be parsed -- kan kanskje fjerne da?? siden vi har identisk Val
-    -- fjern etterpå!!:))
     deriving (Eq, Show, Read, Ord)
 
 data Operator =
@@ -102,9 +100,10 @@ data Value =
       Nil
     | Boolean Bool
     | Number Integer
+    | Decimal Double
     | Text String
     | List [Expression]
     | HashSet (Set.Set Expression)
     | HashMap (Map.Map Expression Expression)
-    | StructVal [(String, Value)] -- kan omdøpe til LocalStructValue
+    | StructVal [(String, Value)]
     deriving (Eq, Show, Read, Ord)
