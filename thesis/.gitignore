@@ -10,3 +10,5 @@
 *.synctex.gz
 *.lol
 *.toc
+*.dvi
+*.lof
