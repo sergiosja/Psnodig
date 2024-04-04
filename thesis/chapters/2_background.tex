@@ -29,31 +29,31 @@ In a note made for the Algorithmic Problem Solving course at the University of W
 The oldest variant is from 1974, presented in The Design and Analysis of Computer Algorithms by Aho et al.~\cite[139]{BOOK:DesignAnalysis/Aho}: \hfill \\
 
 \begin{lstlisting}
-    procedure SEARCH(a, f, l):
-    if f $>$ l then return "no"
+procedure SEARCH(a, f, l):
+if f $>$ l then return "no"
+else
+    if a = A[$\lfloor$(f + l)/2$\rfloor$] then return "yes"
     else
-        if a = A[$\lfloor$(f + l)/2$\rfloor$] then return "yes"
-        else
-            if a < A[$\lfloor$(f + l)/2$\rfloor$] then
-                return SEARCH(a, f, $\lfloor$(f + l)/2$\rfloor$ - 1)
-            else return SEARCH(a, $\lfloor$(f + l)/2$\rfloor$ + 1, l)
+        if a < A[$\lfloor$(f + l)/2$\rfloor$] then
+            return SEARCH(a, f, $\lfloor$(f + l)/2$\rfloor$ - 1)
+        else return SEARCH(a, $\lfloor$(f + l)/2$\rfloor$ + 1, l)
 \end{lstlisting} \hfill \\
 
 Then, roughly 17 years later, Lewis et al. present it like this in Data Structures and Their Algorithms~\cite[182]{BOOK:DSA/Lewis}: \hfill \\
 
 \begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
-    function BinarySearchLookUp(key K, table T[0..n-1]): info
-    {Return information stored with key K in T, or $\Lambda$ if K is not in T}
-        Left $\gets$ 0
-        Right $\gets$ n - 1
-        repeat forever
-            if Right < Left then
-                return $\Lambda$
-            else
-                Middle $\gets$ $\lfloor$(Left + Right) / 2$\rfloor$
-                if K = Key(T[Middle]) then return Info(T[Middle])
-                else if K < Key(T[Middle]) then Right $\gets$ Middle - 1
-                else Left $\gets$ Middle + 1
+function BinarySearchLookUp(key K, table T[0..n-1]): info
+{Return information stored with key K in T, or $\Lambda$ if K is not in T}
+    Left $\gets$ 0
+    Right $\gets$ n - 1
+    repeat forever
+        if Right < Left then
+            return $\Lambda$
+        else
+            Middle $\gets$ $\lfloor$(Left + Right) / 2$\rfloor$
+            if K = Key(T[Middle]) then return Info(T[Middle])
+            else if K < Key(T[Middle]) then Right $\gets$ Middle - 1
+            else Left $\gets$ Middle + 1
 \end{lstlisting}
 
 The wish for automatic generation of pseudocode has been desired for some time, with the intention of presenting ideas without having to worry about syntax of a particular programming language~\cite{desireToGetPseudocodeGeneration}. Traditional pseudocode allows authors to draft ideas in an imperative way, just like we write recipes for baking bread and building legos. Here, the author is free to omit boilerplate code, include mathematical notation and necessary abstractions, and even resort to natural language where deemed appropriate~\cite{BOOK:intro/Cormen/Leiserson, DBLP:conf/els/Nuallain15}. \hfill \\
@@ -207,42 +207,42 @@ Types in Haskell are also called \textbf{data types}, as the \textbf{type} keywo
 A common type in any programming language is the boolean, shown in Listing 2.1. All types have one or more \textbf{value constructors}, which specify the different values a certain type can have. In this case, the Boolean type can have one of two values: True or False. The pipe operator functions as an ``or'' \cite[be stian om å sjekke hvilken side dette eksemplet er på i boka]{LYAH}. \hfill \\
 
 \begin{lstlisting}[caption={Recreating the Boolean data type with Haskell}, captionpos=b]
-   data Boolean = False | True
+data Boolean = False | True
 \end{lstlisting}
 
 With Haskell, it is straightforward to create your own data types, which can then be used to model ASTs. For instance, we can create our own calculator language in just a few lines of code, as shown in Listing 2.2. \hfill \\
 
 \begin{lstlisting}[caption={Example data types in Haskell}, captionpos=b]
-    data Program = Program Expression
+data Program = Program Expression
 
-    data Expression =
-          CompoundExpression Integer Operator Expression
-        | IntExpression Integer
+data Expression =
+      CompoundExpression Integer Operator Expression
+    | IntExpression Integer
 
-    data Operator =
-          Plus
-        | Minus
-        | Times
-        | Division
+data Operator =
+      Plus
+    | Minus
+    | Times
+    | Division
 \end{lstlisting}
 
 From this, we can construct an AST as the one we see in Listing 2.3. \hfill \\
 
 \begin{lstlisting}[caption={An AST constructed with data types presented in Listing 2.2}, captionpos=b]
-    Program (CompoundExpression 1 Plus
-                (CompoundExpression 2 Minus
-                    (IntExpression 3))
+Program (CompoundExpression 1 Plus
+            (CompoundExpression 2 Minus
+                (IntExpression 3))
 \end{lstlisting}
 
 Naturally, we could create much bigger calculations than this. If we wish to expand our operators data type, we only have to add a pipe and the operator name, as shown in Listing 2.4. \hfill \\
 
 \begin{lstlisting}[caption={An extended version of the Operator data type presented in Listing 2.2}, captionpos=b]
-    data Operator =
-          Plus
-        | Minus
-        | Times
-        | Division
-        | Exponent
+data Operator =
+      Plus
+    | Minus
+    | Times
+    | Division
+    | Exponent
 \end{lstlisting}
 
 \subsection{Pattern matching}
@@ -252,20 +252,20 @@ Another integral part of Haskell, is that its strong type system opens for clean
 Pattern matching is demonstrated in Listing 2.5, with a function converting each value of the Operator type (introduced in Listing 2.2) to its string equivalent. It shows a function \texttt{convert} that takes a value of type Operator as input, and returns a value of type String. \hfill \\
 
 \begin{lstlisting}[caption={Haskell function converting values of one type to another}, captionpos=b]
-    convert :: Operator -> String
-    convert Plus     = " + "
-    convert Minus    = " - "
-    convert Times    = " / "
-    convert Division = " * "
+convert :: Operator -> String
+convert Plus     = " + "
+convert Minus    = " - "
+convert Times    = " / "
+convert Division = " * "
 \end{lstlisting}
 
 If the function shown in Listing 2.5 was to work on the extended Operator data type from Listing 2.4, the compiler would let us know that our pattern matching is in, as there is no case for the \texttt{Exponent} value. This is one of the features that make pattern matching so powerful and safe. For some types though, like \texttt{Integer}, it can be exhausting to define injective functions. Listing 2.6 shows how the underscore can be used to capture all remaining values of a type. \hfill \\
 
 \begin{lstlisting}[caption={A simple Haskell function converting values of type Integer to its string equivalent}, captionpos=b]
-    convertInt :: Integer -> String
-    convertInt 1 = "one"
-    convertInt 2 = "two"
-    convertInt _ = "in integer other than one or two"
+convertInt :: Integer -> String
+convertInt 1 = "one"
+convertInt 2 = "two"
+convertInt _ = "in integer other than one or two"
 \end{lstlisting}
 
 \subsection{Testing}
@@ -305,34 +305,34 @@ Unlike JavaScript, TypeScript is structurally typed. TypeScript is syntactically
 AlaSQL is an open-source SQL database for JavaScript.\footnote{\url{https://github.com/AlaSQL/alasql}} It is technically a transpiler since we work in a JavaScript environment, but it allows you to write CRUD operations in SQL, like displayed in Listing 2.1. \hfill \\
 
 \begin{lstlisting}[caption={JavaScript code to create, populate and select a table with AlaSQL}, captionpos=b]
-    alasql("CREATE TABLE
-            cities (city string, pop number)");
+alasql("CREATE TABLE
+        cities (city string, pop number)");
 
-    alasql("INSERT INTO cities
-            VALUES ('Paris', 2249975),
-                   ('Berlin', 3517424),
-                   ('Madrid', 3041579)");
+alasql("INSERT INTO cities
+        VALUES ('Paris', 2249975),
+               ('Berlin', 3517424),
+               ('Madrid', 3041579)");
 
-    const res = alasql("SELECT *
-                        FROM cities
-                        WHERE pop < 3500000
-                        ORDER BY pop
-                        DESC");
+const res = alasql("SELECT *
+                    FROM cities
+                    WHERE pop < 3500000
+                    ORDER BY pop
+                    DESC");
 \end{lstlisting}
 
 Despite all the commands being written in SQL, \texttt{res} has a JavaScript value of a list with two objects, as seen in Listing 2.2. \hfill \\
 
 \begin{lstlisting}[caption={JSON list with two objects}, captionpos=b]
-    [
-        {
-            "city": "Madrid",
-            "pop": 3041579
-        },
-        {
-            "city": "Paris",
-            "pop": 2249975
-        }
-    ]
+[
+    {
+        "city": "Madrid",
+        "pop": 3041579
+    },
+    {
+        "city": "Paris",
+        "pop": 2249975
+    }
+]
 \end{lstlisting}
 
 JavaScript is practically the only Turing-complete programming language that can be used across browsers for web development. Rather than reinventing the wheel, developers have created transpilers to compile their favourite languages to JavaScript, which allows them to write code in their preferred languages, also for web development. Notable examples inlcude GopherJS, Scala.js and Opal, which transpile Go, Scala and Ruby, respectively, to JavaScript. \hfill \\
@@ -358,18 +358,18 @@ An example of this is the programming language \textbf{Derw}, an ML language mai
 Listing 2.3 shows how expressions like $6 <= 8$ are converted. The token \textbf{lessThanOrEqual} has a left- and right pointer, corresponding to the respective integers. These are extracted, and put on each side of the string ``is less than or equal to''.\footnote{The entire English code generator can be found at \url{https://github.com/eeue56/derw/blob/main/src/generators/English.derw}} \hfill \\
 
 \begin{lstlisting}[caption={The function that converts a ``less than or equal''-expression in Derw to English}, captionpos=b]
-    generateLessThanOrEqual: LessThanOrEqual -> string
-    generateLessThanOrEqual lessThanOrEqual =
-        let
-            left: string
-            left =
-                generateExpression lessThanOrEqual.left
+generateLessThanOrEqual: LessThanOrEqual -> string
+generateLessThanOrEqual lessThanOrEqual =
+    let
+        left: string
+        left =
+            generateExpression lessThanOrEqual.left
 
-            right: string
-            right =
-                generateExpression lessThanOrEqual.right
-        in
-            `$\textdollar${left} is less than or equal to $\textdollar${right}`
+        right: string
+        right =
+            generateExpression lessThanOrEqual.right
+    in
+        `$\textdollar${left} is less than or equal to $\textdollar${right}`
 \end{lstlisting}
 
 Another example is \textbf{Pandoc}, which is a software that converts between different markdown formats~\cite{dominici2014}. It includes a Haskell library, as well as a command-line program. It is able to a document from 45 source formats to 63 target formats.\footnote{See the entire list at \url{https://hackage.haskell.org/package/pandoc}} Additionally, Pandoc is able to convert documents in LaTex, Groff ms and HTML into PDFs. \hfill \\
@@ -377,20 +377,20 @@ Another example is \textbf{Pandoc}, which is a software that converts between di
 At its core, Pandoc is really just an abstract syntax tree (AST) of Haskell data types. A Pandoc document has the type \textbf{Pandoc Meta [Block]}. The first attribute is \textit{Meta}, metadata for the document, like its title, its author(s), the date it was written and more. The second attribute is a list of \textit{Block}. A block is a more intricate data type, which is shown in its entirety in Listing 2.4.
 
 \begin{lstlisting}[caption={The ``Block'' data type of Pandocs native representation}, captionpos=b]
-    Plain [Inline]
-    Para [Inline]
-    LineBlock [[Inline]]
-    CodeBlock Attr String
-    RawBlock Format String
-    BlockQuote [Block]
-    OrderedList ListAttributes [[Block]]
-    BulletList [[Block]]
-    DefinitionList [([Inline], [[Block]])]
-    Header Int Attr [Inline]
-    HorizontalRule
-    Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]
-    Div Attr [Block]
-    Null    
+Plain [Inline]
+Para [Inline]
+LineBlock [[Inline]]
+CodeBlock Attr String
+RawBlock Format String
+BlockQuote [Block]
+OrderedList ListAttributes [[Block]]
+BulletList [[Block]]
+DefinitionList [([Inline], [[Block]])]
+Header Int Attr [Inline]
+HorizontalRule
+Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]
+Div Attr [Block]
+Null
 \end{lstlisting}
 
 The modular design of Pandoc means that adding an input or output formats only requires adding a program that can convert \textit{to} this native representation, and a program that can convert \textit{from} this native representation. This is much like parsers and code generators of compilers, but as they are much less intricate, the Pandoc documentation refers to them simply as \textbf{readers} and \textbf{writers}. \hfill \\

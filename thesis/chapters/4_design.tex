@@ -49,85 +49,85 @@ The data types of Psnodig are presented in Listing 4.1. The entry point of a Psn
 Most of the syntax will resemble the syntax of common programming languages. However, there are two statements that have been introduced specifically for Psnodig's real use case: Hash- and Annotation statements. \hfill \\
 
 \begin{lstlisting}[caption={Psnodig's data types in Haskell}, captionpos=b]
-    data Program = Program [StructDecl] [Function]
-                   (Maybe FunctionCall)
+data Program = Program [StructDecl] [Function]
+               (Maybe FunctionCall)
 
-    data StructDecl = StructDecl String [Argument]
+data StructDecl = StructDecl String [Argument]
 
-    data Struct = Struct String [Expression]
+data Struct = Struct String [Expression]
 
-    data StructField = StructField Expression
-                       Expression
+data StructField = StructField Expression
+                   Expression
 
-    data Function = Function String [Argument]
-                    [Statement]
+data Function = Function String [Argument]
+                [Statement]
 
-    data FunctionCall = FunctionCall String
-                        [Expression]
+data FunctionCall = FunctionCall String
+                    [Expression]
 
-    data Argument = Argument String String
+data Argument = Argument String String
 
-    data Statement =
-          Assignment AssignmentTarget AssignmentValue
-        | Loop Expression [Statement]
-        | If Expression [Statement] (Maybe Else)
-        | ForEach String Expression [Statement]
-        | For String Expression Expression [Statement]
-        | CallStmt FunctionCall
-        | Return Expression
-        | HashStmt Statement
-        | AnnotationStmt String [Statement]
-        | Break
-        | Continue
+data Statement =
+      Assignment AssignmentTarget AssignmentValue
+    | Loop Expression [Statement]
+    | If Expression [Statement] (Maybe Else)
+    | ForEach String Expression [Statement]
+    | For String Expression Expression [Statement]
+    | CallStmt FunctionCall
+    | Return Expression
+    | HashStmt Statement
+    | AnnotationStmt String [Statement]
+    | Break
+    | Continue
 
-    data AssignmentTarget =
-          VariableTarget String
-        | ListIndexTarget String [Expression]
-        | StructFieldTarget StructField
+data AssignmentTarget =
+      VariableTarget String
+    | ListIndexTarget String [Expression]
+    | StructFieldTarget StructField
 
-    data AssignmentValue =
-          ExpressionValue Expression
-        | StructValue Struct
+data AssignmentValue =
+      ExpressionValue Expression
+    | StructValue Struct
 
-    data Else =
-          ElseIf Expression [Statement] (Maybe Else)
-        | Else [Statement]
+data Else =
+      ElseIf Expression [Statement] (Maybe Else)
+    | Else [Statement]
 
-    data Expression =
-          Constant Value
-        | VariableExp String
-        | BinaryExp Operator Expression Expression
-        | ListIndex String [Expression]
-        | CallExp FunctionCall
-        | Not Expression
-        | StructExpr Struct
-        | StructFieldExp StructField
+data Expression =
+      Constant Value
+    | VariableExp String
+    | BinaryExp Operator Expression Expression
+    | ListIndex String [Expression]
+    | CallExp FunctionCall
+    | Not Expression
+    | StructExpr Struct
+    | StructFieldExp StructField
 
-    data Operator =
-          Plus
-        | Minus
-        | Times
-        | Division
-        | LessThan
-        | LessThanEqual
-        | GreaterThan
-        | GreaterThanEqual
-        | Equal
-        | NotEqual
-        | And
-        | Or
-        | Modulo
+data Operator =
+      Plus
+    | Minus
+    | Times
+    | Division
+    | LessThan
+    | LessThanEqual
+    | GreaterThan
+    | GreaterThanEqual
+    | Equal
+    | NotEqual
+    | And
+    | Or
+    | Modulo
 
-    data Value =
-          Nil
-        | Boolean Bool
-        | Number Integer
-        | Decimal Double
-        | Text String
-        | List [Expression]
-        | HashSet (Set.Set Expression)
-        | HashMap (Map.Map Expression Expression)
-        | StructVal [(String, Value)]
+data Value =
+      Nil
+    | Boolean Bool
+    | Number Integer
+    | Decimal Double
+    | Text String
+    | List [Expression]
+    | HashSet (Set.Set Expression)
+    | HashMap (Map.Map Expression Expression)
+    | StructVal [(String, Value)]
 \end{lstlisting}
 
 Hash statements are picked up by the parser and intended to be interpreted, but ignored by writers. This lets us abstract away things that we deem to be obvious to our audience. It could also be things that have already been stated implicitly elsewhere, but still need to be parsed for our programs to run. The name derives from how we can write single line comments in Python with a hash symbol. \hfill \\
@@ -282,28 +282,28 @@ Whitespace can be defined as spaces, newlines and tabs. Gourmet does not differe
 Listing 4.5, Listing 4.6 and Listing 4.7 show three identical programs, besides the use of whitespace. We define a function \textbf{f} which again defines \textbf{a} to be a list with two elements, before returning \textbf{a}. Lastly, the fuction is called. All three programs will be parsed successfully, and have the same internal representation in Psnodig. \hfill \\
 
 \begin{lstlisting}[caption={f with a standard amount of whitespace}, captionpos=b]
-    func f() {
-        a := [1, 2]
-        return a
-    }
+func f() {
+    a := [1, 2]
+    return a
+}
 
-    f()    
+f()    
 \end{lstlisting}
 
 \begin{lstlisting}[caption={f with a lot of whitespace}, captionpos=b]
-    func f()
-    {
-        a       :=
-            [1   ,   2]
-        return
-        a
-    }
-    
-    f   (   )
+func f()
+{
+    a       :=
+        [1   ,   2]
+    return
+    a
+}
+
+f   (   )
 \end{lstlisting}
 
 \begin{lstlisting}[caption={f with no whitespace}, captionpos=b]
-    funcf(){a:=[1,2]returna}f()
+funcf(){a:=[1,2]returna}f()
 \end{lstlisting}
 
 \forsup{Jeg har tatt mye inspirasjon herfra: \url{https://github.uio.no/compilerconstruction-inf5110/compila/blob/master/doc/languagespec/compila.pdf} uten å kildeføre noe. her er jeg veldig usikker på hva jeg skal gjøre! Har jeg kopiert for mye? Finnes det en ryddig måte å kildeføre noe slikt?}
@@ -321,20 +321,20 @@ Essentially, types associate data values into classes and provide rules for how 
 Listing 4.8 shows how we can create a struct for modelling a tree data structure, and Listing 4.9 shows how they can be initialised. \hfill \\
 
 \begin{lstlisting}[caption={A Gourmet struct Tree, with instance variables value, left and right}, captionpos=b]
-    struct Tree {
-        value int,
-        left Tree,
-        right Tree
-    }
+struct Tree {
+    value int,
+    left Tree,
+    right Tree
+}
 \end{lstlisting}
 
 \begin{lstlisting}[caption=A function to initialise three tree structs and return the last one,captionpos=b]{Program}
-    func f() {
-        tree := struct Tree(10, nil, nil)
-        tree' := struct Tree(20, nil, nil)
-        tree'' := struct Tree(15, tree, tree')
-        return tree''
-    }
+func f() {
+    tree := struct Tree(10, nil, nil)
+    tree' := struct Tree(20, nil, nil)
+    tree'' := struct Tree(15, tree, tree')
+    return tree''
+}
 \end{lstlisting}
 
 \subsection{Syntax}
@@ -346,7 +346,7 @@ Gourmet's EBNF grammar is presented in Figure 4.1. EBNF (short for Extended Back
 In this variant of EBNF, we use the following meta symbols:
 
 \begin{lstlisting}
-    -> { } [ ] " |
+-> { } [ ] " |
 \end{lstlisting}
 
 Arrows indicate the application of a rule. Curly brackets indicate repetition of 0 or more times (much like the reflexive arrow in Figure 2.1). Square brackets indicate binary presentness. Vertical bars indicate option. Anything wrapped in double quotes is a keyword. \hfill \\
@@ -476,20 +476,20 @@ Algorithm2e allows us to define our own keywords with the \texttt{\textbackslash
 There are also more specific macros, like \texttt{\textbackslash SetKwProg\{proc\}\{Procedure\}\{is\}\\\{end\}}. This is used to initialise programs, and denotes a special syntax for the program. Listing 4.10 shows an example program, and Figure 4.2 shows the subsequent compiled result. For our TBP writer, we decide to ignore the last two parameters of \texttt{SetKwProg}, because we do not believe they add enough value to the final result. \hfill \\
 
 \begin{lstlisting}[caption={Example program with Algorithm2e to show macros in action}, captionpos=b]
-    ...
-    \SetKwProg{proc}{Procedure}{}{}
-    \SetKwFunction{ExampleProgram}{ExampleProgram}
-    ...
-    \begin{document}    
-    \begin{algorithm}[H]
-      \KwIn{Nothing}
-      \KwOut{The number 1}
-      \proc{$\$$\ExampleProgram()$\$$}{
-        \Return 1
-      }
-      \caption{Example program}
-    \end{algorithm}
-    \end{document}
+...
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{ExampleProgram}{ExampleProgram}
+...
+\begin{document}    
+\begin{algorithm}[H]
+  \KwIn{Nothing}
+  \KwOut{The number 1}
+  \proc{$\$$\ExampleProgram()$\$$}{
+    \Return 1
+  }
+  \caption{Example program}
+\end{algorithm}
+\end{document}
 \end{lstlisting}
 
 \begin{figure}[ht]
@@ -513,7 +513,7 @@ We also declare some macros to match the syntax of Psnodig. Before our programs 
 
 \subsection{Output}
 
-If we run \texttt{psnodig --tbp program} in our command line, and the program is syntactically correct, we receive a corresponding LaTeX file. If we add a flag \texttt{--pdf}, we also get a PDF of the compiled LaTeX file. \hfill \\
+If we run \texttt{psnodig --tbp program} in our command line, and the program is syntactically correct, we receive a corresponding LaTeX file. If we add a flag \texttt{--pdf, we also get a PDF of the compiled LaTeX file. \hfill \\
 
 Because the LaTeX file is built from Psnodig's internal representation, and not directly from the source program, formatting is not taken into account. This means that a program like \hfill \\
 
@@ -609,7 +609,7 @@ When working with large control flow statements, we have to deal with multiple e
 Additionally, having multiple straight edges from the same source might interfere with edge labels. Thus, we might also have to change the way we draw edges. An option is to change \texttt{--} to \texttt{|-} like
 
 \begin{lstlisting}
-    \draw [edge] (node) |- (node');
+\draw [edge] (node) |- (node');
 \end{lstlisting}
 
 This will curve the edge between \texttt{node} and \texttt{node'}, making the flowchart clearer. However, this is a difficult task to carry out since we never know how programs turn out beforehand. Therefore it seems natural to opt for the easiest choice available and instead, unfortunately, force the authors to tweak the resulting LaTeX on their own if they are dissatisfied.
@@ -625,10 +625,10 @@ Working with IBP in the command line works precisely like it does with TBP. We r
 Listing 4.11 shows the (most important parts of the) LaTeX file we receive by transpiling the program from Section 4.4.3. We see how every node has a unique ID, reference a tikzstyle, and how they are explicitly placed beneath each other. \hfill \\
 
 \begin{lstlisting}[caption={The LaTeX from transpiling a program to IBP}, captionpos=b]
-    \node (0) [startstop] {f()};
-    \node (1) [statement, below of=0] {v = 5};
-    \node (2) [startstop, below of=1] {v};
+\node (0) [startstop] {f()};
+\node (1) [statement, below of=0] {v = 5};
+\node (2) [startstop, below of=1] {v};
 
-    \draw [edge] (1) -- (2);
-    \draw [edge] (0) -- (1);
+\draw [edge] (1) -- (2);
+\draw [edge] (0) -- (1);
 \end{lstlisting}

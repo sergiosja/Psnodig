@@ -80,25 +80,25 @@ However, since Pseudogen will translate each line in a servile manner, all error
 % Obs, lagt inn ekstra newline over!
 
 \begin{lstlisting}[caption={Error handling in Python}, captionpos=b]
-    except ValueError as e:
-        print(e)
+except ValueError as e:
+    print(e)
 \end{lstlisting}
 
 \begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b]
-    # If ValueError, renamed to e, exception is caught.
-        # Call the function print with an argument e.
+# If ValueError, renamed to e, exception is caught.
+    # Call the function print with an argument e.
 \end{lstlisting}
 
 Another example is visible in Listing 3.3 and Listing 3.4, where list comprehension has been translated very literally. It is plausible to assume people with backgrounds in academia might favour the Python version to the transpiled one, as it closely resembles how we would write set comprehension in mathematics. \hfill \\
 
 \begin{lstlisting}[caption={A list comprehension of applying f(n) to integers in the range -10 to 10, and placing the results in a list}, captionpos=b]
-    a = [f(n) for n in range(-10, 10)]
+a = [f(n) for n in range(-10, 10)]
 \end{lstlisting}
 
 \begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b]
-    # Call the function f with an argument n for every
-      n in range of integers from range 10 negative
-      integer 10, substitute the result for a
+# Call the function f with an argument n for every
+  n in range of integers from range 10 negative
+  integer 10, substitute the result for a
 \end{lstlisting}
 
 It is clear that the target audience for Pseudogen's output formats must be people with little to no experience with reading/writing code. It seems like an excellent tool for translating Python to English, and shows that something like this is indeed possible. However, Psnodig's intended target audience is broader, and thus we believe Pseudogen alone is not enough to solve the problem we are dealing with.
@@ -130,14 +130,14 @@ Code2Flow is a tool that lets us create flowcharts with natural language, decora
 Flowcharts created with Code2Flow have a few, consistent colours to differentiate parts of their corresponding programs. Start- and end expressions are displayed as red ovals, while all remaining expressions are displayed as blue rectangles. Conditionals, loops and match statements are displayed with red rhombuses, and comments are displayed with orange rectangles. \\
 
 \begin{lstlisting}[caption={A Code2Flow program}, captionpos=b]
-    First expression;
-    Another expression;
-    if (conditional) {
-      expression 1;
-    } else {
-      expression 2; // Random comment
-    }
-    Last expression;
+First expression;
+Another expression;
+if (conditional) {
+  expression 1;
+} else {
+  expression 2; // Random comment
+}
+Last expression;
 \end{lstlisting}
 
 Listing 3.5 shows a program written with Code2Flow, and Figure 3.2 shows the corresponding flowchart. As we can see, syntactically correct expressions are just any combination of UTF-8 characters. Thus, we have no way to test a Code2Flow program. In fact, Code2Flow will \textit{never} let us know about syntactic errors, and will \textit{always} try to construct whatever flowchart it can. \\
@@ -162,15 +162,15 @@ To write a Mermaid.js flowchart, our program must start with \texttt{flowchart T
 We can also have add text, by writing it either inside the brackets, like \texttt{Node[text]}. Arrows can also include text by breaking them up into two parts, like \texttt{-- text -->}.\footnote{The full documentation can be found at~\url{https://mermaid.js.org/syntax/flowchart.html}} \\
 
 \begin{lstlisting}[caption={A mermaid.js program}, captionpos=b]
-    flowchart TD
-        A([First expression])
-            --> B[Another expression]
-        B --> C{contidional}
-        C -- True --> D[Expression 1]
-        C -- False --> E[Expression 2]
-            %% Random comment
-        D --> F([Last expression])
-        E --> F
+flowchart TD
+    A([First expression])
+        --> B[Another expression]
+    B --> C{contidional}
+    C -- True --> D[Expression 1]
+    C -- False --> E[Expression 2]
+        %% Random comment
+    D --> F([Last expression])
+    E --> F
 \end{lstlisting}
 
 Just like with Code2Flow, the text inside these nodes can be anything. Listing 3.5 shows a program written with Mermaid.js, and Figure 3.3 shows the corresponding flowchart. Contrary to Code2Flow, comments are ignored by the parser, and solely exist to aid the programmer. They must also be on their own lines. \\
