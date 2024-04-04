@@ -6,6 +6,7 @@
 \usepackage{listings}
 \usepackage[scale=0.95]{sourcecodepro}
 \definecolor{codebackground}{HTML}{FAFAFA}
+\definecolor{rulecolor}{HTML}{5E5086}
 
 % For different listing styles, see: https://tex.stackexchange.com/questions/45711/defining-lstset-parameters-for-multiple-languages
 \lstset {
@@ -14,17 +15,18 @@
   breaklines=true,
   columns=fullflexible,
   commentstyle=\color{ForestGreen},
-  xleftmargin=4ex,
-  frame=none,
+  frameshape={RYR}{Y}{Y}{RYR},
   framexleftmargin=2ex,
   keepspaces,
   keywordstyle=\color{RoyalBlue},
   language=haskell,
   mathescape,
   numberstyle=\tiny,
+  rulecolor=\color{rulecolor},
   showstringspaces=false,
   stringstyle=\color{Maroon},
-  tabsize=2
+  tabsize=2,
+  xleftmargin=4ex
 }
 
 \usepackage{caption}
