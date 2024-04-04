@@ -28,7 +28,7 @@ The interpreter is built around our monad of choice, \textbf{StateT ExecutionSta
 
 The state we apply is \texttt{ExecutionState}, fleshed out in Listing 5.1. It is a compound type with named fields, and closely resembles a struct in programming languages like Go and C. Applying \texttt{StateT} allows us to maintain and operate on this state throughout computations. \hfill \\
 
-\begin{lstlisting}[caption={The Psnodig interpreter's state}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={The Psnodig interpreter's state}, captionpos=b]
     type StructDecls = Map.Map String [String]
     type FuncEnv = Map.Map String Function
     type Scope = [[(String, Value)]]
@@ -58,7 +58,7 @@ Lastly, our state takes care of \texttt{output}, which is a list of strings. Thi
 
 The inner monad that StateT operates over is \texttt{ExceptT RuntimeError IO}. This allows us to augment the \texttt{IO} monad with a value of type \texttt{RuntimeError}. The latter is several types of custom error messages, to locate the source of error easier. The entire list is shown in Listing 5.2. \hfill \\
 
-\begin{lstlisting}[caption={All error messages to be encountered in Psnodig}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={All error messages to be encountered in Psnodig}, captionpos=b]
     data RuntimeError =
           VariableNotFound String
         | FunctionNotFound String
@@ -96,7 +96,7 @@ We used the Haskell library Parsec to write the parser for Gourmet. Parsec is an
 
 Parsec also lets us write our lexer and parser in one. The entire lexer is presented in Listing 5.3, which takes up just 20 lines. It could have been presented with even fewer lines, but we have focused on readability instead of showboating. The lexer mainly defines the form of identifiers, comments and reserved names. \hfill \\
 
-\begin{lstlisting}[caption={The Gourmet lexer}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={The Gourmet lexer}, captionpos=b]
     lexer :: Token.TokenParser ()
     lexer = Token.makeTokenParser emptyDef {
         Token.identStart = letter,
@@ -121,7 +121,7 @@ Parsec also lets us write our lexer and parser in one. The entire lexer is prese
 
 Listing 5.4 shows the entry function, and how programs are parsed. We parse all struct declarations, function declarations, and potentially a function call, before the program returns the resulting AST in a Parser context. \texttt{Many} means 0 or more, and \texttt{optionMaybe} means 0 or 1. This also reveals that any text written after the function call is simply ignored. \hfill \\
 
-\begin{lstlisting}[caption={Parsing Gourmet programs}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={Parsing Gourmet programs}, captionpos=b]
     parseGourmet :: Parser Program
     parseGourmet = do
         whiteSpace
@@ -135,7 +135,7 @@ We have opted for an applicative programming style when developing the parser, w
 
 \texttt{$<$\$$>$} allows us to put everything on the right as arguments to \texttt{FunctionCall}. \texttt{$<$*} means that we parse both the left side and the right side, but only keep the left side. \texttt{*$>$} means the opposite. \texttt{$<$*$>$} means that we keep both. \hfill \\
 
-\begin{lstlisting}[caption={Parsing Gourmet function calls}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={Parsing Gourmet function calls}, captionpos=b]
     parseFunctionCall :: Parser FunctionCall
     parseFunctionCall =
         FunctionCall
@@ -151,7 +151,7 @@ Creating a writer when you already have a parser is manageable. In fact, the wri
 
 Since Psnodig does not take formatting into consideration, it has no way of knowing the combination of whitespace we used in our program. Therefore, we use the function in Listing 5.6 to add indentation. This is used when entering new scopes in loops and if-statements, to add readability to our programs. Thus, in a way Psnodig works like a linter: By transpiling our Gourmet programs, we receive semantically identical programs, but with the intended amount of whitespace. \hfill \\
 
-\begin{lstlisting}[caption={A function for adding indentation}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={A function for adding indentation}, captionpos=b]
     addIndents :: Int -> String
     addIndents n = replicate n '\t'
 \end{lstlisting}

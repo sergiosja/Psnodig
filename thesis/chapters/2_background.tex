@@ -28,7 +28,7 @@ In a note made for the Algorithmic Problem Solving course at the University of W
 
 The oldest variant is from 1974, presented in The Design and Analysis of Computer Algorithms by Aho et al.~\cite[139]{BOOK:DesignAnalysis/Aho}: \hfill \\
 
-\begin{lstlisting}[frame=tlrb]
+\begin{lstlisting}
     procedure SEARCH(a, f, l):
     if f $>$ l then return "no"
     else
@@ -41,7 +41,7 @@ The oldest variant is from 1974, presented in The Design and Analysis of Compute
 
 Then, roughly 17 years later, Lewis et al. present it like this in Data Structures and Their Algorithms~\cite[182]{BOOK:DSA/Lewis}: \hfill \\
 
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily, frame=tlrb]
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
     function BinarySearchLookUp(key K, table T[0..n-1]): info
     {Return information stored with key K in T, or $\Lambda$ if K is not in T}
         Left $\gets$ 0
@@ -206,13 +206,13 @@ Types in Haskell are also called \textbf{data types}, as the \textbf{type} keywo
 
 A common type in any programming language is the boolean, shown in Listing 2.1. All types have one or more \textbf{value constructors}, which specify the different values a certain type can have. In this case, the Boolean type can have one of two values: True or False. The pipe operator functions as an ``or'' \cite[be stian om å sjekke hvilken side dette eksemplet er på i boka]{LYAH}. \hfill \\
 
-\begin{lstlisting}[caption={Recreating the Boolean data type with Haskell}, captionpos=b, frame=tlrb]
-    data Boolean = False | True
+\begin{lstlisting}[caption={Recreating the Boolean data type with Haskell}, captionpos=b]
+   data Boolean = False | True
 \end{lstlisting}
 
 With Haskell, it is straightforward to create your own data types, which can then be used to model ASTs. For instance, we can create our own calculator language in just a few lines of code, as shown in Listing 2.2. \hfill \\
 
-\begin{lstlisting}[caption={Example data types in Haskell}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={Example data types in Haskell}, captionpos=b]
     data Program = Program Expression
 
     data Expression =
@@ -228,7 +228,7 @@ With Haskell, it is straightforward to create your own data types, which can the
 
 From this, we can construct an AST as the one we see in Listing 2.3. \hfill \\
 
-\begin{lstlisting}[caption={An AST constructed with data types presented in Listing 2.2}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={An AST constructed with data types presented in Listing 2.2}, captionpos=b]
     Program (CompoundExpression 1 Plus
                 (CompoundExpression 2 Minus
                     (IntExpression 3))
@@ -236,7 +236,7 @@ From this, we can construct an AST as the one we see in Listing 2.3. \hfill \\
 
 Naturally, we could create much bigger calculations than this. If we wish to expand our operators data type, we only have to add a pipe and the operator name, as shown in Listing 2.4. \hfill \\
 
-\begin{lstlisting}[caption={An extended version of the Operator data type presented in Listing 2.2}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={An extended version of the Operator data type presented in Listing 2.2}, captionpos=b]
     data Operator =
           Plus
         | Minus
@@ -251,7 +251,7 @@ Another integral part of Haskell, is that its strong type system opens for clean
 
 Pattern matching is demonstrated in Listing 2.5, with a function converting each value of the Operator type (introduced in Listing 2.2) to its string equivalent. It shows a function \texttt{convert} that takes a value of type Operator as input, and returns a value of type String. \hfill \\
 
-\begin{lstlisting}[caption={Haskell function converting values of one type to another}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={Haskell function converting values of one type to another}, captionpos=b]
     convert :: Operator -> String
     convert Plus     = " + "
     convert Minus    = " - "
@@ -261,7 +261,7 @@ Pattern matching is demonstrated in Listing 2.5, with a function converting each
 
 If the function shown in Listing 2.5 was to work on the extended Operator data type from Listing 2.4, the compiler would let us know that our pattern matching is in, as there is no case for the \texttt{Exponent} value. This is one of the features that make pattern matching so powerful and safe. For some types though, like \texttt{Integer}, it can be exhausting to define injective functions. Listing 2.6 shows how the underscore can be used to capture all remaining values of a type. \hfill \\
 
-\begin{lstlisting}[caption={A simple Haskell function converting values of type Integer to its string equivalent}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={A simple Haskell function converting values of type Integer to its string equivalent}, captionpos=b]
     convertInt :: Integer -> String
     convertInt 1 = "one"
     convertInt 2 = "two"
@@ -304,7 +304,7 @@ Unlike JavaScript, TypeScript is structurally typed. TypeScript is syntactically
 
 AlaSQL is an open-source SQL database for JavaScript.\footnote{\url{https://github.com/AlaSQL/alasql}} It is technically a transpiler since we work in a JavaScript environment, but it allows you to write CRUD operations in SQL, like displayed in Listing 2.1. \hfill \\
 
-\begin{lstlisting}[caption={JavaScript code to create, populate and select a table with AlaSQL}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={JavaScript code to create, populate and select a table with AlaSQL}, captionpos=b]
     alasql("CREATE TABLE
             cities (city string, pop number)");
 
@@ -322,7 +322,7 @@ AlaSQL is an open-source SQL database for JavaScript.\footnote{\url{https://gith
 
 Despite all the commands being written in SQL, \texttt{res} has a JavaScript value of a list with two objects, as seen in Listing 2.2. \hfill \\
 
-\begin{lstlisting}[caption={JSON list with two objects}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={JSON list with two objects}, captionpos=b]
     [
         {
             "city": "Madrid",
@@ -357,7 +357,7 @@ An example of this is the programming language \textbf{Derw}, an ML language mai
 
 Listing 2.3 shows how expressions like $6 <= 8$ are converted. The token \textbf{lessThanOrEqual} has a left- and right pointer, corresponding to the respective integers. These are extracted, and put on each side of the string ``is less than or equal to''.\footnote{The entire English code generator can be found at \url{https://github.com/eeue56/derw/blob/main/src/generators/English.derw}} \hfill \\
 
-\begin{lstlisting}[caption={The function that converts a ``less than or equal''-expression in Derw to English}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={The function that converts a ``less than or equal''-expression in Derw to English}, captionpos=b]
     generateLessThanOrEqual: LessThanOrEqual -> string
     generateLessThanOrEqual lessThanOrEqual =
         let

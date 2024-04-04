@@ -1,12 +1,31 @@
 \documentclass[twoside, openright, a4paper,  UKenglish]{report}
+\usepackage[dvipsnames]{xcolor}
 \usepackage[UKenglish]{uiomasterfp}
 \usepackage{amsmath, listings, graphicx, csquotes, amsfonts, commath}
 \usepackage[colorlinks=true, allcolors=black, breaklinks=true]{hyperref}
 \usepackage{listings}
-\lstset{
-    basicstyle=\ttfamily,
-    mathescape
+\usepackage[scale=0.95]{sourcecodepro}
+\definecolor{codebackground}{HTML}{FAFAFA}
+
+\lstset {
+  backgroundcolor=\color{codebackground},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  commentstyle=\color{ForestGreen},
+  xleftmargin=4ex,
+  frame=none,
+  framexleftmargin=2ex,
+  keepspaces,
+  keywordstyle=\color{RoyalBlue},
+  language=haskell,
+  mathescape,
+  numberstyle=\tiny,
+  showstringspaces=false,
+  stringstyle=\color{Maroon},
+  tabsize=2
 }
+
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage[normalem]{ulem}

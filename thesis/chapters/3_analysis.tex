@@ -79,23 +79,23 @@ However, since Pseudogen will translate each line in a servile manner, all error
 
 % Obs, lagt inn ekstra newline over!
 
-\begin{lstlisting}[caption={Error handling in Python}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={Error handling in Python}, captionpos=b]
     except ValueError as e:
         print(e)
 \end{lstlisting}
 
-\begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b]
     # If ValueError, renamed to e, exception is caught.
         # Call the function print with an argument e.
 \end{lstlisting}
 
 Another example is visible in Listing 3.3 and Listing 3.4, where list comprehension has been translated very literally. It is plausible to assume people with backgrounds in academia might favour the Python version to the transpiled one, as it closely resembles how we would write set comprehension in mathematics. \hfill \\
 
-\begin{lstlisting}[caption={A list comprehension of applying f(n) to integers in the range -10 to 10, and placing the results in a list}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={A list comprehension of applying f(n) to integers in the range -10 to 10, and placing the results in a list}, captionpos=b]
     a = [f(n) for n in range(-10, 10)]
 \end{lstlisting}
 
-\begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={The result of transpiling the code in Listing ?? with Pseudogen}, captionpos=b]
     # Call the function f with an argument n for every
       n in range of integers from range 10 negative
       integer 10, substitute the result for a
@@ -129,7 +129,7 @@ Code2Flow is a tool that lets us create flowcharts with natural language, decora
 
 Flowcharts created with Code2Flow have a few, consistent colours to differentiate parts of their corresponding programs. Start- and end expressions are displayed as red ovals, while all remaining expressions are displayed as blue rectangles. Conditionals, loops and match statements are displayed with red rhombuses, and comments are displayed with orange rectangles. \\
 
-\begin{lstlisting}[caption={A Code2Flow program}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={A Code2Flow program}, captionpos=b]
     First expression;
     Another expression;
     if (conditional) {
@@ -161,7 +161,7 @@ To write a Mermaid.js flowchart, our program must start with \texttt{flowchart T
 
 We can also have add text, by writing it either inside the brackets, like \texttt{Node[text]}. Arrows can also include text by breaking them up into two parts, like \texttt{-- text -->}.\footnote{The full documentation can be found at~\url{https://mermaid.js.org/syntax/flowchart.html}} \\
 
-\begin{lstlisting}[caption={A mermaid.js program}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={A mermaid.js program}, captionpos=b]
     flowchart TD
         A([First expression])
             --> B[Another expression]

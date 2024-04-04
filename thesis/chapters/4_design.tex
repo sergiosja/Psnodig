@@ -48,7 +48,7 @@ The data types of Psnodig are presented in Listing 4.1. The entry point of a Psn
 
 Most of the syntax will resemble the syntax of common programming languages. However, there are two statements that have been introduced specifically for Psnodig's real use case: Hash- and Annotation statements. \hfill \\
 
-\begin{lstlisting}[caption={Psnodig's data types in Haskell}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={Psnodig's data types in Haskell}, captionpos=b]
     data Program = Program [StructDecl] [Function]
                    (Maybe FunctionCall)
 
@@ -146,7 +146,7 @@ A big selling point of Psnodig is that in addition to being a transpiler, it als
 
 Take the program presented in Listing 4.2 as an example. The function \\ \texttt{printEvenNumbers} takes two arguments: a list of numbers and the list's length. Then we iterate through this range, and proceed to print every number in the list that is even. However, we check for evenness by doing \texttt{if i \% 2 == 0}, when really we intend to do \texttt{if numbers[i] \% 2 == 0}. The difference is subtle, but by running the program we quickly realise the error when the screen displays 47, 79 and 93 rather than 46 and 22. \hfill \\
 
-\begin{lstlisting}[caption={A syntactically correct program with a subtle logical error}, captionpos=b, frame=tlrb]{Name}
+\begin{lstlisting}[caption={A syntactically correct program with a subtle logical error}, captionpos=b]{Name}
 func printEvenNumbers(numbers list, length int) {
     for i := 0, length-1 {
         if i % 2 == 0 {
@@ -171,7 +171,7 @@ Psnodig works with both a global and a local scope. All structs and functions ar
 Listing 4.3 and Listing 4.4 both show syntactically correct programs. However, running the former will yield an error, because \texttt{n} is not available in the scope of \texttt{g}. The latter program will yield the value of {n}, as we pass the variable as an argument to \texttt{g}, which returns the variable straight back. \hfill \\
 
 \begin{minipage}{.45\textwidth}
-\begin{lstlisting}[caption=Code with error, captionpos=b, frame=tlrb]{Name}
+\begin{lstlisting}[caption=Code with error, captionpos=b]{Name}
 func f() {
     n := 5
     return g()
@@ -185,7 +185,7 @@ f()
 \end{lstlisting}
 \end{minipage}\hfill
 \begin{minipage}{.45\textwidth}
-\begin{lstlisting}[caption=Code without error, captionpos=b, frame=tlrb]{Name}
+\begin{lstlisting}[caption=Code without error, captionpos=b]{Name}
 func f() {
     n := 5
     return g(n)
@@ -281,7 +281,7 @@ Whitespace can be defined as spaces, newlines and tabs. Gourmet does not differe
 
 Listing 4.5, Listing 4.6 and Listing 4.7 show three identical programs, besides the use of whitespace. We define a function \textbf{f} which again defines \textbf{a} to be a list with two elements, before returning \textbf{a}. Lastly, the fuction is called. All three programs will be parsed successfully, and have the same internal representation in Psnodig. \hfill \\
 
-\begin{lstlisting}[caption={f with a standard amount of whitespace}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={f with a standard amount of whitespace}, captionpos=b]
     func f() {
         a := [1, 2]
         return a
@@ -290,7 +290,7 @@ Listing 4.5, Listing 4.6 and Listing 4.7 show three identical programs, besides 
     f()    
 \end{lstlisting}
 
-\begin{lstlisting}[caption={f with a lot of whitespace}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={f with a lot of whitespace}, captionpos=b]
     func f()
     {
         a       :=
@@ -302,7 +302,7 @@ Listing 4.5, Listing 4.6 and Listing 4.7 show three identical programs, besides 
     f   (   )
 \end{lstlisting}
 
-\begin{lstlisting}[caption={f with no whitespace}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={f with no whitespace}, captionpos=b]
     funcf(){a:=[1,2]returna}f()
 \end{lstlisting}
 
@@ -320,7 +320,7 @@ Essentially, types associate data values into classes and provide rules for how 
 
 Listing 4.8 shows how we can create a struct for modelling a tree data structure, and Listing 4.9 shows how they can be initialised. \hfill \\
 
-\begin{lstlisting}[caption={A Gourmet struct Tree, with instance variables value, left and right}, captionpos=b, frame=tlrb]
+\begin{lstlisting}[caption={A Gourmet struct Tree, with instance variables value, left and right}, captionpos=b]
     struct Tree {
         value int,
         left Tree,
@@ -328,7 +328,7 @@ Listing 4.8 shows how we can create a struct for modelling a tree data structure
     }
 \end{lstlisting}
 
-\begin{lstlisting}[caption=A function to initialise three tree structs and return the last one,captionpos=b, frame=tlrb]{Program}
+\begin{lstlisting}[caption=A function to initialise three tree structs and return the last one,captionpos=b]{Program}
     func f() {
         tree := struct Tree(10, nil, nil)
         tree' := struct Tree(20, nil, nil)
@@ -475,7 +475,7 @@ Algorithm2e allows us to define our own keywords with the \texttt{\textbackslash
 
 There are also more specific macros, like \texttt{\textbackslash SetKwProg\{proc\}\{Procedure\}\{is\}\\\{end\}}. This is used to initialise programs, and denotes a special syntax for the program. Listing 4.10 shows an example program, and Figure 4.2 shows the subsequent compiled result. For our TBP writer, we decide to ignore the last two parameters of \texttt{SetKwProg}, because we do not believe they add enough value to the final result. \hfill \\
 
-\begin{lstlisting}[caption={Example program with Algorithm2e to show macros in action}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={Example program with Algorithm2e to show macros in action}, captionpos=b]
     ...
     \SetKwProg{proc}{Procedure}{}{}
     \SetKwFunction{ExampleProgram}{ExampleProgram}
@@ -624,7 +624,7 @@ Working with IBP in the command line works precisely like it does with TBP. We r
 
 Listing 4.11 shows the (most important parts of the) LaTeX file we receive by transpiling the program from Section 4.4.3. We see how every node has a unique ID, reference a tikzstyle, and how they are explicitly placed beneath each other. \hfill \\
 
-\begin{lstlisting}[caption={The LaTeX from transpiling a program to IBP}, captionpos=b, frame=trbl]
+\begin{lstlisting}[caption={The LaTeX from transpiling a program to IBP}, captionpos=b]
     \node (0) [startstop] {f()};
     \node (1) [statement, below of=0] {v = 5};
     \node (2) [startstop, below of=1] {v};
