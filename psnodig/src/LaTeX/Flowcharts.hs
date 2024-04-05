@@ -7,35 +7,19 @@ import Control.Monad.Writer
 import Control.Monad.State
 import Syntax
 
-type Scope = (String, [String])
-data Stack = Stack { edges :: [Scope], ids :: Int }
+type Edge = String
+data Stack = Stack { edges :: [Edge], ids :: Int }
 type Flowchart = StateT Stack (Writer String)
 
 -- Helper functions
 
-uniqueID :: Flowchart String
+uniqueID :: Flowchart Int
 uniqueID = do
     stack <- get
     let currentId = ids stack
     let updatedId = currentId + 1
     put $ stack { ids = updatedId }
-    return $ show updatedId
-
-peekStack :: Flowchart Scope
-peekStack = do
-    Stack existingEdges _ <- get
-    case existingEdges of
-        [] -> return ("", [])
-        entry : _ -> return entry
-
-updateStack :: String -> String -> [String] -> Flowchart ()
-updateStack current parent children =
-    modify (\stack -> stack { edges = (current, []) : (parent, current : children) : tail (edges stack) })
-
-countBranches :: (Maybe Else) -> Int
-countBranches Nothing = 0
-countBranches (Just (Else _)) = 1
-countBranches (Just (ElseIf _ _ branch)) = 1 + countBranches branch
+    return updatedId
 
 intercalateExprs :: [Expression] -> String
 intercalateExprs exprs =
@@ -50,16 +34,7 @@ intercalateArgs args =
         drawArg :: Argument -> String
         drawArg (Argument x _) = x
 
-drawLoopStmts :: [Statement] -> Flowchart ()
-drawLoopStmts stmts =
-    case length stmts of
-        0 -> return ()
-        1 -> drawStmt (head stmts) "yshift=-0.5cm, xshift=-1.5cm, below left of="
-        _ -> do
-            drawStmt (head stmts) "yshift=-0.5cm, xshift=-1.5cm, below left of="
-            mapM_ (\stmt -> drawStmt stmt "below of=") (tail stmts)
-
--- Drawing values
+-- Values
 
 drawValue :: Value -> Bool -> String
 drawValue Nil _ = "Nil"
@@ -103,7 +78,7 @@ drawStruct fields =
             in str ++ ": " ++ val'
 
 
--- Drawing expressions
+-- Expressions
 
 drawExpr :: Expression -> String
 drawExpr (Constant v) = drawValue v False
@@ -139,36 +114,35 @@ drawIndexExprs [] = ""
 drawIndexExprs (x:xs) = "[" ++ drawExpr x ++ "]" ++ drawIndexExprs xs
 
 
--- Drawing statements
+-- Statements
 
 drawStmt :: Statement -> String -> Flowchart ()
 drawStmt (Assignment target value) pos = do
-    currentId <- uniqueID
-    (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value ++ "};\n"
-    updateStack currentId parentId children
+    id <- uniqueID
+    tell $ "\\node (" ++ (show id) ++ ") [statement, " ++ pos ++ (show $ id - 1) ++ "] {" ++ drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value ++ "};\n"
+    addEdge id
 
 
 
 
-drawStmt (Loop expr stmts) pos = do
-    currentId <- uniqueID
-    (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ " ?};\n"
-    updateStack currentId parentId children
+-- drawStmt (Loop expr stmts) pos = do
+--     currentId <- uniqueID
+--     (parentId, children) <- peekStack
+--     tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ " ?};\n"
+--     addEdge currentId parentId children
 
-    drawLoopStmts stmts
+--     drawLoopStmts stmts
 
-    updateStack currentId parentId []
-
-
+--     addEdge currentId parentId []
 
 
-drawStmt (If expr stmts maybeElse) pos = do
-    currentId <- uniqueID
-    (parentId, children) <- peekStack
-    updateStack currentId parentId children
-    tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ "};\n"
+
+
+-- drawStmt (If expr stmts maybeElse) pos = do
+--     currentId <- uniqueID
+--     (parentId, children) <- peekStack
+--     addEdge currentId parentId children
+--     tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ "};\n"
 
     -- Find number of branches
     -- let numberOfBranches = countBranches maybeElse
@@ -205,23 +179,20 @@ drawStmt (If expr stmts maybeElse) pos = do
 -- drawStmt (For str expr1 expr2 stmts) =
 
 drawStmt (CallStmt functionCall) pos = do
-    currentId <- uniqueID
-    (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ drawFunctionCall functionCall ++ "};\n"
-    updateStack currentId parentId children
+    id <- uniqueID
+    tell $ "\\node (" ++ (show id) ++ ") [statement, " ++ pos ++ (show $ id - 1) ++ "] {" ++ drawFunctionCall functionCall ++ "};\n"
+    addEdge id
 
 drawStmt (Return expr) pos = do
-    currentId <- uniqueID
-    (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [startstop, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ "};\n"
-    updateStack currentId parentId children
+    id <- uniqueID
+    tell $ "\\node (" ++ (show id) ++ ") [startstop, " ++ pos ++ (show $ id - 1) ++ "] {" ++ drawExpr expr ++ "};\n"
+    addEdge id
 
 drawStmt (HashStmt _) _ = return ()
 drawStmt (AnnotationStmt str _) pos = do
-    currentId <- uniqueID
-    (parentId, children) <- peekStack
-    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ str ++ "};\n"
-    updateStack currentId parentId children
+    id <- uniqueID
+    tell $ "\\node (" ++ (show id) ++ ") [statement, " ++ pos ++ (show $ id - 1) ++ "] {" ++ str ++ "};\n"
+    addEdge id
 
 drawStmt Break _ = return () -- denne kan vel fikses greit? feks peke på neste
 drawStmt Continue _ = return () -- og denne? feks peke på forrige skop
@@ -243,6 +214,17 @@ drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercala
 -- drawElse :: Else -> ..
 -- drawElse maybeElse
 
+-- Statement helpers
+
+drawLoopStmts :: [Statement] -> Flowchart ()
+drawLoopStmts stmts =
+    case length stmts of
+        0 -> return ()
+        1 -> drawStmt (head stmts) "yshift=-0.5cm, xshift=-1.5cm, below left of="
+        _ -> do
+            drawStmt (head stmts) "yshift=-0.5cm, xshift=-1.5cm, below left of="
+            mapM_ (\stmt -> drawStmt stmt "below of=") (tail stmts)
+
 
 -- Functions
 
@@ -250,11 +232,9 @@ drawFunction :: Function -> Flowchart ()
 drawFunction (Function name args stmts) = do
     tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ intercalateArgs args ++ ")};\n"
     drawFuncStmts stmts
-    -- mapM_ (\s -> drawStmt s "below of=") stmts
 
 drawFuncStmts :: [Statement] -> Flowchart ()
 drawFuncStmts [] = return ()
-
 drawFuncStmts (loop@(Loop _ _) : []) = do
     drawStmt loop "below of="
 drawFuncStmts (loop@(Loop _ _) : x : xs) = do
@@ -269,17 +249,18 @@ drawFuncStmts (x:xs) = do
 drawFunctionCall :: FunctionCall -> String
 drawFunctionCall (FunctionCall name exprs) = name ++ "(" ++ intercalateExprs exprs ++ ")"
 
+
 -- Edges
 
 drawEdges :: Flowchart ()
 drawEdges = do
-    (Stack edges' _) <- get
-    tell "\n" >> mapM_ drawEdge edges'
+    (Stack edges _) <- get
+    tell "\n" >> mapM_ tell (reverse edges)
 
-drawEdge :: Scope -> Flowchart ()
-drawEdge (parent, children) =
-    mapM_ (\child -> tell $ "\\draw [edge] (" ++ parent ++ ") -- (" ++ child ++ ");\n") children
-
+addEdge :: Int -> Flowchart ()
+addEdge id = do
+    let newEdge = "\\draw [edge] (" ++ show (id - 1) ++ ") -- (" ++ show id ++ ");\n"
+    modify (\stack -> stack { edges = newEdge : (edges stack) })
 
 
 {-
