@@ -1,6 +1,8 @@
 module LaTeX.Flowcharts (Stack(..), writeFlowchart) where
 
--- import qualified Data.Map as Map
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Data.List (intercalate)
 import Control.Monad.Writer
 import Control.Monad.State
 import Syntax
@@ -23,7 +25,7 @@ peekStack :: Flowchart Scope
 peekStack = do
     Stack existingEdges _ <- get
     case existingEdges of
-        [] -> return ("",[])
+        [] -> return ("", [])
         entry : _ -> return entry
 
 updateStack :: String -> String -> [String] -> Flowchart ()
@@ -35,48 +37,84 @@ countBranches Nothing = 0
 countBranches (Just (Else _)) = 1
 countBranches (Just (ElseIf _ _ branch)) = 1 + countBranches branch
 
+intercalateExprs :: [Expression] -> String
+intercalateExprs exprs =
+    let exprs' = map drawExpr exprs
+    in intercalate ", " exprs'
 
--- Drawing functions
+intercalateArgs :: [Argument] -> String
+intercalateArgs args =
+    let args' = map drawArg args
+    in intercalate ", " args'
+    where
+        drawArg :: Argument -> String
+        drawArg (Argument x _) = x
 
-drawFunction :: Function -> Flowchart ()
-drawFunction (Function name args stmts) = do
-    tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ drawArgs args ++ ")};\n"
-    mapM_ (\s -> drawStmt s "below of=") stmts
-
-drawArgs :: [Argument] -> String
-drawArgs [] = ""
-drawArgs ((Argument x _) : []) = x
-drawArgs ((Argument x _) : xs) = x ++ ", " ++ drawArgs xs
-
+drawLoopStmts :: [Statement] -> Flowchart ()
+drawLoopStmts stmts =
+    case length stmts of
+        0 -> return ()
+        1 -> drawStmt (head stmts) "yshift=-0.5cm, xshift=-1.5cm, below left of="
+        _ -> do
+            drawStmt (head stmts) "yshift=-0.5cm, xshift=-1.5cm, below left of="
+            mapM_ (\stmt -> drawStmt stmt "below of=") (tail stmts)
 
 -- Drawing values
 
-drawValue :: Value -> String
-drawValue Nil = "empty"
-drawValue (Boolean True) = "true"
-drawValue (Boolean False) = "false"
-drawValue (Number n) = show n
-drawValue (Text t) = t
--- List [Expression]
--- HashSet (Set.Set Expression)
--- HashMap (Map.Map Expression Expression)
--- StructVal [(String, Value)]
-drawValue v = show v
+drawValue :: Value -> Bool -> String
+drawValue Nil _ = "Nil"
+drawValue (Boolean b) _ = show b
+drawValue (Number n) _ = show n
+drawValue (Decimal d) _ = show d
+drawValue (Text t) b = if b then '\"' : t ++ "\"" else t
+drawValue (List l) _ = drawIterable "[" l "]"
+drawValue (HashSet hs) _ = drawIterable "(" (Set.toList hs) ")"
+drawValue (HashMap hm) _ = drawHMap $ Map.toList hm
+drawValue (StructVal sf) _ = drawStruct sf
+
+drawIterable :: String -> [Expression] -> String -> String
+drawIterable l it r =
+    let vals = map drawExpr it
+    in l ++ intercalate ", " vals ++ r
+
+drawHMap :: [(Expression, Expression)] -> String
+drawHMap pairs =
+    let vals = map drawPair pairs
+        vals' = map (\(x, y) -> x ++ ": " ++ y) vals
+    in "{" ++ intercalate ", " vals' ++ "}"
+    where
+        drawPair :: (Expression, Expression) -> (String, String)
+        drawPair (x, y) =
+            let x' = drawExpr x
+                y' = drawExpr y
+            in (x', y')
+
+drawStruct :: [(String, Value)] -> String
+drawStruct fields =
+    let fields' = map drawField fields
+    in intercalate ", " fields'
+    where
+        drawField :: (String, Value) -> String
+        drawField (str, (StructVal fields)) =
+            let fields' = drawStruct fields
+            in str ++ ": (" ++ fields' ++ ")"
+        drawField (str, val) =
+            let val' = drawValue val False
+            in str ++ ": " ++ val'
 
 
 -- Drawing expressions
 
 drawExpr :: Expression -> String
-drawExpr (Constant v) = drawValue v
+drawExpr (Constant v) = drawValue v False
 drawExpr (VariableExp v) = v
 drawExpr (BinaryExp op expr1 expr2) = drawExpr expr1 ++ drawOp op ++ drawExpr expr2
 drawExpr (ListIndex listName exprs) = listName ++ drawIndexExprs exprs
 drawExpr (CallExp functionCall) = drawFunctionCall functionCall
 drawExpr (Not expr) = "not " ++ drawExpr expr
-drawExpr (StructExpr (Struct structName exprs)) = structName ++ "(" ++ drawExprsInParentheses exprs
+drawExpr (StructExpr (Struct structName exprs)) = structName ++ "(" ++ intercalateExprs exprs
 drawExpr (StructFieldExp (StructField expr1 expr2)) =
     drawExpr expr1 ++ "." ++ drawExpr expr2
-drawExpr _ = "" -- må fjerne LocalStructField fra Expressions på et tidspunkt
 
 
 drawOp :: Operator -> String
@@ -110,7 +148,21 @@ drawStmt (Assignment target value) pos = do
     tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ parentId ++ "] {" ++ drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value ++ "};\n"
     updateStack currentId parentId children
 
--- drawStmt (Loop expr stmts) =
+
+
+
+drawStmt (Loop expr stmts) pos = do
+    currentId <- uniqueID
+    (parentId, children) <- peekStack
+    tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ " ?};\n"
+    updateStack currentId parentId children
+
+    drawLoopStmts stmts
+
+    updateStack currentId parentId []
+
+
+
 
 drawStmt (If expr stmts maybeElse) pos = do
     currentId <- uniqueID
@@ -186,7 +238,7 @@ drawAssignmentTarget (StructFieldTarget (StructField x y)) =
 
 drawAssignmentValue :: AssignmentValue -> String
 drawAssignmentValue (ExpressionValue expr) = drawExpr expr
-drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ drawExprsInParentheses exprs ++ ")"
+drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercalateExprs exprs ++ ")"
 
 -- drawElse :: Else -> ..
 -- drawElse maybeElse
@@ -194,14 +246,28 @@ drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ drawExprs
 
 -- Functions
 
+drawFunction :: Function -> Flowchart ()
+drawFunction (Function name args stmts) = do
+    tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ intercalateArgs args ++ ")};\n"
+    drawFuncStmts stmts
+    -- mapM_ (\s -> drawStmt s "below of=") stmts
+
+drawFuncStmts :: [Statement] -> Flowchart ()
+drawFuncStmts [] = return ()
+
+drawFuncStmts (loop@(Loop _ _) : []) = do
+    drawStmt loop "below of="
+drawFuncStmts (loop@(Loop _ _) : x : xs) = do
+    drawStmt loop "below of="
+    drawStmt x "yshift=-0.5cm, xshift=1.5cm, below right of="
+    drawFuncStmts xs
+
+drawFuncStmts (x:xs) = do
+    drawStmt x "below of="
+    drawFuncStmts xs
+
 drawFunctionCall :: FunctionCall -> String
-drawFunctionCall (FunctionCall name exprs) = name ++ "(" ++ drawExprsInParentheses exprs ++ ")" -- trenger en counter på name her!
-
-drawExprsInParentheses :: [Expression] -> String
-drawExprsInParentheses [] = ""
-drawExprsInParentheses (x:[]) = drawExpr x
-drawExprsInParentheses (x:xs) = drawExpr x ++ ", " ++ drawExprsInParentheses xs
-
+drawFunctionCall (FunctionCall name exprs) = name ++ "(" ++ intercalateExprs exprs ++ ")"
 
 -- Edges
 
@@ -215,7 +281,29 @@ drawEdge (parent, children) =
     mapM_ (\child -> tell $ "\\draw [edge] (" ++ parent ++ ") -- (" ++ child ++ ");\n") children
 
 
--- Config
+
+{-
+
+Kantene til en while-loop:
+    left ->
+        \draw [edge] (loop-kjernen) -- node[anchor=west] {true} (første loop-stmt);
+
+    right ->
+        \draw [edge] (loop-kjernen) -- node[anchor=east] {false} (resten av statementene);
+
+
+Fra siste stmt:
+    \draw [edge] (siste stmt) -| (loop-kjernen);
+
+
+Tanke: en egen drawLoopEdges-funksjon. Det er nemlig ikke farlig hvilken rekkefølge de kommer i
+
+OOOK det går faktisk an å ha dem etter hverandre osv
+
+-}
+
+
+-- Entry point
 
 -- hadde vært kult om man kunne sende med egne sånne? feks gjennom en fil, også er brukeren selv ansvarlig for at alt er riktig
 -- istedenfor å være bundet til startstop, io osv. å legge inn en egen \tikzstyle{sergey_custom} = [rectangle, minimum width=15cm, ..]
