@@ -11,23 +11,27 @@ import Syntax
 -- vi henter alltid currentId fra feks `getNewId`, også belowid fra `getCoreId` ellerno!
 
 type Edge = String
-data Stack = Stack { edges :: [Edge], ids :: Int, core :: Int } -- endre navn fra ids. vi har jo bare 1 id om gangen
+data Stack = Stack { edges :: [Edge], previousId :: Int, coreId :: Int }
 type Flowchart = StateT Stack (Writer String)
 
 -- Helper functions
 
-uniqueID :: Flowchart Int
-uniqueID = do
+generateNewId :: Flowchart Int
+generateNewId = do
     stack <- get
-    let currentId = ids stack
-    let updatedId = currentId + 1
-    put $ stack { ids = updatedId }
+    let updatedId = previousId stack + 1
+    put $ stack { previousId = updatedId }
     return updatedId
 
-getCoreID :: Flowchart Int
-getCoreID = do
+getCoreId :: Flowchart Int
+getCoreId = do
     stack <- get
-    return $ core stack
+    return $ coreId stack
+
+updateCoreId :: Int -> Flowchart ()
+updateCoreId newCoreId = do
+    stack <- get
+    put $ stack { coreId = newCoreId }
 
 intercalateExprs :: [Expression] -> String
 intercalateExprs exprs =
@@ -41,6 +45,9 @@ intercalateArgs args =
     where
         drawArg :: Argument -> String
         drawArg (Argument x _) = x
+
+toInt :: Expression -> Int
+toInt x = read (drawExpr x) :: Int
 
 -- Values
 
@@ -124,27 +131,53 @@ drawIndexExprs (x:xs) = "[" ++ drawExpr x ++ "]" ++ drawIndexExprs xs
 
 -- Statements
 
+drawStmts :: [Statement] -> Flowchart ()
+drawStmts [] = return ()
+drawStmts (loop@(Loop _ _) : []) = initiateLoop loop
+drawStmts (loop@(Loop _ _) : x : xs) = do
+    initiateLoop loop
+
+    -- Right side of loop
+    currentId' <- show <$> generateNewId
+    currentCoreId <- show <$> getCoreId
+    drawStmt x currentId' ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ currentCoreId)
+    addEdge currentCoreId currentId' "-- node[anchor=west, yshift=0.1cm]{true}"
+    drawStmts xs
+
+-- drawStmts (forEach@(ForEach _ _ _) : []) = initiateLoop
+-- drawStmts (forEach@(ForEach _ _ _) : x : xs) = do
+    -- initiateLoop
+
+    -- Left side of loop
+
+drawStmts (for@(For _ _ _ _) : []) = initiateLoop for
+drawStmts (for@(For _ _ _ _) : x : xs) = do
+    initiateLoop for
+
+    -- Left side of loop
+    currentId' <- show <$> generateNewId
+    currentCoreId <- show <$> getCoreId
+    drawStmt x currentId' ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentCoreId)
+    addEdge currentCoreId currentId' "-- node[anchor=east, yshift=0.1cm]{false}"
+    drawStmts xs
+
+drawStmts (x:xs) = do
+    currentId <- show <$> generateNewId
+    let parentId = show $ (read currentId :: Int) - 1
+    drawStmt x currentId ("below of=" ++ parentId)
+    addEdge parentId currentId "--"
+    drawStmts xs
+
 drawStmt :: Statement -> String -> String -> Flowchart ()
-drawStmt (Assignment target value) currentId pos = do
-    -- currentId <- uniqueID
-    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ "] {" ++ drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value ++ "};\n"
-    -- addEdge (currentId - 1) currentId "--"
-
-
-
+drawStmt (Assignment target value) currentId pos =
+    drawStatementNode currentId pos (drawAssignmentTarget target ++ " = " ++ drawAssignmentValue value)
 
 drawStmt (Loop expr stmts) currentId pos = do
-    -- currentId <- uniqueID
-    tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ "] {" ++ drawExpr expr ++ " ?};\n"
-    -- addEdge (currentId - 1) currentId "--"
+    drawDecisionNode currentId pos (drawExpr expr)
     drawLoopStmts stmts (read currentId :: Int)
---    modify (\env -> env { ids = currentId })
-
-
-
 
 -- drawStmt (If expr stmts maybeElse) pos = do
---     currentId <- uniqueID
+--     currentId <- generateNewId
 --     (parentId, children) <- peekStack
 --     addEdge currentId parentId children
 --     tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ parentId ++ "] {" ++ drawExpr expr ++ "};\n"
@@ -181,23 +214,30 @@ drawStmt (Loop expr stmts) currentId pos = do
         -- as next stmt will be unreahable
 
 -- drawStmt (ForEach str expr stmts) =
--- drawStmt (For str expr1 expr2 stmts) =
 
-drawStmt (CallStmt functionCall) currentId pos = do
-    -- currentId <- uniqueID
-    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ "] {" ++ drawFunctionCall functionCall ++ "};\n"
-    -- addEdge (currentId - 1) currentId "--"
+-- opprette egne funksjoner som drawStmtNode og drawDecisionNode etc. ?
+drawStmt (For identifier expr1 expr2 stmts) currentId pos = do
+    drawStatementNode currentId pos (identifier ++ " = " ++ drawExpr expr1)
+
+    let op = if toInt expr1 <= toInt expr2 then " $<$ " else " $>$ "
+    decisionId <- show <$> generateNewId
+    drawDecisionNode decisionId ("below of=" ++ currentId) (identifier ++ op ++ drawExpr expr2)
+    addEdge currentId decisionId "--"
+
+    let crement = if toInt expr1 <= toInt expr2
+        then identifier ++ " = " ++ identifier ++ " + 1"
+        else identifier ++ " = " ++ identifier ++ " - 1"
+    drawForStmts stmts (read decisionId :: Int) crement
+
+drawStmt (CallStmt functionCall) currentId pos =
+    drawStatementNode currentId pos (drawFunctionCall functionCall)
 
 drawStmt (Return expr) currentId pos = do
-    -- currentId <- uniqueID
-    tell $ "\\node (" ++ currentId ++ ") [startstop, " ++ pos ++ "] {" ++ drawExpr expr ++ "};\n"
-    -- addEdge (currentId - 1) currentId "--"
+    drawStartstopNode currentId pos (drawExpr expr)
 
 drawStmt (HashStmt _) _ _ = return ()
-drawStmt (AnnotationStmt str _) currentId pos = do
-    -- currentId <- uniqueID
-    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ "] {" ++ str ++ "};\n"
-    -- addEdge (currentId - 1) currentId "--"
+drawStmt (AnnotationStmt text _) currentId pos =
+    drawStatementNode currentId pos text
 
 drawStmt Break _ _ = return () -- denne kan vel fikses greit? feks peke på neste
 drawStmt Continue _ _ = return () -- og denne? feks peke på forrige skop
@@ -219,26 +259,58 @@ drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercala
 -- drawElse :: Else -> ..
 -- drawElse maybeElse
 
+initiateLoop :: Statement -> Flowchart ()
+initiateLoop loop = do
+    currentId <- show <$> generateNewId
+    let parentId = show $ (read currentId :: Int) - 1
+    drawStmt loop currentId ("below of=" ++ parentId)
+    addEdge parentId currentId "--"
+
 drawLoopStmts :: [Statement] -> Int -> Flowchart ()
 drawLoopStmts stmts coreNodeId = do
-    stack <- get
-    put $ stack { core = coreNodeId }
-
-    currentId <- uniqueID
-    let parentId = show $ currentId - 1
+    updateCoreId coreNodeId
+    currentId <- show <$> generateNewId
+    let parentId = show $ (read currentId :: Int) - 1
 
     case length stmts of
         0 -> return ()
         1 -> do
-            drawStmt (head stmts) (show currentId) ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
-            addEdge parentId (show currentId) "--"
+            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
+            addEdge parentId currentId "-- node[anchor=east, yshift=0.1cm]{false}"
             addEdge (show $ coreNodeId + 1) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
         n -> do
-            drawStmt (head stmts) (show currentId) ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
+            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
+            addEdge parentId currentId "-- node[anchor=east, yshift=0.1cm]{false}"
             drawStmts (tail stmts)
-            addEdge parentId (show currentId) "--"
-            -- mapM_ (\stmt -> drawStmt stmt) (tail stmts)
             addEdge (show $ coreNodeId + n) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
+
+drawForStmts :: [Statement] -> Int -> String -> Flowchart ()
+drawForStmts stmts coreNodeId crement = do
+    updateCoreId coreNodeId
+    currentId <- show <$> generateNewId
+    let parentId = show $ (read currentId :: Int) - 1
+
+    case length stmts of
+        0 -> return ()
+        1 -> do
+            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ parentId)
+            addEdge parentId currentId "-- node[anchor=west, yshift=0.1cm]{true}"
+
+            crementId <- show <$> generateNewId
+            tell $ "\\node (" ++ crementId ++ ") [statement, xshift=3cm, below right of=" ++ currentId ++ "] {" ++ crement ++ "};\n"
+            addEdge currentId crementId "|-"
+            addEdge crementId (show coreNodeId) "|-"
+        _ -> do
+            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ parentId)
+            addEdge parentId currentId "-- node[anchor=west, yshift=0.1cm]{true}"
+            drawStmts (tail stmts)
+
+            crementId <- show <$> generateNewId
+            let crementParentId = show $ (read crementId :: Int) - 1
+            tell $ "\\node (" ++ crementId ++ ") [statement, xshift=3cm, below right of=" ++ crementParentId ++ "] {" ++ crement ++ "};\n"
+            addEdge crementParentId crementId "|-"
+            addEdge crementId (show coreNodeId) "|-"
+
 
 -- Functions
 
@@ -247,40 +319,23 @@ drawFunction (Function name args stmts) = do
     tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ intercalateArgs args ++ ")};\n"
     drawStmts stmts
 
-drawStmts :: [Statement] -> Flowchart ()
-drawStmts [] = return ()
-drawStmts (loop@(Loop _ _) : []) = do
-    currentId <- uniqueID
-    let parentId = show $ currentId - 1
-
-    drawStmt loop (show currentId) ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ parentId)
-    addEdge parentId (show currentId) "--"
-
-drawStmts (loop@(Loop _ _) : x : xs) = do
-    currentId <- uniqueID
-    let parentId = show $ currentId - 1
-    drawStmt loop (show currentId) ("below of=" ++ parentId)
-    addEdge parentId (show currentId) "--"
-
-    currentId' <- uniqueID
-    -- let parentId' = show $ currentId' - 1
-    coreId <- show <$> getCoreID
-    drawStmt x (show currentId') ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ coreId)
-    addEdge coreId (show currentId') "--"
-
-    drawStmts xs
-
-drawStmts (x:xs) = do
-    currentId <- uniqueID
-    let parentId = show $ currentId - 1
-
-    drawStmt x (show currentId) ("below of=" ++ parentId)
-    addEdge parentId (show currentId) "--"
-
-    drawStmts xs
-
 drawFunctionCall :: FunctionCall -> String
 drawFunctionCall (FunctionCall name exprs) = name ++ "(" ++ intercalateExprs exprs ++ ")"
+
+
+-- Nodes
+
+drawStartstopNode :: String -> String -> String -> Flowchart ()
+drawStartstopNode currentId pos text =
+    tell $ "\\node (" ++ currentId ++ ") [startstop, " ++ pos ++ "] {" ++ text ++ "};\n"
+
+drawStatementNode :: String -> String -> String -> Flowchart ()
+drawStatementNode currentId pos text =
+    tell $ "\\node (" ++ currentId ++ ") [statement, " ++ pos ++ "] {" ++ text ++ "};\n"
+
+drawDecisionNode :: String -> String -> String -> Flowchart ()
+drawDecisionNode currentId pos text =
+    tell $ "\\node (" ++ currentId ++ ") [decision, " ++ pos ++ "] {" ++ text ++ " ?};\n"
 
 
 -- Edges
@@ -295,35 +350,6 @@ addEdge fromId toId direction = do
     let newEdge = "\\draw [edge] (" ++ fromId ++ ") " ++  direction ++ " (" ++ toId ++ ");\n"
     modify (\stack -> stack { edges = newEdge : (edges stack) })
 
--- addLoopEdges :: Int -> Flowchart ()
--- addLoopEdge [] = return ()
--- addLoopEdge (x : []) = do
---     (Stack _ currentId) <- get
---     addEdge -- fra x til "kjernen"
--- addLoopEdge x
-
-
-{-
-
-Kantene til en while-loop:
-    left ->
-        \draw [edge] (loop-kjernen) -- node[anchor=west] {true} (første loop-stmt);
-
-    right ->
-        \draw [edge] (loop-kjernen) -- node[anchor=east] {false} (resten av statementene);
-
-
-Fra siste stmt:
-    \draw [edge] (siste stmt) -| (loop-kjernen);
-
-
-Tanke: en egen drawLoopEdges-funksjon. Det er nemlig ikke farlig hvilken rekkefølge de kommer i
-
-OOOK det går faktisk an å ha dem etter hverandre osv
-
--}
-
-
 -- Entry point
 
 -- hadde vært kult om man kunne sende med egne sånne? feks gjennom en fil, også er brukeren selv ansvarlig for at alt er riktig
@@ -331,11 +357,8 @@ OOOK det går faktisk an å ha dem etter hverandre osv
 constantConfig :: Flowchart ()
 constantConfig = do
     tell "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes.geometric, arrows}\n\n"
-    -- tell "\\tikzstyle{startstop} = [rectangle, rounded corners,\nminimum width=3cm,\nminimum height=1cm,\ntext centered,\ndraw=black,\nfill=red!30]\n\n"
     tell "\\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]\n"
-    -- tell "\\tikzstyle{statement} = [rectangle,\nminimum width=3cm,\nminimum height=1cm,\ntext centered,\ntext width=3cm,\ndraw=black,\nfill=orange!30]\n\n"
     tell "\\tikzstyle{statement} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!20]\n"
-    -- tell "\\tikzstyle{decision} = [diamond,\nminimum width=3cm,\nminimum height=1cm,\ntext centered,\ndraw=black,\nfill=green!30]\n\n"
     tell "\\tikzstyle{decision} = [diamond, text centered, draw=black, fill=yellow!30]\n"
     tell "\\tikzstyle{edge} = [thick, ->, >=stealth]\n\n"
     tell "\\begin{document}\n\\begin{tikzpicture}[node distance=2cm]\n\n"
