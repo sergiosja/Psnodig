@@ -7,9 +7,6 @@ import Control.Monad.Writer
 import Control.Monad.State
 import Syntax
 
--- ha en currentId, og ha en belowId
--- vi henter alltid currentId fra feks `getNewId`, også belowid fra `getCoreId` ellerno!
-
 type Edge = String
 data Stack = Stack { edges :: [Edge], previousId :: Int, coreId :: Int }
 type Flowchart = StateT Stack (Writer String)
@@ -48,6 +45,7 @@ intercalateArgs args =
 
 toInt :: Expression -> Int
 toInt x = read (drawExpr x) :: Int
+
 
 -- Values
 
@@ -144,11 +142,16 @@ drawStmts (loop@(Loop _ _) : x : xs) = do
     addEdge currentCoreId currentId' "-- node[anchor=west, yshift=0.1cm]{true}"
     drawStmts xs
 
--- drawStmts (forEach@(ForEach _ _ _) : []) = initiateLoop
--- drawStmts (forEach@(ForEach _ _ _) : x : xs) = do
-    -- initiateLoop
+drawStmts (forEach@(ForEach _ _ _) : []) = initiateLoop forEach
+drawStmts (forEach@(ForEach _ _ _) : x : xs) = do
+    initiateLoop forEach
 
     -- Left side of loop
+    currentId' <- show <$> generateNewId
+    currentCoreId <- show <$> getCoreId
+    drawStmt x currentId' ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentCoreId)
+    addEdge currentCoreId currentId' "-- node[anchor=east, yshift=0.1cm]{true}"
+    drawStmts xs
 
 drawStmts (for@(For _ _ _ _) : []) = initiateLoop for
 drawStmts (for@(For _ _ _ _) : x : xs) = do
@@ -213,12 +216,12 @@ drawStmt (Loop expr stmts) currentId pos = do
         -- If all branches have a return, we can technically finish,
         -- as next stmt will be unreahable
 
--- drawStmt (ForEach str expr stmts) =
+drawStmt (ForEach identifier expr stmts) currentId pos = do
+    drawDecisionNode currentId pos ("Iterated " ++ drawExpr expr)
+    drawForEachStmts stmts identifier (read currentId :: Int)
 
--- opprette egne funksjoner som drawStmtNode og drawDecisionNode etc. ?
 drawStmt (For identifier expr1 expr2 stmts) currentId pos = do
     drawStatementNode currentId pos (identifier ++ " = " ++ drawExpr expr1)
-
     let op = if toInt expr1 <= toInt expr2 then " $<$ " else " $>$ "
     decisionId <- show <$> generateNewId
     drawDecisionNode decisionId ("below of=" ++ currentId) (identifier ++ op ++ drawExpr expr2)
@@ -239,9 +242,8 @@ drawStmt (HashStmt _) _ _ = return ()
 drawStmt (AnnotationStmt text _) currentId pos =
     drawStatementNode currentId pos text
 
-drawStmt Break _ _ = return () -- denne kan vel fikses greit? feks peke på neste
-drawStmt Continue _ _ = return () -- og denne? feks peke på forrige skop
-
+drawStmt Break _ _ = return ()
+drawStmt Continue _ _ = return ()
 drawStmt _ _ _ = return ()
 
 
@@ -259,6 +261,8 @@ drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercala
 -- drawElse :: Else -> ..
 -- drawElse maybeElse
 
+-- Loop helpers
+
 initiateLoop :: Statement -> Flowchart ()
 initiateLoop loop = do
     currentId <- show <$> generateNewId
@@ -271,7 +275,6 @@ drawLoopStmts stmts coreNodeId = do
     updateCoreId coreNodeId
     currentId <- show <$> generateNewId
     let parentId = show $ (read currentId :: Int) - 1
-
     case length stmts of
         0 -> return ()
         1 -> do
@@ -284,12 +287,24 @@ drawLoopStmts stmts coreNodeId = do
             drawStmts (tail stmts)
             addEdge (show $ coreNodeId + n) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
 
+drawForEachStmts :: [Statement] -> String -> Int -> Flowchart ()
+drawForEachStmts stmts identifier coreNodeId = do
+    updateCoreId coreNodeId
+    currentId <- show <$> generateNewId
+    let parentId = show $ (read currentId :: Int) - 1
+    drawStatementNode currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ parentId) (identifier ++ " = next element") -- in collection
+    addEdge parentId currentId "-- node[anchor=west, yshift=0.1cm]{false}"
+    case length stmts of
+        0 -> return ()
+        n -> do
+            drawStmts stmts
+            addEdge (show $ coreNodeId + n + 1) (show coreNodeId) "-|"
+
 drawForStmts :: [Statement] -> Int -> String -> Flowchart ()
 drawForStmts stmts coreNodeId crement = do
     updateCoreId coreNodeId
     currentId <- show <$> generateNewId
     let parentId = show $ (read currentId :: Int) - 1
-
     case length stmts of
         0 -> return ()
         1 -> do
@@ -359,7 +374,7 @@ constantConfig = do
     tell "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes.geometric, arrows}\n\n"
     tell "\\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]\n"
     tell "\\tikzstyle{statement} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!20]\n"
-    tell "\\tikzstyle{decision} = [diamond, text centered, draw=black, fill=yellow!30]\n"
+    tell "\\tikzstyle{decision} = [ellipse, minimum height=1cm, text centered, draw=black, fill=yellow!30]\n"
     tell "\\tikzstyle{edge} = [thick, ->, >=stealth]\n\n"
     tell "\\begin{document}\n\\begin{tikzpicture}[node distance=2cm]\n\n"
 
