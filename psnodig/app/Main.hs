@@ -40,7 +40,7 @@ main = do
             transpile p filename
         ["ibp", filename] -> do
             p <- readFile filename
-            p2f p
+            makeFlowchart p filename
         ["ast", filename] -> do -- should be able to get this in its own file maybe?
             p <- readFile filename
             getAST p
@@ -60,10 +60,6 @@ transpile program filename = do
             writeFile texfile transpiled
             callCommand $ "latexmk -pdf " ++ texfile
         (Left err) -> putStrLn $ show err
-    where
-        gourmet2tex :: String -> String
-        gourmet2tex s = take (length s - 2) s ++ "tex"
-
 
 g2g :: String -> IO ()
 g2g program = do
@@ -74,14 +70,15 @@ g2g program = do
             in writeFile "algo.gt" transpiled
         (Left err) -> putStrLn $ show err
 
-p2f :: String -> IO ()
-p2f program = do
+makeFlowchart :: String -> String -> IO ()
+makeFlowchart program filename = do
     let parsed = parse parseGourmet "" program
     case parsed of
         Right p -> do
-            let flowTex = execWriter $ runStateT (writeFlowchart p) (Stack [("0", [])] 0)
-            writeFile "flowchart.tex" flowTex
-            callCommand $ "pdflatex flowchart.tex"
+            let flowTex = execWriter $ runStateT (writeFlowchart p) (Stack [] 0 [0] [])
+            let texfile = gourmet2flowTex filename
+            writeFile texfile flowTex
+            callCommand $ "latexmk -pdf " ++ texfile
         Left err -> putStrLn $ show err
 
 getAST :: String -> IO ()
@@ -107,6 +104,11 @@ interpret program = do
                     print err
         (Left err) -> putStrLn $ show err
 
+gourmet2tex :: String -> String
+gourmet2tex s = take (length s - 2) s ++ "tex"
+
+gourmet2flowTex :: String -> String
+gourmet2flowTex s = take (length s - 3) s ++ "_flowchart.tex"
 
 
 -- kjøre helt IN1000 style med
