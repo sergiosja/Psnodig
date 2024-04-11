@@ -177,14 +177,14 @@ drawIndexExprs (x:xs) = "[" ++ drawExpr x ++ "]" ++ drawIndexExprs xs
 
 -- Statements
 
-initiateStmt :: Statement -> Flowchart ()
-initiateStmt stmt = do
+initiateStmtStraight :: Statement -> Flowchart ()
+initiateStmtStraight stmt = do
     (currentId, parentId) <- getNextEdge
     drawStmt stmt currentId ("below of=" ++ parentId)
     addEdge parentId currentId "--"
 
-initiateStmtFromIf :: Statement -> Flowchart ()
-initiateStmtFromIf stmt = do
+initiateStmtRight :: Statement -> Flowchart ()
+initiateStmtRight stmt = do
     currentId <- show <$> getNewId
     currentCoreId <- show <$> popCoreId
     drawStmt stmt currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ currentCoreId)
@@ -193,48 +193,31 @@ initiateStmtFromIf stmt = do
 drawStmts :: [Statement] -> Bool -> Flowchart ()
 drawStmts [] _ = return ()
 
-drawStmts (stmt@(If _ _ maybeElse) : x : xs) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
-
-    -- Right side (false)
-    case maybeElse of
-        Just (ElseIf expr stmts maybeElse') -> do
-            return ()
-
-        Just (Else stmts) -> do
-            return ()
-
-        Nothing -> do
-            drawStmts (x:xs) True
-
 drawStmts ((If _ _ _) : []) _ = return ()
-
-
-
-
-
+drawStmts (stmt@(If _ _ _) : x : xs) fromIf = do
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
+    drawStmts (x:xs) True
 
 drawStmts (stmt@(Loop _ _) : []) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
     void popCoreId
 
 drawStmts (stmt@(Loop _ _) : x : xs) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
-
-    -- Right side of loop
-    currentId <- show <$> getNewId
-    currentCoreId <- show <$> popCoreId
-    drawStmt x currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ currentCoreId)
-    addEdge currentCoreId currentId "-- node[anchor=west, yshift=0.1cm]{false}"
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
+    initiateStmtRight x
     drawStmts xs False
 
 drawStmts (stmt@(ForEach _ _ _) : []) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
     void popCoreId
 
 drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
-    -- initiateStmt stmt
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
 
     -- Left side of loop
     currentId <- show <$> getNewId
@@ -244,12 +227,13 @@ drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
     drawStmts xs False
 
 drawStmts (stmt@(For _ _ _ _) : []) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
     void popCoreId
 
 drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
-    -- initiateStmt stmt
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
 
     -- Left side of loop
     currentId <- show <$> getNewId
@@ -259,7 +243,7 @@ drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
     drawStmts xs False
 
 drawStmts (stmt : stmts) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt else initiateStmtStraight stmt
     drawStmts stmts False
 
 
@@ -271,21 +255,27 @@ drawStmt (Loop expr stmts) currentId pos = do
     drawDecisionNode currentId pos (drawExpr expr)
     drawLoopStmts stmts (read currentId :: Int)
 
-drawStmt (If expr stmts _) currentId pos = do -- bør gjøre noe med maybe her, i tilfelle head stmts er en if!
+drawStmt (If expr stmts maybeElse) currentId pos = do -- bør gjøre noe med maybe her, i tilfelle head stmts er en if!
     drawDecisionNode currentId pos (drawExpr expr)
     setCoreId (read currentId :: Int)
 
-    -- Left side
-    headId <- show <$> getNewId
-    drawStmt (head stmts) headId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentId)
-    addEdge currentId headId "-- node[anchor=east, yshift=0.1cm]{true}"
+    case stmts of
+        [] -> return ()
+        (x : xs) -> do
+            headId <- show <$> getNewId
+            drawStmt x headId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentId)
+            addEdge currentId headId "-- node[anchor=east, yshift=0.1cm]{true}"
 
-    -- om head stmts har length 1, må vi sjekke om den er en return elr ikke! kan prøve å extracte den:)
+            case x of
+                If _ _ _ -> drawIfStmts (tail stmts) True
+                _ -> drawIfStmts (tail stmts) False
     
-    -- Right side
-    case head stmts of
-        If _ _ _ -> drawIfStmts (tail stmts) True
-        _ -> drawIfStmts (tail stmts) False
+            case maybeElse of
+                Just (ElseIf expr' stmts' maybeElse') -> do
+                    drawIfStmts [(If expr' stmts' maybeElse')] True
+
+                _ -> return ()
+
 
 drawStmt (ForEach identifier expr stmts) currentId pos = do
     let collection = drawExpr expr
@@ -330,7 +320,7 @@ drawAssignmentValue (ExpressionValue expr) = drawExpr expr
 drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercalateExprs exprs ++ ")"
 
 
--- Loop helpers
+-- Special helpers
 
 drawLoopStmts :: [Statement] -> Int -> Flowchart ()
 drawLoopStmts stmts coreNodeId = do
@@ -347,6 +337,7 @@ drawLoopStmts stmts coreNodeId = do
             addEdge parentId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
             drawStmts (tail stmts) False
             addEdge (show $ coreNodeId + n) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
+
 
 drawIfStmts :: [Statement] -> Bool -> Flowchart ()
 drawIfStmts [] _ = return ()
@@ -367,12 +358,12 @@ drawIfStmts (loop@(For _ _ _ _) : stmt : stmts) _ = do
     continueDrawingOrMarkActive stmt stmts
 
 drawIfStmts (stmt : []) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt else initiateStmtStraight stmt
     checkActiveBranch stmt
     addEdgeFromActiveBranches
 
 drawIfStmts (stmt : stmts) fromIf = do
-    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    if fromIf then initiateStmtRight stmt else initiateStmtStraight stmt
     drawIfStmts stmts False
 
 continueDrawingOrMarkActive :: Statement -> [Statement] -> Flowchart ()
