@@ -52,6 +52,11 @@ popCoreId = do
             return currentCoreId
 
 
+getActiveBranches :: Flowchart [String]
+getActiveBranches = do
+    (Stack _ _ _ branches) <- get
+    return branches
+
 checkActiveBranch :: Statement -> Flowchart ()
 checkActiveBranch stmt = do
     branchId <- getLastId
@@ -71,11 +76,6 @@ emptyActiveBranches :: Flowchart ()
 emptyActiveBranches = do
     currStack@(Stack { activeBranches = _ }) <- get
     put currStack { activeBranches = [] }
-
-getActiveBranches :: Flowchart [String]
-getActiveBranches = do
-    (Stack _ _ _ branches) <- get
-    return branches
 
 
 intercalateExprs :: [Expression] -> String
@@ -205,8 +205,7 @@ drawStmts (stmt@(If _ _ maybeElse) : x : xs) fromIf = do
             return ()
 
         Nothing -> do
-            initiateStmtFromIf x
-            drawStmts xs True
+            drawStmts (x:xs) True
 
 drawStmts ((If _ _ _) : []) _ = return ()
 
@@ -215,9 +214,12 @@ drawStmts ((If _ _ _) : []) _ = return ()
 
 
 
-drawStmts (stmt@(Loop _ _) : []) _ = initiateStmt stmt >> void popCoreId
-drawStmts (stmt@(Loop _ _) : x : xs) _ = do
-    initiateStmt stmt
+drawStmts (stmt@(Loop _ _) : []) fromIf = do
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    void popCoreId
+
+drawStmts (stmt@(Loop _ _) : x : xs) fromIf = do
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
 
     -- Right side of loop
     currentId <- show <$> getNewId
@@ -226,9 +228,13 @@ drawStmts (stmt@(Loop _ _) : x : xs) _ = do
     addEdge currentCoreId currentId "-- node[anchor=west, yshift=0.1cm]{false}"
     drawStmts xs False
 
-drawStmts (stmt@(ForEach _ _ _) : []) _ = initiateStmt stmt >> void popCoreId
-drawStmts (stmt@(ForEach _ _ _) : x : xs) _ = do
-    initiateStmt stmt
+drawStmts (stmt@(ForEach _ _ _) : []) fromIf = do
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    void popCoreId
+
+drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
+    -- initiateStmt stmt
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
 
     -- Left side of loop
     currentId <- show <$> getNewId
@@ -237,9 +243,13 @@ drawStmts (stmt@(ForEach _ _ _) : x : xs) _ = do
     addEdge currentCoreId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
     drawStmts xs False
 
-drawStmts (stmt@(For _ _ _ _) : []) _ = initiateStmt stmt >> void popCoreId
-drawStmts (stmt@(For _ _ _ _) : x : xs) _ = do
-    initiateStmt stmt
+drawStmts (stmt@(For _ _ _ _) : []) fromIf = do
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
+    void popCoreId
+
+drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
+    -- initiateStmt stmt
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
 
     -- Left side of loop
     currentId <- show <$> getNewId
@@ -248,8 +258,8 @@ drawStmts (stmt@(For _ _ _ _) : x : xs) _ = do
     addEdge currentCoreId currentId "-- node[anchor=east, yshift=0.1cm]{false}"
     drawStmts xs False
 
-drawStmts (stmt : stmts) _ = do
-    initiateStmt stmt
+drawStmts (stmt : stmts) fromIf = do
+    if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
     drawStmts stmts False
 
 
@@ -269,7 +279,10 @@ drawStmt (If expr stmts _) currentId pos = do -- bør gjøre noe med maybe her, 
     headId <- show <$> getNewId
     drawStmt (head stmts) headId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentId)
     addEdge currentId headId "-- node[anchor=east, yshift=0.1cm]{true}"
+
+    -- om head stmts har length 1, må vi sjekke om den er en return elr ikke! kan prøve å extracte den:)
     
+    -- Right side
     case head stmts of
         If _ _ _ -> drawIfStmts (tail stmts) True
         _ -> drawIfStmts (tail stmts) False
@@ -356,6 +369,7 @@ drawIfStmts (loop@(For _ _ _ _) : stmt : stmts) _ = do
 drawIfStmts (stmt : []) fromIf = do
     if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
     checkActiveBranch stmt
+    addEdgeFromActiveBranches
 
 drawIfStmts (stmt : stmts) fromIf = do
     if fromIf then initiateStmtFromIf stmt else initiateStmt stmt
@@ -364,7 +378,9 @@ drawIfStmts (stmt : stmts) fromIf = do
 continueDrawingOrMarkActive :: Statement -> [Statement] -> Flowchart ()
 continueDrawingOrMarkActive x xs =
     case xs of
-        [] -> checkActiveBranch x
+        [] -> do
+            checkActiveBranch x
+            addEdgeFromActiveBranches
         _ -> drawIfStmts xs False
 
 
@@ -506,9 +522,10 @@ addEdge fromId toId direction = do
 addEdgeFromActiveBranches :: Flowchart ()
 addEdgeFromActiveBranches = do
     branches <- getActiveBranches
-    currId <- getLastId
+    currId' <- getLastId
+    let currId = show $ (read currId' :: Int) + 1
 
-    mapM_ (\x -> addEdge x currId "--node{yeah}") branches
+    mapM_ (\x -> addEdge x currId "--") branches
     emptyActiveBranches
 
 -- Entry point
