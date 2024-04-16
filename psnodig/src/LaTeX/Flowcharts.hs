@@ -1,26 +1,26 @@
-module LaTeX.Flowcharts (Stack(..), writeFlowchart) where
+module LaTeX.Flowcharts (Environment(..), writeFlowchart) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.List (intercalate)
+import Data.List (intercalate, sortOn)
 import Control.Monad.Writer
 import Control.Monad.State
 import Syntax
 
-data Stack = Stack
-    { edges :: [String]
+data Environment = Environment
+    { edges :: [(Int, String)]
     , lastId :: Int
-    , coreIds :: [Int]
+    , coreId :: [Int]
     , activeBranches :: [String]
     }
 
-type Flowchart = StateT Stack (Writer String)
+type Flowchart = StateT Environment (Writer String)
 
 -- Helper functions
 
 getLastId :: Flowchart String
 getLastId = do
-    (Stack _ currentId _ _) <- get
+    (Environment _ currentId _ _) <- get
     return . show $ currentId
 
 getNewId :: Flowchart Int
@@ -36,46 +36,19 @@ getNextEdge = do
     let parentId = currentId - 1
     return (show currentId, show parentId)
 
-
 setCoreId :: Int -> Flowchart ()
 setCoreId newCoreId = do
-    currStack@(Stack { coreIds = ids }) <- get
-    put currStack { coreIds = (newCoreId : ids) }
+    currStack@(Environment { coreId = ids }) <- get
+    put currStack { coreId = (newCoreId : ids) }
 
 popCoreId :: Flowchart Int
 popCoreId = do
-    currStack@(Stack { coreIds = ids }) <- get
+    currStack@(Environment { coreId = ids }) <- get
     case ids of
-        [] -> error "Stack underflow: Popping empty coreId stack"
+        [] -> error "Flowchart error: Called `popCoreId` with empty coreId stack"
         (currentCoreId : rest) -> do
-            put currStack { coreIds = rest }
+            put currStack { coreId = rest }
             return currentCoreId
-
-
-getActiveBranches :: Flowchart [String]
-getActiveBranches = do
-    (Stack _ _ _ branches) <- get
-    return branches
-
-checkActiveBranch :: Statement -> Flowchart ()
-checkActiveBranch stmt = do
-    branchId <- getLastId
-    case stmt of
-        Loop _ _ -> return ()
-        Return _ -> return ()
-        If _ _ _ -> return ()
-        ForEach _ _ _ -> return ()
-        _ -> addActiveBranch branchId
-
-addActiveBranch :: String -> Flowchart ()
-addActiveBranch newId = do
-    currStack@(Stack { activeBranches = ids }) <- get
-    put currStack { activeBranches = (newId : ids) }
-
-emptyActiveBranches :: Flowchart ()
-emptyActiveBranches = do
-    currStack@(Stack { activeBranches = _ }) <- get
-    put currStack { activeBranches = [] }
 
 
 intercalateExprs :: [Expression] -> String
@@ -93,6 +66,72 @@ intercalateArgs args =
 
 toInt :: Expression -> Int
 toInt x = read (drawExpr x) :: Int
+
+hasElse :: Maybe Else -> Bool
+hasElse Nothing = False
+hasElse (Just (Else _)) = True
+hasElse (Just (ElseIf _ _ maybeElse)) = hasElse maybeElse
+
+lastElseIsReturn :: Maybe Else -> Bool
+lastElseIsReturn Nothing = False
+lastElseIsReturn (Just (Else stmts)) =
+    case last stmts of { Return _ -> True ; _ -> False }
+lastElseIsReturn (Just (ElseIf _ _ maybeElse)) =
+    lastElseIsReturn maybeElse
+
+
+stmtCount :: [Statement] -> Int
+stmtCount [] = 0
+stmtCount (x:xs) =
+    case x of
+        Loop _ stmts -> sum [1, stmtCount stmts, stmtCount xs]
+        If _ stmts maybeElse -> sum [1, stmtCount stmts, stmtCount xs] +
+            case maybeElse of
+                Just (ElseIf expr stmts' maybeElse') -> 1 + stmtCount [(If expr stmts' maybeElse')]
+                Just (Else stmts') -> 1 + stmtCount stmts'
+                Nothing -> 0
+        ForEach _ _ stmts -> sum [1, stmtCount stmts, stmtCount xs]
+        For _ _ _ stmts -> sum [1, stmtCount stmts, stmtCount xs]
+        HashStmt _ -> stmtCount xs
+        _ -> 1 + stmtCount xs
+
+addTrailingBranches :: Statement -> Int -> Int -> Flowchart Int
+addTrailingBranches stmt currentId numberOfBranches =
+    case stmt of
+        If _ stmts maybeElse -> do
+            let trailingId = currentId + stmtCount stmts
+
+            case (maybeElse, last stmts) of
+                (Just (ElseIf expr stmts' maybeElse'), Return _) ->
+                    addTrailingBranches (If expr stmts' maybeElse') (trailingId + 1) numberOfBranches
+
+                (Just (ElseIf expr stmts' maybeElse'), _) -> do
+                    addBranch (show trailingId)
+                    addTrailingBranches (If expr stmts' maybeElse') (trailingId + 1) (numberOfBranches + 1)
+
+                (_, Return _) ->
+                    return numberOfBranches
+
+                _ -> do
+                    addBranch (show trailingId)
+                    return $ 1 + numberOfBranches
+        _ -> error "Flowchart error: `addTrailingBranches` called from illegal context"
+
+
+addBranch :: String -> Flowchart ()
+addBranch newId = do
+    currStack@(Environment { activeBranches = ids }) <- get
+    put currStack { activeBranches = (newId : ids) }
+
+drawBranches :: Int -> String -> Flowchart ()
+drawBranches count toId = do
+    (Environment _ _ _ ids) <- get
+    mapM_ (\x -> addEdge x toId "--") (take count ids)
+
+removeBranches :: Int -> Flowchart ()
+removeBranches count = do
+    currStack@(Environment { activeBranches = ids }) <- get
+    put currStack { activeBranches = drop count ids }
 
 
 -- Values
@@ -193,27 +232,25 @@ initiateStmtRight stmt = do
 drawStmts :: [Statement] -> Bool -> Flowchart ()
 drawStmts [] _ = return ()
 
-drawStmts ((If _ _ _) : []) _ = return ()
-drawStmts (stmt@(If _ _ _) : x : xs) fromIf = do
-    if fromIf then initiateStmtRight stmt
-    else initiateStmtStraight stmt
-    drawStmts (x:xs) True
+drawStmts (stmt@(If _ _ maybeElse) : x : xs) fromIf = do
+    startId <- (+ 1) . (read :: String -> Int) <$> getLastId
 
-drawStmts (stmt@(Loop _ _) : []) fromIf = do
     if fromIf then initiateStmtRight stmt
     else initiateStmtStraight stmt
-    void popCoreId
+
+    -- Puts the next statement underneath the first ending if-else without a return
+    if hasElse maybeElse && lastElseIsReturn maybeElse
+    then do
+        drawSpecialIf stmt x startId
+        drawStmts xs False
+    else
+        drawStmts (x:xs) (not $ hasElse maybeElse)
 
 drawStmts (stmt@(Loop _ _) : x : xs) fromIf = do
     if fromIf then initiateStmtRight stmt
     else initiateStmtStraight stmt
     initiateStmtRight x
     drawStmts xs False
-
-drawStmts (stmt@(ForEach _ _ _) : []) fromIf = do
-    if fromIf then initiateStmtRight stmt
-    else initiateStmtStraight stmt
-    void popCoreId
 
 drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
     if fromIf then initiateStmtRight stmt
@@ -225,11 +262,6 @@ drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
     drawStmt x currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentCoreId)
     addEdge currentCoreId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
     drawStmts xs False
-
-drawStmts (stmt@(For _ _ _ _) : []) fromIf = do
-    if fromIf then initiateStmtRight stmt
-    else initiateStmtStraight stmt
-    void popCoreId
 
 drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
     if fromIf then initiateStmtRight stmt
@@ -243,9 +275,9 @@ drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
     drawStmts xs False
 
 drawStmts (stmt : stmts) fromIf = do
-    if fromIf then initiateStmtRight stmt else initiateStmtStraight stmt
+    if fromIf then initiateStmtRight stmt
+    else initiateStmtStraight stmt
     drawStmts stmts False
-
 
 drawStmt :: Statement -> String -> String -> Flowchart ()
 drawStmt (Assignment target value) currentId pos =
@@ -255,27 +287,17 @@ drawStmt (Loop expr stmts) currentId pos = do
     drawDecisionNode currentId pos (drawExpr expr)
     drawLoopStmts stmts (read currentId :: Int)
 
-drawStmt (If expr stmts maybeElse) currentId pos = do -- bør gjøre noe med maybe her, i tilfelle head stmts er en if!
+drawStmt stmt@(If expr stmts maybeElse) currentId pos = do
+    trailingBranches <- addTrailingBranches stmt (read currentId :: Int) 0
+
     drawDecisionNode currentId pos (drawExpr expr)
     setCoreId (read currentId :: Int)
+    drawIfStmts stmts currentId maybeElse
 
-    case stmts of
-        [] -> return ()
-        (x : xs) -> do
-            headId <- show <$> getNewId
-            drawStmt x headId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentId)
-            addEdge currentId headId "-- node[anchor=east, yshift=0.1cm]{true}"
-
-            case x of
-                If _ _ _ -> drawIfStmts (tail stmts) True
-                _ -> drawIfStmts (tail stmts) False
-    
-            case maybeElse of
-                Just (ElseIf expr' stmts' maybeElse') -> do
-                    drawIfStmts [(If expr' stmts' maybeElse')] True
-
-                _ -> return ()
-
+    -- Adds edges from all ending if-else without return to the next statement
+    endId <- (+ 1) . (read :: String -> Int) <$> getLastId
+    drawBranches trailingBranches (show endId)
+    removeBranches trailingBranches
 
 drawStmt (ForEach identifier expr stmts) currentId pos = do
     let collection = drawExpr expr
@@ -320,7 +342,7 @@ drawAssignmentValue (ExpressionValue expr) = drawExpr expr
 drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercalateExprs exprs ++ ")"
 
 
--- Special helpers
+-- Special statement helpers
 
 drawLoopStmts :: [Statement] -> Int -> Flowchart ()
 drawLoopStmts stmts coreNodeId = do
@@ -338,102 +360,39 @@ drawLoopStmts stmts coreNodeId = do
             drawStmts (tail stmts) False
             addEdge (show $ coreNodeId + n) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
 
+drawIfStmts :: [Statement] -> String -> Maybe Else -> Flowchart ()
+drawIfStmts stmts currentId maybeElse =
+    case stmts of
+        [] -> return ()
+        (x : xs) -> do
+            headId <- show <$> getNewId
+            drawStmt x headId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentId)
+            addEdge currentId headId "-- node[anchor=east, yshift=0.1cm]{true}"
 
-drawIfStmts :: [Statement] -> Bool -> Flowchart ()
-drawIfStmts [] _ = return ()
-drawIfStmts (loop@(Loop _ _) : stmt : stmts) _ = do
-    drawStmts [loop, stmt] False
-    continueDrawingOrMarkActive stmt stmts
+            drawStmts xs False
+    
+            case maybeElse of
+                Just (ElseIf expr' stmts' maybeElse') ->
+                    drawStmts [(If expr' stmts' maybeElse')] True
+                Just (Else stmts') ->
+                    drawStmts stmts' True
+                Nothing -> return ()
 
-drawIfStmts (cond@(If _ _ _) : stmt : stmts) _ = do
-    drawStmts [cond, stmt] False
-    continueDrawingOrMarkActive stmt stmts
-
-drawIfStmts (loop@(ForEach _ _ _) : stmt : stmts) _ = do
-    drawStmts [loop, stmt] False
-    continueDrawingOrMarkActive stmt stmts
-
-drawIfStmts (loop@(For _ _ _ _) : stmt : stmts) _ = do
-    drawStmts [loop, stmt] False
-    continueDrawingOrMarkActive stmt stmts
-
-drawIfStmts (stmt : []) fromIf = do
-    if fromIf then initiateStmtRight stmt else initiateStmtStraight stmt
-    checkActiveBranch stmt
-    addEdgeFromActiveBranches
-
-drawIfStmts (stmt : stmts) fromIf = do
-    if fromIf then initiateStmtRight stmt else initiateStmtStraight stmt
-    drawIfStmts stmts False
-
-continueDrawingOrMarkActive :: Statement -> [Statement] -> Flowchart ()
-continueDrawingOrMarkActive x xs =
-    case xs of
-        [] -> do
-            checkActiveBranch x
-            addEdgeFromActiveBranches
-        _ -> drawIfStmts xs False
-
-
---     case x of
---         Return expr -> return ()
---         _ -> return ()
-            -- legg til i 
-
-
--- drawIfStmts stmts = drawStmts stmts
-
--- drawHeadIfStmt :: [Statement] -> (Maybe Else) -> Flowchart ()
--- drawHeadIfStmt [] Nothing = return ()
--- drawHeadIfStmt (x : xs) Nothing = do
---     (currentId, parentId) <- getNextEdge
---     drawStmt x currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
---     addEdge parentId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
---     case xs of
---         [] -> case x of
---             Return _ -> return ()
---             _ -> return ()
-                -- add currentId to a record
-                -- later, add edge from all ids in this record to the next stmt outside if!
-        -- _ -> drawIfStmts xs Nothing
-
--- må ha en til case med (Just Else) og (Just ElseIf)
-
--- drawIfStmts :: [Statement] -> (Maybe Else) -> Flowchart ()
--- drawIfStmts (returnExpr@(Return expr) : []) Nothing = do
---     (currentId, parentId) <- getNextEdge
---     drawStmt returnExpr currentId ("below of=" ++ parentId)
---     addEdge parentId currentId "--"
-
--- drawIfStmts (x : []) Nothing = do
---     (currentId, parentId) <- getNextEdge
---     drawStmt x currentId ("below of=" ++ parentId)
---     addEdge parentId currentId "--"
-    -- add currentId to a record
-    -- later, add edge from all ids in this record to the next stmt outside if!
-
--- drawIfStmts (x : xs) Nothing = do
-    -- case x of
-    --     (If _ _ _) -> do
-    --         currentId <- show <$> getNewId
-    --         currentCoreId <- show <$> popCoreId
-    --         drawStmt x currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ currentCoreId)
-    --         addEdge currentCoreId currentId "-- node[anchor=east, yshift=0.1cm]{false}"
-    --         drawIfStmts xs Nothing
-    --     _ -> do
-        -- (currentId, parentId) <- getNextEdge
-        -- drawStmt x currentId ("below of=" ++ parentId)
-        -- addEdge parentId currentId "--"
-        -- drawIfStmts xs Nothing
-
-
--- drawIfStmts stmts maybeElse = do
-    -- (currentId, parentId) <- getNextEdge
-    -- return ()
-
--- drawElse :: Else -> ..
--- drawElse maybeElse
-
+drawSpecialIf :: Statement -> Statement -> Int -> Flowchart ()
+drawSpecialIf (If expr stmts maybeElse) toBePrinted accumulatedId = do
+    let parentId = stmtCount stmts + accumulatedId
+    case last stmts of
+        Return _ ->
+            case maybeElse of
+                Nothing -> error "Flowchart error: Unreachable statement cannot be drawn properly."
+                Just (Else stmts') ->
+                    drawSpecialIf (If expr stmts' Nothing) toBePrinted (parentId + 1)
+                Just (ElseIf _ stmts' maybeElse') ->
+                    drawSpecialIf (If expr stmts' maybeElse') toBePrinted (parentId + 1)
+        _ -> do
+            currentId <- show <$> getNewId
+            drawStmt toBePrinted currentId ("below of=" ++ (show parentId))
+drawSpecialIf _ _ _ = error "Flowchart error: `drawSpecialIf` called from illegal context."
 
 drawForEachStmts :: [Statement] -> String -> String -> Int -> Flowchart ()
 drawForEachStmts stmts identifier collection coreNodeId = do
@@ -502,22 +461,14 @@ drawDecisionNode currentId pos text =
 
 drawEdges :: Flowchart ()
 drawEdges = do
-    (Stack edges' _ _ _) <- get
-    tell "\n" >> mapM_ tell (reverse edges')
+    (Environment edges' _ _ _) <- get
+    tell "\n" >> mapM_ (\(_, e) -> tell e) (sortOn fst edges')
 
 addEdge :: String -> String -> String -> Flowchart ()
 addEdge fromId toId direction = do
-    let newEdge = "\\draw [edge] (" ++ fromId ++ ") " ++  direction ++ " (" ++ toId ++ ");\n"
-    modify (\stack -> stack { edges = newEdge : (edges stack) })
+    let newEdge = "\\draw [edge] (" ++ fromId ++ ") " ++ direction ++ " (" ++ toId ++ ");\n"
+    modify (\stack -> stack { edges = (read fromId :: Int, newEdge) : (edges stack) })
 
-addEdgeFromActiveBranches :: Flowchart ()
-addEdgeFromActiveBranches = do
-    branches <- getActiveBranches
-    currId' <- getLastId
-    let currId = show $ (read currId' :: Int) + 1
-
-    mapM_ (\x -> addEdge x currId "--") branches
-    emptyActiveBranches
 
 -- Entry point
 
@@ -525,7 +476,7 @@ addEdgeFromActiveBranches = do
 -- istedenfor å være bundet til startstop, io osv. å legge inn en egen \tikzstyle{sergey_custom} = [rectangle, minimum width=15cm, ..]
 constantConfig :: Flowchart ()
 constantConfig = do
-    tell "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes.geometric, arrows}\n\n"
+    tell "\\documentclass[margin=3mm]{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes.geometric, arrows}\n\n"
     tell "\\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]\n"
     tell "\\tikzstyle{statement} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!20]\n"
     tell "\\tikzstyle{decision} = [ellipse, minimum height=1cm, text centered, draw=black, fill=yellow!30]\n"
