@@ -607,19 +607,37 @@ callFunction (FunctionCall "min" args) = do
     values <- mapM evalExpr args
     unless (all (\v -> isNumber v || isDecimal v) values) $
         throwError' $ BadArgument "All arguments to function 'min' must be numeric values."
-    let smallestNumber = minimum $ mapMaybe fromNumber values
-    let smallestDecimal = minimum $ mapMaybe fromDecimal values
-    return $ if (fromInteger smallestNumber) < smallestDecimal
-                then Number smallestNumber else Decimal smallestDecimal
+    
+    let numberList = mapMaybe fromNumber values
+    let decimalList = mapMaybe fromDecimal values
+
+    case (numberList, decimalList) of
+        ([], []) -> throwError' $ BadArgument "Cannot call `min` with no arguments"
+        (_, []) -> return . Number $ minimum numberList
+        ([], _) -> return . Decimal $ minimum decimalList
+        (_, _) -> return $
+            let mNum = minimum numberList
+                mDec = minimum decimalList
+            in if (fromInteger mNum) < mDec
+                then Number mNum else Decimal mDec
 
 callFunction (FunctionCall "max" args) = do
     values <- mapM evalExpr args
     unless (all (\v -> isNumber v || isDecimal v) values) $
         throwError' $ BadArgument "All arguments to function 'max' must be numeric values."
-    let largestNumber = maximum $ mapMaybe fromNumber values
-    let largestDecimal = maximum $ mapMaybe fromDecimal values
-    return $ if (fromInteger largestNumber) > largestDecimal
-                then Number largestNumber else Decimal largestDecimal
+
+    let numberList = mapMaybe fromNumber values
+    let decimalList = mapMaybe fromDecimal values
+
+    case (numberList, decimalList) of
+        ([], []) -> throwError' $ BadArgument "Cannot call `max` with no arguments"
+        (_, []) -> return . Number $ maximum numberList
+        ([], _) -> return . Decimal $ maximum decimalList
+        (_, _) -> return $
+            let mNum = maximum numberList
+                mDec = maximum decimalList
+            in if (fromInteger mNum) > mDec
+                then Number mNum else Decimal mDec
 
 callFunction (FunctionCall "get" args) = do
     when (length args /= 2)
@@ -804,7 +822,7 @@ isDecimal (Decimal _) = True
 isDecimal _ = False
 
 stringifyValue :: Value -> Bool -> Psnodig String
-stringifyValue Nil _ = return "\"Nil\""
+stringifyValue Nil _ = return "Nil"
 stringifyValue (Boolean b) _ = return $ show b
 stringifyValue (Number n) _ = return $ show n
 stringifyValue (Decimal d) _ = return $ show d
@@ -821,15 +839,35 @@ stringifyExprIterable l list r = do
     return $ l ++ intercalate ", " strList ++ r
 
 stringifyHMap :: [(Expression, Expression)] -> Psnodig String
-stringifyHMap exprs = return "ok"
-    -- vals <- mapM (\(x, y) -> (evalExpr x, evalExpr y)) exprs
-    -- strPairList <- mapM (\(x, y) -> stringifyValue x ++ ": " ++ stringifyValue y) vals
-    -- return $ "{" ++ intercalate ", " strPairList ++ "}"
+stringifyHMap exprs = do
+    vals <- mapM evalPair exprs
+    vals' <- mapM stringifyPair vals
+    let strPairList = map (\(x, y) -> x ++ ": " ++ y) vals'
+    return $ "{" ++ intercalate ", " strPairList ++ "}"
+    where
+        evalPair :: (Expression, Expression) -> Psnodig (Value, Value)
+        evalPair (x, y) = do
+            x' <- evalExpr x
+            y' <- evalExpr y
+            return (x', y')
+        stringifyPair :: (Value, Value) -> Psnodig (String, String)
+        stringifyPair (x, y) = do
+            x' <- stringifyValue x False
+            y' <- stringifyValue y False
+            return (x', y')
 
 stringifyStruct :: [(String, Value)] -> Psnodig String
-stringifyStruct _ = return "ok"
--- -- stringifyStruct fields =
---     -- intercalate ", " $ map (\(k, v) -> k ++ " -> " ++ show v) fields
+stringifyStruct fields = do
+    fields' <- mapM stringifyField fields
+    return $ intercalate ", " fields'
+    where
+        stringifyField :: (String, Value) -> Psnodig String
+        stringifyField (str, (StructVal fields)) = do
+            fields <- stringifyStruct fields
+            return $ str ++ ": (" ++ fields ++ ")"
+        stringifyField (str, val) = do
+            val' <- stringifyValue val False
+            return $ str ++ ": " ++ val'
 
 evalNestedIndex :: Value -> [Expression] -> Psnodig Value
 evalNestedIndex val [] = return val
