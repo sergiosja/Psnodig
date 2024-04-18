@@ -761,7 +761,7 @@ applyFunction (Function name args stmts) values = do
 -- Main functions for execution
 
 evalProgram :: Program -> Psnodig ()
-evalProgram (Program structs funcs entryPoint) = do
+evalProgram (Program _ structs funcs entryPoint) = do
     mapM_ processStructDecls structs
     mapM_ processFunDecl funcs -- don't allow multiple declaratins, and no shadowing library functions!
     case entryPoint of

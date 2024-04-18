@@ -80,9 +80,9 @@ writeExp (VariableExp var) = tell var
 writeExp (BinaryExp op exp1 exp2) = do
     case op of
         Division -> do
-            tell "\\frac{"
+            tell "$\\frac{"
             writeExp exp1 >> tell "}{"
-            writeExp exp2 >> tell "}"
+            writeExp exp2 >> tell "}$"
         _ -> writeExp exp1 >> transpileOp op >> writeExp exp2
 writeExp (CallExp functioncall) = do
     writeFunctionCall functioncall
@@ -93,7 +93,7 @@ writeExp (Not expr) = do
     case expr of
         (CallExp (FunctionCall "in" args)) -> do
             writeExp $ head args
-            tell $ " \\notin "
+            tell $ " $\\notin$ "
             writeExp $ last args
         _ -> do
             tell "\\KwNot \\: "
@@ -157,8 +157,7 @@ writeFunc (Function funcname args stmts) = do
     tell $ "\\proc{$\\" ++ funcname ++ "("
     case length args of
         0 -> tell ")$}{\n"
-        1 -> do
-            tell $ head (getArgumentNames args) ++ ")$}{\n"
+        1 -> tell $ head (getArgumentNames args) ++ ")$}{\n"
         _ -> do
             mapM_ (\a -> (tell $ a ++ ", ")) (init $ getArgumentNames args)
             tell $ last (getArgumentNames args) ++ ")$}{\n"
@@ -203,9 +202,9 @@ writeStmt (If expr stmts maybeElse) indent = do
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
 writeStmt (Return expr) _ = do
-    tell "\\Return $"
+    tell "\\Return "
     writeExp expr
-    tell "$ \\;"
+    tell " \\;"
 writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
     tell " \\;"
@@ -275,25 +274,27 @@ writeStaticFunctions = do
 writeStaticKeywords :: LatexWriter ()
 writeStaticKeywords = do
     keywords <- asks snd
-    mapM_ (\k -> tell $ "\\SetKw{Kw" ++ take 1 k ++ tail k ++ "}{" ++ k ++ "}") keywords
+    mapM_ (\k -> tell $ "\\SetKw{Kw" ++ take 1 k ++ tail k ++ "}{" ++ k ++ "}\n") keywords
 
 constantConfig :: LatexWriter ()
 constantConfig = do
     tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
-    writeStaticFunctions >> tell "\n" >> writeStaticKeywords
-    tell "\\SetKw{KwNil}{Nil}\n\\SetKw{KwContinue}{continue}\n\\SetKw{KwBreak}{break}\n\\SetKw{KwFalse}{false}\n\\SetKw{KwTrue}{true}\n\\SetKw{KwNot}{not}\n\\SetKw{KwTo}{to}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n"
+    writeStaticFunctions >> writeStaticKeywords
+    tell "\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n"
 
-funcStart :: LatexWriter ()
-funcStart =
-    tell "\\begin{algorithm}[H]\n\\KwIn{Input}\n\\KwOut{Output}\n"
+writeProgramDescription :: Maybe ProgramDescription -> LatexWriter ()
+writeProgramDescription Nothing = return ()
+writeProgramDescription (Just (ProgramDescription input output)) = do
+    tell $ "\\KwIn{" ++ input ++ "}\n"
+    tell $ "\\KwOut{" ++ output ++ "}\n"
 
 funcEnd :: Function -> LatexWriter ()
 funcEnd (Function name _ _) =
     tell $ "\\caption{" ++ name ++ "}\n\\end{algorithm}\n\n"
 
 writeLatex :: Program -> LatexWriter ()
-writeLatex (Program _ funcs _) = do
+writeLatex (Program programDescription _ funcs _) = do
     constantConfig
-    if length funcs == 0 then return ()
-    else funcStart >> writeFunc (head funcs) >> funcEnd (head funcs)
+    if null funcs then return ()
+    else writeProgramDescription programDescription >> writeFunc (head funcs) >> funcEnd (head funcs)
     tell "\\end{document}"

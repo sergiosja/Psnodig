@@ -7,7 +7,10 @@ import qualified Data.Set as Set
 
 -- Program
 
-data Program = Program [StructDecl] [Function] (Maybe FunctionCall)
+data Program = Program (Maybe ProgramDescription) [StructDecl] [Function] (Maybe FunctionCall)
+    deriving (Eq, Show, Read, Ord)
+
+data ProgramDescription = ProgramDescription String String
     deriving (Eq, Show, Read, Ord)
 
 -- Structs

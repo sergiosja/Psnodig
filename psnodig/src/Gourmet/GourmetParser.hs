@@ -315,10 +315,18 @@ parseElse = (try parseElseIf) <|> parsePlainElse
         parsePlainElse =
             Else <$> (reservedOp "else" *> reservedOp "{" *> many parseStmt) <* reservedOp "}"
 
+parseProgramDescription :: Parser ProgramDescription
+parseProgramDescription = ProgramDescription
+    <$> (char '?' *> manyTill anyChar (char '?'))
+    <* whiteSpace
+    <*> (char '!' *> manyTill anyChar (char '!'))
+
+
 parseGourmet :: Parser Program
 parseGourmet = do
     whiteSpace
+    programDescription <- optionMaybe parseProgramDescription
     structs <- many parseStructDecl
     funcs <- many parseFunction
     functioncall <- optionMaybe parseFunctionCall
-    return $ Program structs funcs functioncall
+    return $ Program programDescription structs funcs functioncall

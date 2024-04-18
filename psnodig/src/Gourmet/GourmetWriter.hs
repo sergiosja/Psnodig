@@ -201,8 +201,15 @@ writeOp And = tell " and "
 writeOp Or = tell " or "
 writeOp Modulo = tell " % "
 
+writeProgramDescription :: Maybe ProgramDescription -> GourmetWriter ()
+writeProgramDescription Nothing = return ()
+writeProgramDescription (Just (ProgramDescription input output)) = do
+    tell $ "? " ++ input ++ " ?\n"
+    tell $ "! " ++ output ++ " !\n\n"
+
 writeGourmet :: Program -> GourmetWriter ()
-writeGourmet (Program structs funcs funcCall) = do
+writeGourmet (Program programDescription structs funcs funcCall) = do
+    writeProgramDescription programDescription
     mapM_ (\s -> (writeStructDecl s) >> tell "\n\n") structs
     mapM_ (\f -> (writeFunc f) >> tell "\n\n") funcs
     case funcCall of

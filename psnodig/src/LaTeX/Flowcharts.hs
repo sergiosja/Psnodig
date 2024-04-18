@@ -484,7 +484,7 @@ constantConfig = do
     tell "\\begin{document}\n\\begin{tikzpicture}[node distance=2cm]\n\n"
 
 writeFlowchart :: Program -> Flowchart ()
-writeFlowchart (Program _ funcs _) = do
+writeFlowchart (Program _ _ funcs _) = do
     constantConfig
     drawFunction $ head funcs
     drawEdges

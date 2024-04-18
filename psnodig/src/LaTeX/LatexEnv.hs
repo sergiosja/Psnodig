@@ -11,7 +11,7 @@ type Collector = State (Set String, Set String)
 -- Top levels
 
 collectNames :: Program -> Collector ()
-collectNames (Program structs funcs _) = do
+collectNames (Program _ structs funcs _) = do
     mapM_ collectStructDeclarations structs
     mapM_ collectFuncDeclarations funcs
 
