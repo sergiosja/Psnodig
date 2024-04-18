@@ -318,9 +318,8 @@ parseElse = (try parseElseIf) <|> parsePlainElse
 parseProgramDescription :: Parser ProgramDescription
 parseProgramDescription = ProgramDescription
     <$> (char '?' *> manyTill anyChar (char '?'))
+    <* whiteSpace <*> (char '!' *> manyTill anyChar (char '!'))
     <* whiteSpace
-    <*> (char '!' *> manyTill anyChar (char '!'))
-
 
 parseGourmet :: Parser Program
 parseGourmet = do
