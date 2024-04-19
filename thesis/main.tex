@@ -29,19 +29,20 @@
   xleftmargin=4ex
 }
 
-\usepackage{caption}
-\usepackage{subcaption}
+\usepackage{caption, subcaption, url, cleveref}
 \usepackage[normalem]{ulem}
-\usepackage{url}
+\crefname{lstlisting}{Listing}{Listings}
+\Crefname{lstlisting}{Listing}{Listing}
 
-% Macro for personal comments :)
+% Macros
 \usepackage{xcolor}
 \newcommand{\forsup}[1]{\textcolor{violet}{\texttt{#1}}\\}
+
+\newcommand{\textbfit}[1]{\textbf{\textit{#1}}}
 
 % Pseudocode
 \usepackage{algorithm2e}
 \SetKwFunction{f}{f}
-
 \usepackage{tikz}
 
 % Avoid automatic indentation
@@ -91,8 +92,6 @@
 \input{chapters/3_analysis}
 
 \input{chapters/4_design}
-
-% From now on, nothing new should be introduced!
 
 \input{chapters/5_implementation}
 
