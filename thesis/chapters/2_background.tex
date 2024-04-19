@@ -86,7 +86,7 @@ Images in computer science is nothing new. One of the most notable examples we h
 \begin{figure}[ht]
     \centering
     \includegraphics[scale=0.46]{assets/dfa.png}
-    \caption{An example finite state automata.}
+    \caption{A finite state automata.}
     \label{An example finite state automata.}
 \end{figure}
 
@@ -148,38 +148,36 @@ As mentioned in Section 1.3, there are two central LaTeX packages in the context
 
 \Cref{LaTeX program that utilises the Algorithm2e package.} is the LaTeX source code of a program written with the Algorithm2e package, and \Cref{The result of compiling CrefLaTeX.} shows the result of compiling said source code. \\
 
-\forsup{Snodig problem: Koden under blir faktisk eksekvert om jeg ikke har kommentarer foran!}
-
 \begin{lstlisting}[caption={LaTeX program that utilises the Algorithm2e package.}, captionpos=b, label={LaTeX program that utilises the Algorithm2e package.}]
-%\documentclass{standalone}
-%\usepackage[utf8]{inputenc}
-%\usepackage{amsmath,commath} 
-%\usepackage[linesnumbered, ruled]{algorithm2e}
+\ documentclass{standalone} % klikker om jeg fjerner
+mellomrommet
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
 
-%\SetKwProg{proc}{Procedure}{}{}
-%\SetKwFunction{AreaGreaterThanItaly}{AreaGreaterThanItaly}
-%\SetKw{KwFalse}{false}
-%\SetKw{KwTrue}{true}
-%\DontPrintSemicolon
-%\renewcommand{\thealgocf}{}
-%\begin{document}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{AreaGreaterThanItaly}{AreaGreaterThanItaly}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
 
-%\begin{algorithm}[H]
-%\KwIn{Two integers $length$ and $width$}
-%\KwOut{A boolean revealing whether or not the input's area is greater than that of the Italian Republic}
-%\proc{\AreaGreaterThanItaly(length, width)}{
-%    maa egentlig ha dollartegn foer procnavn og etter, men alt inni eksekveres jo
-%    $\texttt{area} \gets length \cdot width$ \;
-%    \uIf{$area > 301340$}{
-%        \Return \KwTrue \;
-%    }
-%    \uElse{
-%        \Return \KwFalse \;
-%    }
-%}
-%\caption{AreaGreaterThanItaly}
-%\end{algorithm}
-%\end{document}
+\begin{algorithm}[H]
+\KwIn{Two integers $length$ and $width$}
+\KwOut{A boolean revealing whether or not the input's area is greater than that of the Italian Republic}
+\proc{\AreaGreaterThanItaly(length, width)}{
+    $\texttt{area} \gets length \cdot width$ \;
+    \uIf{$area > 301340$}{
+        \Return \KwTrue \;
+    }
+    \uElse{
+        \Return \KwFalse \;
+    }
+}
+\caption{AreaGreaterThanItaly}
+\end{algorithm}
+\end{document}
 \end{lstlisting}
 
 \begin{figure}[ht]
@@ -260,7 +258,7 @@ A common type in any programming language is the boolean, shown in \Cref{Recreat
 data Boolean = False | True
 \end{lstlisting}
 
-With Haskell, it is straightforward to create your own data types, which can then be used to model ASTs. For instance, we can create a simple calculator language in just a few lines of code, as shown in \Cref{Data types for a calculator language in Haskell.}. From this, we can construct an AST as the one we see in \Cref{An AST constructed with data types presented in}, intended to model the mathematical expression \texttt{1 + 2 - 3}. \\
+With Haskell, it is straightforward to create our own data types, which can then be used to model ASTs. For instance, we can create a simple calculator language in just a few lines of code, as shown in \Cref{Data types for a calculator language in Haskell.}. From this, we can construct an AST as the one we see in \Cref{An AST constructed with data types presented in}, intended to model the mathematical expression \texttt{1 + 2 - 3}. \\
 
 \begin{lstlisting}[caption={Data types for a calculator language in Haskell.}, captionpos=b, label={Data types for a calculator language in Haskell.}]
 data Program = Program Expression
@@ -394,7 +392,7 @@ Another example is a transpiler presented by Lunnikiv et. al, where Python is co
 
 We mentioned that the frontend of a compiler is tasked with reading source code, and --- given that it is syntactically correct --- building an intermediate representation. The backend of a compiler is tasked with converting that intermediate representation into target code. \\
 
-Having in-depth knowledge about the entire pipeline of a compiler is not necessary to understand the key points of this thesis. Nevertheless, two important aspects of a compiler that \textit{will} be central focus points, are parsers and code generators. Parsers and code generators play a vital role also in a transpiler. In fact, they are all you really need to build a simple transpiler. When the parser has converted the source code to an intermediate representation, the code generator can convert that intermediate representation into a target program. \\
+Having in-depth knowledge about the entire pipeline of a compiler is not necessary to understand the key points of this thesis. Nevertheless, two important aspects of a compiler that \textit{will} be central focus points, are parsers and code generators. Parsers and code generators play a vital role also in a transpiler. In fact, they are all we really need to build a simple transpiler. When the parser has converted the source code to an intermediate representation, the code generator can convert that intermediate representation into a target program. \\
 
 Technically, the parser and the code generator are completely independent from one another. The only thing they must have in common is the ability to read or write the same intermediate representation. There are several advantages to this, like flexibility and modularity. If we want our transpiler to read or write another language, we can just create an additional parser or code generator. When we add a parser, we do not have to do any changes to our code generator, and vice versa, because they work on the same intermediate representation, independent of how the source- and target programs look like. \\
 
@@ -438,7 +436,7 @@ Div Attr [Block]
 Null
 \end{lstlisting}
 
-The modular design of Pandoc means that adding an input format only requires the program to convert \textit{to} this native representation, whilst an output format only needs to convert \textit{from} it. This is much like parsers and code generators of compilers, but as they are much less intricate, the Pandoc documentation refers to them simply as \texttt{readers} and \texttt{writers}. Throughout this thesis, the words \texttt{writer} and \texttt{code generator} will be used interchangeably. \\
+The modular design of Pandoc means that adding an input format only requires the program to convert \textit{to} this native representation, whilst an output format only needs to convert \textit{from} it. This is much like parsers and code generators of compilers, but as they are much less intricate, the Pandoc documentation refers to them simply as \texttt{readers} and \texttt{writers}. Throughout this thesis, the words \texttt{writer} and \texttt{code generator} will be used interchangeably.~\footnote{In reality, traditional code generators do much more than directly translating data types to a target program. In the context of this thesis, however, code generators will not be asked to do much more. This is also a way to acknowledge that the writers we ultimately construct are not fully fledged code generators like one might see in compilers.} \\
 
 Though it must be said, Pandoc cannot always ensure a completely lossless conversion. As the native representation is less expressive than many of the formats it converts between, details are bound to get lost on the way. For instance, LaTeX is a notoriously rich format, much more so than many of its companions in the Pandoc dynasty. However, Pandoc is an excellent interpreter of lightweight markup languages like Markdown, which are more \textit{neutural} by design~\cite{whatIsPandoc}. \\
 
