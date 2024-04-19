@@ -1,6 +1,818 @@
 % Finn artikler på https://scholar.google.com/
 % Hent bibliografi på https://dblp.org/
 
+% 1 - Introduction
+
+@online{whatIsPseudocode,
+    title        = {Algorithms: A Very Brief Introduction},
+    author       = {LINFO},
+    year         = 2007,
+    url          = {http://www.linfo.org/algorithm.html},
+    urldate      = {2024-04-17},
+}
+
+@misc{manyLinters,
+    author       = {Martins, Carmelo},
+    title        = {Awesome Linters},
+    year         = {2023},
+    url          = {https://github.com/caramelomartins/awesome-linters},
+    urldate      = {2024-04-17}
+}
+
+@article{whatIsALinter,
+    author       = {Yecine Megdiche and
+                  Fabian Huch and
+                  Lukas Stevens},
+    title        = {A Linter for Isabelle: Implementation and Evaluation},
+    journal      = {CoRR},
+    volume       = {abs/2207.10424},
+    year         = {2022},
+    url          = {https://doi.org/10.48550/arXiv.2207.10424},
+    doi          = {10.48550/ARXIV.2207.10424},
+    eprinttype    = {arXiv},
+    eprint       = {2207.10424},
+    timestamp    = {Sun, 02 Oct 2022 15:32:50 +0200},
+    biburl       = {https://dblp.org/rec/journals/corr/abs-2207-10424.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate      = {2024-04-17}
+}
+
+@inproceedings{algorithmsAreHard1,
+    author = {Danielsiek, Holger and Paul, Wolfgang and Vahrenhold, Jan},
+    title = {Detecting and Understanding Students' Misconceptions Related to Algorithms and Data Structures},
+    year = {2012},
+    isbn = {9781450310987},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/2157136.2157148},
+    doi = {10.1145/2157136.2157148},
+    booktitle = {Proceedings of the 43rd ACM Technical Symposium on Computer Science Education},
+    pages = {21–26},
+    numpages = {6},
+    keywords = {misconceptions, concept inventories, CS1/2},
+    location = {Raleigh, North Carolina, USA},
+    series = {SIGCSE '12},
+    urldate      = {2024-04-17}
+}
+
+@inproceedings{algorithmsAreHard2,
+    title={Misconceptions and concept inventory questions for binary search trees and hash tables},
+    author={Karpierz, Kuba and Wolfman, Steven A},
+    booktitle={Proceedings of the 45th ACM technical symposium on Computer science education},
+    pages={109--114},
+    year={2014},
+    urldate = {2024-04-17}
+}
+
+@article{algorithmsAreHard3,
+  title={Observations on student misconceptions—A case study of the Build--Heap Algorithm},
+  author={Sepp{\"a}l{\"a}, Otto and Malmi, Lauri and Korhonen, Ari},
+  journal={Computer Science Education},
+  volume={16},
+  number={3},
+  pages={241--255},
+  year={2006},
+  publisher={Taylor \& Francis}
+}
+
+@article{flowchartsAreGood1,
+    author    = {David A. Scanlan},
+    title     = {Structured Flowcharts Outperform Pseudocode: An Experimental Comparison},
+    journal   = {{IEEE} Softw.},
+    volume    = {6},
+    number    = {5},
+    pages     = {28--36},
+    year      = {1989},
+    url       = {https://doi.org/10.1109/52.35587},
+    doi       = {10.1109/52.35587},
+    timestamp = {Mon, 08 Jun 2020 22:31:02 +0200},
+    biburl    = {https://dblp.org/rec/journals/software/Scanlan89.bib},
+    bibsource = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-17}
+}
+
+@INPROCEEDINGS{flowchartsAreGood2,
+    author={Giordano, Daniela and Maiorana, Francesco},
+    booktitle={2015 IEEE Global Engineering Education Conference (EDUCON)}, 
+    title={Teaching algorithms: Visual language vs flowchart vs textual language}, 
+    year={2015},
+    volume={},
+    number={},
+    pages={499-504},
+    doi={10.1109/EDUCON.2015.7096016},
+    urldate = {2024-04-17}
+}
+
+@inproceedings{flowchartsAreGood3,
+    author       = {Marcin Stefanowicz and
+                  Anna Sasak{-}Okon},
+    editor       = {Jelena Jovanovic and
+                  Irene{-}Angelica Chounta and
+                  James Uhomoibhi and
+                  Bruce M. McLaren},
+    title        = {AlgoPoint as an Original Didactic Tool for Introductory Programming
+                  Using Flowcharts},
+    booktitle    = {Proceedings of the 15th International Conference on Computer Supported
+                  Education, {CSEDU} 2023, Volume 1, Prague - Czech Republic, April
+                  21-23, 2023},
+    pages        = {162--170},
+    publisher    = {{SCITEPRESS}},
+    year         = {2023},
+    url          = {https://doi.org/10.5220/0011826300003470},
+    doi          = {10.5220/0011826300003470},
+    timestamp    = {Tue, 06 Jun 2023 10:46:49 +0200},
+    biburl       = {https://dblp.org/rec/conf/csedu/StefanowiczS23.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-17}
+}
+
+@book{weReadMoreThanWeCode,
+    title={Clean Code: A Handbook of Agile Software Craftsmanship},
+    author={Martin, Robert C.},
+    year={2008},
+    publisher={Prentice Hall},
+    urldate = {2024-04-17}
+}
+
+% 2 - Background
+
+@online{famousKnuthQuote,
+    title        = {The correspondence between Donald E. Knuth and Peter van Emde Boas on priority deques during the spring of 1977},
+    organization = {Science Park, Universiteit van Amsterdam},
+    url          = {https://staff.fnwi.uva.nl/p.vanemdeboas/knuthnote.pdf},
+    urldate      = {2024-04-17}
+}
+
+@book{pseudocodeInBook1,
+    title={Introduction to Algorithms},
+    author={Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L. and Stein, Clifford},
+    year={2009},
+    publisher={MIT press},
+    location={Cambridge, MA},
+    edition={3},
+    urldate = {2024-04-17}
+}
+
+@book{pseudocodeInBook2,
+    author = {Goodrich, Michael T. and Tamassia, Roberto},
+    biburl = {https://www.bibsonomy.org/bibtex/2db66ca7fc8633e53547cbfb046f3b7d3/jpmor},
+    editor = {Golub, Beth},
+    interhash = {86def6e66ed413ef985c204462210d94},
+    intrahash = {db66ca7fc8633e53547cbfb046f3b7d3},
+    isbn = {978-1-118-33591-8},
+    keywords = {algorithm applicatioin computer computer-science cse data design graph mathematics pi3-prog-report science structure theory},
+    language = {en},
+    month = {10},
+    publisher = {Wiley},
+    timestamp = {2020-10-07T13:36:50.000+0200},
+    title = {Algorithm Design and Applications},
+    url = {https://www.wiley.com/en-us/Algorithm+Design+and+Applications-p-9781118335918},
+    year = 2014,
+    urldate      = {2024-04-17}
+}
+
+@inproceedings{pseudocodeInPaper1,
+    author       = {Hanxiao Liu and
+                  Zihang Dai and
+                  David R. So and
+                  Quoc V. Le},
+    editor       = {Marc'Aurelio Ranzato and
+                  Alina Beygelzimer and
+                  Yann N. Dauphin and
+                  Percy Liang and
+                  Jennifer Wortman Vaughan},
+    title        = {Pay Attention to MLPs},
+    booktitle    = {Advances in Neural Information Processing Systems 34: Annual Conference
+                  on Neural Information Processing Systems 2021, NeurIPS 2021, December
+                  6-14, 2021, virtual},
+    pages        = {9204--9215},
+    year         = {2021},
+    url          = {https://proceedings.neurips.cc/paper/2021/hash/4cc05b35c2f937c5bd9e7d41d3686fff-Abstract.html},
+    timestamp    = {Tue, 03 May 2022 16:20:47 +0200},
+    biburl       = {https://dblp.org/rec/conf/nips/LiuDSL21.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-17}
+}
+
+@article{pseudocodeInPaper2,
+    title={A graduated assignment algorithm for graph matching},
+    author={Gold, Steven and Rangarajan, Anand},
+    journal={IEEE Transactions on pattern analysis and machine intelligence},
+    volume={18},
+    number={4},
+    pages={377--388},
+    year={1996},
+    publisher={IEEE},
+    url = {https://members.cbio.mines-paristech.fr/~jvert/svn/bibli/local/Gold1996graduated.pdf},
+    urldate = {2024-04-17}
+}
+
+@inproceedings{pseudocodeTendsToBeImperative,
+    author       = {Mark B. Wells and
+                  Barry L. Kurtz},
+    editor       = {Robert A. Barrett and
+                  Maynard J. Mansfield},
+    title        = {Teaching multiple programming paradigms: a proposal for a paradigm
+                  general pseudocode},
+    booktitle    = {Proceedings of the 20th {SIGCSE} Technical Symposium on Computer Science
+                  Education, {SIGCSE} 1989, Louisville, Kentucky, USA, February 23-24,
+                  1989},
+    pages        = {246--251},
+    publisher    = {{ACM}},
+    year         = {1989},
+    url          = {https://doi.org/10.1145/65293.71222},
+    doi          = {10.1145/65293.71222},
+    timestamp    = {Tue, 23 Mar 2021 15:33:11 +0100},
+    biburl       = {https://dblp.org/rec/conf/sigcse/WellsK89.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-17}
+}
+
+@online{differentVersionsOfBinarySearch,
+    title = {Pseudocode},
+    author = {Naomi Nishimura},
+    organization = {University of Waterloo},
+    url = {https://student.cs.uwaterloo.ca/~cs231/resources/pseudocode.pdf},
+    urldate= {2024-04-17}
+}
+
+@book{binarySearchSource1,
+    title={The Design and Analysis of Computer Algorithms},
+    author={Aho, Alfred V. and Hopcroft, John E. and Ullman, Jeffrey D.},
+    year={1974},
+    publisher={Addison-Wesley},
+    urldate= {2024-04-17}
+}
+
+@book{binarySearchSource2,
+    title={Data Structures and Their Algorithms},
+    author={Lewis, Harry R. and Denenberg, Larry},
+    year={1991},
+    publisher={HarperCollins},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{desireToGetPseudocodeGeneration,
+    author       = {Shaofeng Xu and
+                  Yun Xiong},
+    title        = {Automatic Generation of Pseudocode with Attention Seq2seq Model},
+    booktitle    = {25th Asia-Pacific Software Engineering Conference, {APSEC} 2018, Nara,
+                  Japan, December 4-7, 2018},
+    pages        = {711--712},
+    publisher    = {{IEEE}},
+    year         = {2018},
+    url          = {https://doi.org/10.1109/APSEC.2018.00101},
+    doi          = {10.1109/APSEC.2018.00101},
+    timestamp    = {Wed, 16 Oct 2019 14:14:50 +0200},
+    biburl       = {https://dblp.org/rec/conf/apsec/XuX18.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{freedomOfPseudocode,
+    author       = {Breannd{\'{a}}n {\'{O}} Nuall{\'{a}}in},
+    editor       = {Julian A. Padget},
+    title        = {Executable Pseudocode for Graph Algorithms},
+    booktitle    = {Proceedings of the 8th European Lisp Symposium {(ELS} 2015), London,
+                  England, April 20-21, 2015},
+    pages        = {47--54},
+    publisher    = {{ELSAA}},
+    year         = {2015},
+    url          = {https://european-lisp-symposium.org/static/proceedings/2015.pdf\#b},
+    timestamp    = {Wed, 13 Nov 2019 17:59:17 +0100},
+    biburl       = {https://dblp.org/rec/conf/els/Nuallain15.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{pseudogen,
+    author = {Yusuke Oda and Hiroyuki Fudaba and Graham Neubig and Hideaki Hata and Sakriani Sakti and Tomoki Toda and Satoshi Nakamura},
+    editor = {Myra B. Cohen and Lars Grunske and Michael Whalen},
+    title = {Learning to Generate Pseudo-Code from Source Code Using Statistical Machine Translation {(T)}},
+    booktitle = {30th {IEEE/ACM} International Conference on Automated Software Engineering, {ASE} 2015, Lincoln, NE, USA, November 9-13, 2015},
+    pages = {574--584},
+    publisher = {{IEEE} Computer Society},
+    year = {2015},
+    url = {https://doi.org/10.1109/ASE.2015.36},
+    doi = {10.1109/ASE.2015.36},
+    timestamp = {Fri, 24 Mar 2023 00:02:36 +0100},
+    biburl = {https://dblp.org/rec/conf/kbse/OdaFNHSTN15.bib},
+    bibsource = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@article{displayingPseudocode,
+    author = {Kreher, D. and Stinson, Douglas},
+    date = {1999-10},
+    title = {Pseudocode: A LATEX Style File for Displaying Algorithms},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{pseudocodeGenerator,
+    author       = {Abdulaziz Alhefdhi and
+                  Hoa Khanh Dam and
+                  Hideaki Hata and
+                  Aditya Ghose},
+    title        = {Generating Pseudo-Code from Source Code Using Deep Learning},
+    booktitle    = {25th Australasian Software Engineering Conference, {ASWEC} 2018, Adelaide,
+                  Australia, November 26-30, 2018},
+    pages        = {21--25},
+    publisher    = {{IEEE} Computer Society},
+    year         = {2018},
+    url          = {https://doi.org/10.1109/ASWEC.2018.00011},
+    doi          = {10.1109/ASWEC.2018.00011},
+    timestamp    = {Fri, 24 Mar 2023 00:04:19 +0100},
+    biburl       = {https://dblp.org/rec/conf/aswec/AlhefdhiDHG18.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@misc{vhdl,
+    author       = {Klenke, Robert H.},
+    title        = {VHDL Processes},
+    year         = {1999},
+    month        = {6},
+    day          = {18},
+    howpublished = {Slide 8},
+    institution  = {Virginia Commonwealth University, Department of Electrical and Computer Engineering},
+    url          = {https://www.people.vcu.edu/~rhklenke/tutorials/vhdl/modules/m12_23/sld008.htm},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{maude,
+    author       = {Manuel Clavel and
+                  Steven Eker and
+                  Patrick Lincoln and
+                  Jos{\'{e}} Meseguer},
+    editor       = {Jos{\'{e}} Meseguer},
+    title        = {Principles of Maude},
+    booktitle    = {First International Workshop on Rewriting Logic and its Applications,
+                  {RWLW} 1996, Asilomar Conference Center, Pacific Grove, CA, USA, September
+                  3-6, 1996},
+    series       = {Electronic Notes in Theoretical Computer Science},
+    volume       = {4},
+    pages        = {65--89},
+    publisher    = {Elsevier},
+    year         = {1996},
+    url          = {https://doi.org/10.1016/S1571-0661(04)00034-9},
+    doi          = {10.1016/S1571-0661(04)00034-9},
+    timestamp    = {Thu, 21 Sep 2023 09:08:34 +0200},
+    biburl       = {https://dblp.org/rec/journals/entcs/ClavelELM96.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@book{introToAutomataTheory,
+    author       = {John E. Hopcroft and
+                  Rajeev Motwani and
+                  Jeffrey D. Ullman},
+    title        = {Introduction to automata theory, languages, and computation, 3rd Edition},
+    series       = {Pearson international edition},
+    publisher    = {Addison-Wesley},
+    year         = {2007},
+    isbn         = {978-0-321-47617-3},
+    timestamp    = {Thu, 02 Jan 2020 12:13:44 +0100},
+    biburl       = {https://dblp.org/rec/books/daglib/0016921.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@article{firstFSA,
+    author       = {McCulloch, Warren S. and Pitts, Walter},
+    title        = {A logical calculus of the ideas immanent in nervous activity},
+    journal      = {The bulletin of mathematical biophysics},
+    volume       = {5},
+    number       = {4},
+    pages        = {115--133},
+    year         = {1943},
+    url          = {https://doi.org/10.1007/BF02478259},
+    doi          = {10.1007/BF02478259},
+    timestamp    = {Sun, 18 Feb 2024 19:50:00 +0200},
+    urldate= {2024-04-17}
+}
+
+@article{flowchartEditor1,
+    author    = {Carlisle, Martin and Wilson, Terry and Humphries, Jeffrey and Hadfield, Steven},
+    title     = {{RAPTOR}: Introducing programming to non-majors with flowcharts},
+    journal   = {Journal of Computing Sciences in Colleges},
+    volume    = {19},
+    pages     = {52-60},
+    date      = {2004-01},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{flowchartEditor2,
+    author     = {Charntaweekhun, Kanis and Wangsiripitak, Somkiat},
+    title      = {Visual Programming using Flowchart},
+    booktitle  = {2006 International Symposium on Communications and Information Technologies},
+    date       = {2006},
+    pages      = {1062-1065},
+    doi        = {10.1109/ISCIT.2006.339940},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{ML_Visual1,
+    author       = {Herman Pareli Nordaunet and
+                  Trym B{\o} and
+                  Evan J{\aa}sund Kassab and
+                  Frank Veenstra and
+                  Ulysse C{\^{o}}t{\'{e}} Allard},
+    title        = {Competitive Reinforcement Learning Agents with Adaptive Networks},
+    booktitle    = {11th International Conference on Control, Mechatronics and Automation,
+                  {ICCMA} 2023, Grimstad, Norway, November 1-3, 2023},
+    pages        = {314--319},
+    publisher    = {{IEEE}},
+    year         = {2023},
+    url          = {https://doi.org/10.1109/ICCMA59762.2023.10374802},
+    doi          = {10.1109/ICCMA59762.2023.10374802},
+    timestamp    = {Tue, 16 Jan 2024 21:01:22 +0100},
+    biburl       = {https://dblp.org/rec/conf/iccma/NordaunetBKVA23.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@inproceedings{ML_Visual2,
+    author       = {Kent Gauen and
+                  Ryan Dailey and
+                  John Laiman and
+                  Yuxiang Zi and
+                  Nirmal Asokan and
+                  Yung{-}Hsiang Lu and
+                  George K. Thiruvathukal and
+                  Mei{-}Ling Shyu and
+                  Shu{-}Ching Chen},
+    editor       = {Chengcui Zhang and
+                  Balaji Palanisamy and
+                  Latifur Khan and
+                  Sahra Sedigh Sarvestani},
+    title        = {Comparison of Visual Datasets for Machine Learning},
+    booktitle    = {2017 {IEEE} International Conference on Information Reuse and Integration,
+                  {IRI} 2017, San Diego, CA, USA, August 4-6, 2017},
+    pages        = {346--355},
+    publisher    = {{IEEE} Computer Society},
+    year         = {2017},
+    url          = {https://doi.org/10.1109/IRI.2017.59},
+    doi          = {10.1109/IRI.2017.59},
+    timestamp    = {Thu, 23 Mar 2023 23:59:57 +0100},
+    biburl       = {https://dblp.org/rec/conf/iri/GauenDLZALTSC17.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@article{ML_Visual3,
+    author       = {Jun Yuan and
+                  Changjian Chen and
+                  Weikai Yang and
+                  Mengchen Liu and
+                  Jiazhi Xia and
+                  Shixia Liu},
+    title        = {A survey of visual analytics techniques for machine learning},
+    journal      = {Comput. Vis. Media},
+    volume       = {7},
+    number       = {1},
+    pages        = {3--36},
+    year         = {2021},
+    url          = {https://doi.org/10.1007/s41095-020-0191-7},
+    doi          = {10.1007/S41095-020-0191-7},
+    timestamp    = {Fri, 30 Dec 2022 14:18:05 +0100},
+    biburl       = {https://dblp.org/rec/journals/cvm/YuanCYLXL21.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@article{codeFromFlowcharts,
+    author       = {Xianghu Wu and
+                  Mingcheng Qu and
+                  Zhi{-}Qiang Liu and
+                  Jian{-}Zhong Li},
+    title        = {Research and Application of Code Automatic Generation Algorithm Based
+                  on Structured Flowchart},
+    journal      = {J. Softw. Eng. Appl.},
+    volume       = {4},
+    number       = {9},
+    pages        = {534--545},
+    year         = {2011},
+    url          = {https://doi.org/10.4236/jsea.2011.49062},
+    doi          = {10.4236/JSEA.2011.49062},
+    timestamp    = {Sun, 21 Jun 2020 17:41:58 +0200},
+    biburl       = {https://dblp.org/rec/journals/jsea/WuQLL11.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate= {2024-04-17}
+}
+
+@article{flowchartsAreGood4,
+    author       = {Sekreningsih Nita and Sulistyaning Kartikawati},
+    title        = {Analysis Of The Impact Narrative Algorithm Method, Pseudocode And Flowchart Towards Students Understanding Of The Programming Algorithm Courses},
+    journal      = {IOP Conference Series: Materials Science and Engineering},
+    volume       = {835},
+    number       = {1},
+    pages        = {012044},
+    year         = {2020},
+    url          = {https://dx.doi.org/10.1088/1757-899X/835/1/012044},
+    publisher    = {IOP Publishing},
+    doi          = {10.1088/1757-899X/835/1/012044},
+    timestamp    = {Sun, 18 Feb 2024 20:15:00 +0200},
+    urldate= {2024-04-17}
+}
+
+@book{latex,
+    title={Guide to LATEX},
+    author={Kopka, Helmut and Daly, Patrick W},
+    year={2003},
+    publisher={Pearson Education},
+    urldate= {2024-04-17}
+}
+
+@manual{algorithm2e,
+    author       = {Christophe Fiorio},
+    title        = {algorithm2e - Floating algorithm environment with algorithmic keywords},
+    year         = {2017},
+    version      = {5.2},
+    url          = {https://ctan.org/pkg/algorithm2e},
+    urldate = {2024-04-17}
+}
+
+@manual{tikz,
+    author       = {Till Tantau},
+    title        = {TikZ \& PGF Manual for version VERSION},
+    year         = {2023},
+    version      = {3.1.10},
+    url          = {https://ctan.org/pkg/pgf},
+    urldate = {2024-04-18}
+}
+
+@inproceedings{quickcheck,
+    author       = {Koen Claessen and
+                  John Hughes},
+    editor       = {Martin Odersky and
+                  Philip Wadler},
+    title        = {QuickCheck: a lightweight tool for random testing of Haskell programs},
+    booktitle    = {Proceedings of the Fifth {ACM} {SIGPLAN} International Conference
+                  on Functional Programming {(ICFP} '00), Montreal, Canada, September
+                  18-21, 2000},
+    pages        = {268--279},
+    publisher    = {{ACM}},
+    year         = {2000},
+    url          = {https://doi.org/10.1145/351240.351266},
+    doi          = {10.1145/351240.351266},
+    timestamp    = {Wed, 02 Mar 2022 21:39:33 +0100},
+    biburl       = {https://dblp.org/rec/conf/icfp/ClaessenH00.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-18}
+}
+
+@book{whatIsACompiler,
+    author       = {Alfred V. Aho and
+                  Ravi Sethi and
+                  Jeffrey D. Ullman},
+    title        = {Compilers: Principles, Techniques, and Tools},
+    series       = {Addison-Wesley series in computer science / World student series edition},
+    publisher    = {Addison-Wesley},
+    year         = {1986},
+    url          = {https://www.worldcat.org/oclc/12285707},
+    isbn         = {0-201-10088-6},
+    timestamp    = {Fri, 17 Jul 2020 16:12:45 +0200},
+    biburl       = {https://dblp.org/rec/books/aw/AhoSU86.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-18}
+}
+
+@inproceedings{whatIsATranspiler,
+    author       = {Miguel Marcelino and
+                  Ant{\'{o}}nio Menezes Leit{\~{a}}o},
+    editor       = {Didier Verna},
+    title        = {Transpiling Python to Julia using PyJL},
+    booktitle    = {Proceedings of the 15th European Lisp Symposium, {ELS} 2022, Porto,
+                  Portugal, April 21-22, 2022},
+    pages        = {40--47},
+    publisher    = {{ELSAA}},
+    year         = {2022},
+    url          = {https://european-lisp-symposium.org/static/proceedings/2022.pdf},
+    timestamp    = {Fri, 02 Jun 2023 16:38:05 +0200},
+    biburl       = {https://dblp.org/rec/conf/els/MarcelinoL22.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-18}
+}
+
+@manual{theFirstTranspiler,
+    title={MCS-86 Assembly Language Converter Operating Instructions for ISIS-II Users},
+    author={{Intel Corporation}},
+    year={1979},
+    urldate = {2024-04-18}
+}
+
+@misc{javaScriptIsCommon,
+    author    = {Stack Overflow},
+    title     = {Developer Survey 2023 - Most Popular Technologies: Language},
+    year      = {2023},
+    url = {https://survey.stackoverflow.co/2023/#most-popular-technologies-language},
+    urldate = {2024-04-18}
+}
+
+@misc{alaSQL,
+    author       = {Andrey Gershun and Mathias Rangel Wulff},
+    title        = {AlaSQL},
+    year         = {2023},
+    url          = {https://github.com/AlaSQL/alasql},
+    note         = {GitHub repository},
+    urldate = {2024-04-18}
+}
+
+@article{HaskellToC,
+    author = {Peyton Jones, Simon and Cordy, Jones and Kevin, Hall and Partain, Hammond and Wadler, Phil},
+    year = {1998},
+    title = {The Glasgow Haskell compiler: a technical overview},
+    urldate = {2024-04-18}
+}
+
+@inproceedings{PythonToRust,
+    author       = {Henri Lunnikivi and
+                  Kai Jylkk{\"{a}} and
+                  Timo H{\"{a}}m{\"{a}}l{\"{a}}inen},
+    editor       = {Alex Orailoglu and
+                  Matthias Jung and
+                  Marc Reichenbach},
+    title        = {Transpiling Python to Rust for Optimized Performance},
+    booktitle    = {Embedded Computer Systems: Architectures, Modeling, and Simulation
+                  - 20th International Conference, {SAMOS} 2020, Samos, Greece, July
+                  5-9, 2020, Proceedings},
+    series       = {Lecture Notes in Computer Science},
+    volume       = {12471},
+    pages        = {127--138},
+    publisher    = {Springer},
+    year         = {2020},
+    url          = {https://doi.org/10.1007/978-3-030-60939-9\_9},
+    doi          = {10.1007/978-3-030-60939-9\_9},
+    timestamp    = {Sat, 14 Nov 2020 00:57:13 +0100},
+    biburl       = {https://dblp.org/rec/conf/samos/LunnikiviJ020.bib},
+    bibsource    = {dblp computer science bibliography, https://dblp.org},
+    urldate = {2024-04-18}
+}
+
+@misc{derw,
+    author       = {Noah Hall},
+    title        = {derw},
+    year         = {2023},
+    url          = {https://github.com/eeue56/derw},
+    note         = {GitHub repository},
+    urldate = {2024-04-18}
+}
+
+@online{whatIsPandoc,
+    author    = {Domini, Federico},
+    title     = {An overview of Pandoc},
+    journal   = {TUGBoat},
+    volume    = {35},
+    number    = {1},
+    pages     = {44-50},
+    date      = {2014},
+    url       = {https://www.tug.org/TUGboat/tb35-1/tb109dominici.pdf},
+    urldate = {2024-04-18}
+}
+
+% 3 - Analysis
+
+@article{computersInTheClassroom,
+    title={Effects of computer programming on young children's cognition.},
+    author={Clements, Douglas H and Gullo, Dominic F},
+    journal={Journal of educational psychology},
+    volume={76},
+    number={6},
+    pages={1051},
+    year={1984},
+    publisher={American Psychological Association},
+    urldate = {2024-04-18}
+}
+
+@article{whatIsSMT,
+    title={Statistical machine translation},
+    author={Lopez, Adam},
+    journal={ACM Computing Surveys (CSUR)},
+    volume={40},
+    number={3},
+    pages={1--49},
+    year={2008},
+    publisher={ACM New York, NY, USA},
+    urldate = {2024-04-18}
+}
+
+@book{setComprehension,
+    title={Logical methods: the art of thinking abstractly and mathematically},
+    author={Antonsen, Roger},
+    year={2021},
+    publisher={Springer},
+    urldate = {2024-04-18}
+}
+
+@online{pythonHosUIO,
+    author       = {{University of Oslo}},
+    title        = {IN1000 - Introduction to Object-oriented Programming},
+    year         = {2023},
+    url          = {https://www.uio.no/studier/emner/matnat/ifi/IN1000/index-eng.html},
+    note         = {Course webpage},
+    urldate = {2024-04-18}
+}
+
+@online{cHosUIT,
+    author       = {{University of Tromsø}},
+    title        = {INF-1100 - Introduction to programming with scientific applications},
+    year         = {2023},
+    url          = {https://en.uit.no/utdanning/emner/emne/806701/inf-1100},
+    note         = {Course webpage},
+    urldate = {2024-04-18}
+}
+
+@online{javaIHellas,
+    author       = {{Athens University of Economics and Business}},
+    title        = {Introduction to Computer Science},
+    year         = {2023},
+    url          = {http://www.dept.aueb.gr/en/dmst/content/introduction-computer-science},
+    note         = {Course webpage},
+    urldate = {2024-04-18}
+}
+
+@online{javaScriptOgSQLhosHarvard,
+    author       = {{Harvard University}},
+    title        = {CS50: Introduction to Computer Science},
+    year         = {2023},
+    url = {www.pll.harvard.edu/course/cs50-introduction-computer-science},
+    note         = {Course webpage},
+    urldate = {2024-04-18}
+}
+
+% 4 - Design
+
+@article{whatIsEBNF,
+  title={Ebnf: A notation to describe syntax},
+  author={Feynman, Richard and Objectives, Chapter},
+  journal={Cited on},
+  pages={10},
+  year={2016}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @article{haskell,
   title={A gentle introduction to Haskell},
   author={Hudak, Paul and Fasel, Joseph H},
@@ -10,21 +822,6 @@
   pages={1--52},
   year={1992},
   publisher={ACM New York, NY, USA}
-}
-
-@article{feynman2016ebnf,
-  title={Ebnf: A notation to describe syntax},
-  author={Feynman, Richard and Objectives, Chapter},
-  journal={Cited on},
-  pages={10},
-  year={2016}
-}
-
-@book{pierce2002types,
-  title={Types and programming languages},
-  author={Pierce, Benjamin C},
-  year={2002},
-  publisher={MIT press}
 }
 
 @inproceedings{wadler_monads,
@@ -53,88 +850,11 @@
   year={2013}
 }
 
-@article{clements1984effects,
-  title={Effects of computer programming on young children's cognition.},
-  author={Clements, Douglas H and Gullo, Dominic F},
-  journal={Journal of educational psychology},
-  volume={76},
-  number={6},
-  pages={1051},
-  year={1984},
-  publisher={American Psychological Association}
-}
-
 @book{LYAH,
   title={Learn you a haskell for great good!: a beginner's guide},
   author={Lipovaca, Miran},
   year={2011},
   publisher={no starch press}
-}
-
-@inproceedings{ML_Visual3,
-  author       = {Kent Gauen and
-                  Ryan Dailey and
-                  John Laiman and
-                  Yuxiang Zi and
-                  Nirmal Asokan and
-                  Yung{-}Hsiang Lu and
-                  George K. Thiruvathukal and
-                  Mei{-}Ling Shyu and
-                  Shu{-}Ching Chen},
-  editor       = {Chengcui Zhang and
-                  Balaji Palanisamy and
-                  Latifur Khan and
-                  Sahra Sedigh Sarvestani},
-  title        = {Comparison of Visual Datasets for Machine Learning},
-  booktitle    = {2017 {IEEE} International Conference on Information Reuse and Integration,
-                  {IRI} 2017, San Diego, CA, USA, August 4-6, 2017},
-  pages        = {346--355},
-  publisher    = {{IEEE} Computer Society},
-  year         = {2017},
-  url          = {https://doi.org/10.1109/IRI.2017.59},
-  doi          = {10.1109/IRI.2017.59},
-  timestamp    = {Thu, 23 Mar 2023 23:59:57 +0100},
-  biburl       = {https://dblp.org/rec/conf/iri/GauenDLZALTSC17.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@inproceedings{ML_Visual2,
-  author       = {Herman Pareli Nordaunet and
-                  Trym B{\o} and
-                  Evan J{\aa}sund Kassab and
-                  Frank Veenstra and
-                  Ulysse C{\^{o}}t{\'{e}} Allard},
-  title        = {Competitive Reinforcement Learning Agents with Adaptive Networks},
-  booktitle    = {11th International Conference on Control, Mechatronics and Automation,
-                  {ICCMA} 2023, Grimstad, Norway, November 1-3, 2023},
-  pages        = {314--319},
-  publisher    = {{IEEE}},
-  year         = {2023},
-  url          = {https://doi.org/10.1109/ICCMA59762.2023.10374802},
-  doi          = {10.1109/ICCMA59762.2023.10374802},
-  timestamp    = {Tue, 16 Jan 2024 21:01:22 +0100},
-  biburl       = {https://dblp.org/rec/conf/iccma/NordaunetBKVA23.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@article{ML_Visual1,
-  author       = {Jun Yuan and
-                  Changjian Chen and
-                  Weikai Yang and
-                  Mengchen Liu and
-                  Jiazhi Xia and
-                  Shixia Liu},
-  title        = {A survey of visual analytics techniques for machine learning},
-  journal      = {Comput. Vis. Media},
-  volume       = {7},
-  number       = {1},
-  pages        = {3--36},
-  year         = {2021},
-  url          = {https://doi.org/10.1007/s41095-020-0191-7},
-  doi          = {10.1007/S41095-020-0191-7},
-  timestamp    = {Fri, 30 Dec 2022 14:18:05 +0100},
-  biburl       = {https://dblp.org/rec/journals/cvm/YuanCYLXL21.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
 @inproceedings{TypeScript,
@@ -157,260 +877,6 @@
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
-@article{HaskellToC,
-author = {Peyton Jones, Simon and Cordy, Jones and Kevin, Hall and Partain, Hammond and Wadler, Phil},
-year = {1998},
-title = {The Glasgow Haskell compiler: a technical overview}
-}
-
-@inproceedings{principlesOfMaude,
-  author       = {Manuel Clavel and
-                  Steven Eker and
-                  Patrick Lincoln and
-                  Jos{\'{e}} Meseguer},
-  editor       = {Jos{\'{e}} Meseguer},
-  title        = {Principles of Maude},
-  booktitle    = {First International Workshop on Rewriting Logic and its Applications,
-                  {RWLW} 1996, Asilomar Conference Center, Pacific Grove, CA, USA, September
-                  3-6, 1996},
-  series       = {Electronic Notes in Theoretical Computer Science},
-  volume       = {4},
-  pages        = {65--89},
-  publisher    = {Elsevier},
-  year         = {1996},
-  url          = {https://doi.org/10.1016/S1571-0661(04)00034-9},
-  doi          = {10.1016/S1571-0661(04)00034-9},
-  timestamp    = {Thu, 21 Sep 2023 09:08:34 +0200},
-  biburl       = {https://dblp.org/rec/journals/entcs/ClavelELM96.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@article{Nita_2020,
-  author       = {Sekreningsih Nita and Sulistyaning Kartikawati},
-  title        = {Analysis Of The Impact Narrative Algorithm Method, Pseudocode And Flowchart Towards Students Understanding Of The Programming Algorithm Courses},
-  journal      = {IOP Conference Series: Materials Science and Engineering},
-  volume       = {835},
-  number       = {1},
-  pages        = {012044},
-  year         = {2020},
-  url          = {https://dx.doi.org/10.1088/1757-899X/835/1/012044},
-  publisher    = {IOP Publishing},
-  doi          = {10.1088/1757-899X/835/1/012044},
-  timestamp    = {Sun, 18 Feb 2024 20:15:00 +0200},
-}
-
-@article{McCulloch43,
-  author       = {McCulloch, Warren S. and Pitts, Walter},
-  title        = {A logical calculus of the ideas immanent in nervous activity},
-  journal      = {The bulletin of mathematical biophysics},
-  volume       = {5},
-  number       = {4},
-  pages        = {115--133},
-  year         = {1943},
-  url          = {https://doi.org/10.1007/BF02478259},
-  doi          = {10.1007/BF02478259},
-  timestamp    = {Sun, 18 Feb 2024 19:50:00 +0200},
-}
-
-@book{LogicsofSpecificationLanguages,
-  author    = {Bjorner, Dines and Henson, Martin},
-  title     = {Logics of Specification Languages},
-  year      = {2007},
-  publisher = {Springer},
-  isbn      = {978-3-540-74106-0},
-  doi       = {10.1007/978-3-540-74107-7},
-}
-
-@book{introToAutomataTheory,
-  author       = {John E. Hopcroft and
-                  Rajeev Motwani and
-                  Jeffrey D. Ullman},
-  title        = {Introduction to automata theory, languages, and computation, 3rd Edition},
-  series       = {Pearson international edition},
-  publisher    = {Addison-Wesley},
-  year         = {2007},
-  isbn         = {978-0-321-47617-3},
-  timestamp    = {Thu, 02 Jan 2020 12:13:44 +0100},
-  biburl       = {https://dblp.org/rec/books/daglib/0016921.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@article{codeFromFlowcharts,
-  author       = {Xianghu Wu and
-                  Mingcheng Qu and
-                  Zhi{-}Qiang Liu and
-                  Jian{-}Zhong Li},
-  title        = {Research and Application of Code Automatic Generation Algorithm Based
-                  on Structured Flowchart},
-  journal      = {J. Softw. Eng. Appl.},
-  volume       = {4},
-  number       = {9},
-  pages        = {534--545},
-  year         = {2011},
-  url          = {https://doi.org/10.4236/jsea.2011.49062},
-  doi          = {10.4236/JSEA.2011.49062},
-  timestamp    = {Sun, 21 Jun 2020 17:41:58 +0200},
-  biburl       = {https://dblp.org/rec/journals/jsea/WuQLL11.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@inproceedings{desireToGetPseudocodeGeneration,
-  author       = {Shaofeng Xu and
-                  Yun Xiong},
-  title        = {Automatic Generation of Pseudocode with Attention Seq2seq Model},
-  booktitle    = {25th Asia-Pacific Software Engineering Conference, {APSEC} 2018, Nara,
-                  Japan, December 4-7, 2018},
-  pages        = {711--712},
-  publisher    = {{IEEE}},
-  year         = {2018},
-  url          = {https://doi.org/10.1109/APSEC.2018.00101},
-  doi          = {10.1109/APSEC.2018.00101},
-  timestamp    = {Wed, 16 Oct 2019 14:14:50 +0200},
-  biburl       = {https://dblp.org/rec/conf/apsec/XuX18.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@inproceedings{proposalForParadigmGeneralPseudocode,
-  author       = {Mark B. Wells and
-                  Barry L. Kurtz},
-  editor       = {Robert A. Barrett and
-                  Maynard J. Mansfield},
-  title        = {Teaching multiple programming paradigms: a proposal for a paradigm
-                  general pseudocode},
-  booktitle    = {Proceedings of the 20th {SIGCSE} Technical Symposium on Computer Science
-                  Education, {SIGCSE} 1989, Louisville, Kentucky, USA, February 23-24,
-                  1989},
-  pages        = {246--251},
-  publisher    = {{ACM}},
-  year         = {1989},
-  url          = {https://doi.org/10.1145/65293.71222},
-  doi          = {10.1145/65293.71222},
-  timestamp    = {Tue, 23 Mar 2021 15:33:11 +0100},
-  biburl       = {https://dblp.org/rec/conf/sigcse/WellsK89.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@book{martin2008clean,
-title={Clean Code: A Handbook of Agile Software Craftsmanship},
-author={Martin, Robert C.},
-year={2008},
-publisher={Prentice Hall},
-}
-
-@inproceedings{payAttentionToMLPs,
-  author       = {Hanxiao Liu and
-                  Zihang Dai and
-                  David R. So and
-                  Quoc V. Le},
-  editor       = {Marc'Aurelio Ranzato and
-                  Alina Beygelzimer and
-                  Yann N. Dauphin and
-                  Percy Liang and
-                  Jennifer Wortman Vaughan},
-  title        = {Pay Attention to MLPs},
-  booktitle    = {Advances in Neural Information Processing Systems 34: Annual Conference
-                  on Neural Information Processing Systems 2021, NeurIPS 2021, December
-                  6-14, 2021, virtual},
-  pages        = {9204--9215},
-  year         = {2021},
-  url          = {https://proceedings.neurips.cc/paper/2021/hash/4cc05b35c2f937c5bd9e7d41d3686fff-Abstract.html},
-  timestamp    = {Tue, 03 May 2022 16:20:47 +0200},
-  biburl       = {https://dblp.org/rec/conf/nips/LiuDSL21.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@inproceedings{flowchartsHighschool,
-  author       = {Marcin Stefanowicz and
-                  Anna Sasak{-}Okon},
-  editor       = {Jelena Jovanovic and
-                  Irene{-}Angelica Chounta and
-                  James Uhomoibhi and
-                  Bruce M. McLaren},
-  title        = {AlgoPoint as an Original Didactic Tool for Introductory Programming
-                  Using Flowcharts},
-  booktitle    = {Proceedings of the 15th International Conference on Computer Supported
-                  Education, {CSEDU} 2023, Volume 1, Prague - Czech Republic, April
-                  21-23, 2023},
-  pages        = {162--170},
-  publisher    = {{SCITEPRESS}},
-  year         = {2023},
-  url          = {https://doi.org/10.5220/0011826300003470},
-  doi          = {10.5220/0011826300003470},
-  timestamp    = {Tue, 06 Jun 2023 10:46:49 +0200},
-  biburl       = {https://dblp.org/rec/conf/csedu/StefanowiczS23.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@article{flowcharts2015,
-  author    = {Csernoch, Mária and Biró, Piroska and Abari, Kálmán and Máth, János},
-  title     = {Understanding Algorithms in Different Presentations},
-  journal   = {Acta Didactica Napocensia},
-  volume    = {8},
-  number    = {4},
-  pages     = {1-12},
-  year      = {2015},
-  eric      = {EJ1092633},
-  issn      = {2065-1430},
-  language  = {English},
-  country   = {Hungary; Romania},
-  type      = {Journal Articles; Reports - Research},
-  education = {Higher Education; Postsecondary Education},
-  url       = {http://padi.psiedu.ubbcluj.ro/adn/article_8_4_1.pdf},
-}
-
-@article{linter,
-  author       = {Yecine Megdiche and
-                  Fabian Huch and
-                  Lukas Stevens},
-  title        = {A Linter for Isabelle: Implementation and Evaluation},
-  journal      = {CoRR},
-  volume       = {abs/2207.10424},
-  year         = {2022},
-  url          = {https://doi.org/10.48550/arXiv.2207.10424},
-  doi          = {10.48550/ARXIV.2207.10424},
-  eprinttype    = {arXiv},
-  eprint       = {2207.10424},
-  timestamp    = {Sun, 02 Oct 2022 15:32:50 +0200},
-  biburl       = {https://dblp.org/rec/journals/corr/abs-2207-10424.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@manual{intel1979,
-  title={MCS-86 Assembly Language Converter Operating Instructions for ISIS-II Users},
-  author={{Intel Corporation}},
-  year={1979},
-}
-
-@online{dominici2014,
-  author    = {Domini, Federico},
-  title     = {An overview of Pandoc},
-  journal   = {TUGBoat},
-  volume    = {35},
-  number    = {1},
-  pages     = {44-50},
-  date      = {2014},
-  url       = {https://www.tug.org/TUGboat/tb35-1/tb109dominici.pdf},
-  urldate   = {2024-02-13},
-}
-
-@inproceedings{charntaweekhun2006,
-  author     = {Charntaweekhun, Kanis and Wangsiripitak, Somkiat},
-  title      = {Visual Programming using Flowchart},
-  booktitle  = {2006 International Symposium on Communications and Information Technologies},
-  date       = {2006},
-  pages      = {1062-1065},
-  doi        = {10.1109/ISCIT.2006.339940},
-}
-
-@article{carlisle2004,
-  author    = {Carlisle, Martin and Wilson, Terry and Humphries, Jeffrey and Hadfield, Steven},
-  title     = {{RAPTOR}: Introducing programming to non-majors with flowcharts},
-  journal   = {Journal of Computing Sciences in Colleges},
-  volume    = {19},
-  pages     = {52-60},
-  date      = {2004-01},
-}
-
 @article{DBLP:journals/software/NicoliniHF24,
   author       = {Thiago Nicolini and
                   Andr{\'{e}} C. Hora and
@@ -429,115 +895,11 @@ publisher={Prentice Hall},
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
-@inproceedings{DBLP:conf/els/MarcelinoL22,
-  author       = {Miguel Marcelino and
-                  Ant{\'{o}}nio Menezes Leit{\~{a}}o},
-  editor       = {Didier Verna},
-  title        = {Transpiling Python to Julia using PyJL},
-  booktitle    = {Proceedings of the 15th European Lisp Symposium, {ELS} 2022, Porto,
-                  Portugal, April 21-22, 2022},
-  pages        = {40--47},
-  publisher    = {{ELSAA}},
-  year         = {2022},
-  url          = {https://european-lisp-symposium.org/static/proceedings/2022.pdf},
-  timestamp    = {Fri, 02 Jun 2023 16:38:05 +0200},
-  biburl       = {https://dblp.org/rec/conf/els/MarcelinoL22.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
 @article{javaIsAPopularProgrammingLanguage,
     author={Lincopinis, Darllaine and Martinez, Desiree and Remegio, Axl},
     year={2023},
     month={05},
     title={A Review on Java Programming Language},
-}
-
-@inproceedings{DBLP:conf/aswec/AlhefdhiDHG18,
-  author       = {Abdulaziz Alhefdhi and
-                  Hoa Khanh Dam and
-                  Hideaki Hata and
-                  Aditya Ghose},
-  title        = {Generating Pseudo-Code from Source Code Using Deep Learning},
-  booktitle    = {25th Australasian Software Engineering Conference, {ASWEC} 2018, Adelaide,
-                  Australia, November 26-30, 2018},
-  pages        = {21--25},
-  publisher    = {{IEEE} Computer Society},
-  year         = {2018},
-  url          = {https://doi.org/10.1109/ASWEC.2018.00011},
-  doi          = {10.1109/ASWEC.2018.00011},
-  timestamp    = {Fri, 24 Mar 2023 00:04:19 +0100},
-  biburl       = {https://dblp.org/rec/conf/aswec/AlhefdhiDHG18.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@article{PSEU:/Kreher/Stinson,
-author = {Kreher, D. and Stinson, Douglas},
-date = {1999-10},
-title = {Pseudocode: A LATEX Style File for Displaying Algorithms}
-}
-
-@online{LinfoAlgorithmsIntro2007,
-    title        = {Algorithms: A Very Brief Introduction},
-    author       = {LINFO},
-    year         = 2007,
-    url          = {http://www.linfo.org/algorithm.html}
-}
-
-@inproceedings{DBLP:conf/icfp/ClaessenH00,
-  author       = {Koen Claessen and
-                  John Hughes},
-  editor       = {Martin Odersky and
-                  Philip Wadler},
-  title        = {QuickCheck: a lightweight tool for random testing of Haskell programs},
-  booktitle    = {Proceedings of the Fifth {ACM} {SIGPLAN} International Conference
-                  on Functional Programming {(ICFP} '00), Montreal, Canada, September
-                  18-21, 2000},
-  pages        = {268--279},
-  publisher    = {{ACM}},
-  year         = {2000},
-  url          = {https://doi.org/10.1145/351240.351266},
-  doi          = {10.1145/351240.351266},
-  timestamp    = {Wed, 02 Mar 2022 21:39:33 +0100},
-  biburl       = {https://dblp.org/rec/conf/icfp/ClaessenH00.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@inproceedings{DBLP:conf/samos/LunnikiviJ020,
-  author       = {Henri Lunnikivi and
-                  Kai Jylkk{\"{a}} and
-                  Timo H{\"{a}}m{\"{a}}l{\"{a}}inen},
-  editor       = {Alex Orailoglu and
-                  Matthias Jung and
-                  Marc Reichenbach},
-  title        = {Transpiling Python to Rust for Optimized Performance},
-  booktitle    = {Embedded Computer Systems: Architectures, Modeling, and Simulation
-                  - 20th International Conference, {SAMOS} 2020, Samos, Greece, July
-                  5-9, 2020, Proceedings},
-  series       = {Lecture Notes in Computer Science},
-  volume       = {12471},
-  pages        = {127--138},
-  publisher    = {Springer},
-  year         = {2020},
-  url          = {https://doi.org/10.1007/978-3-030-60939-9\_9},
-  doi          = {10.1007/978-3-030-60939-9\_9},
-  timestamp    = {Sat, 14 Nov 2020 00:57:13 +0100},
-  biburl       = {https://dblp.org/rec/conf/samos/LunnikiviJ020.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@book{DBLP:books/aw/AhoSU86,
-  author       = {Alfred V. Aho and
-                  Ravi Sethi and
-                  Jeffrey D. Ullman},
-  title        = {Compilers: Principles, Techniques, and Tools},
-  series       = {Addison-Wesley series in computer science / World student series edition},
-  publisher    = {Addison-Wesley},
-  year         = {1986},
-  url          = {https://www.worldcat.org/oclc/12285707},
-  isbn         = {0-201-10088-6},
-  timestamp    = {Fri, 17 Jul 2020 16:12:45 +0200},
-  biburl       = {https://dblp.org/rec/books/aw/AhoSU86.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
 @book{DBLP:books/aw/Knuth68,
@@ -550,100 +912,10 @@ title = {Pseudocode: A LATEX Style File for Displaying Algorithms}
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
-@inproceedings{10.1145/2157136.2157148,
-author = {Danielsiek, Holger and Paul, Wolfgang and Vahrenhold, Jan},
-title = {Detecting and Understanding Students' Misconceptions Related to Algorithms and Data Structures},
-year = {2012},
-isbn = {9781450310987},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-url = {https://doi.org/10.1145/2157136.2157148},
-doi = {10.1145/2157136.2157148},
-abstract = {We describe the first results of our work towards a concept inventory for Algorithms and Data Structures. Based on expert interviews and the analysis of 400 exams we were able to identify several core topics which are prone to error. In a pilot study, we verified misconceptions known from the literature and identified previously unknown misconceptions related to Algorithms and Data Structures. In addition to this, we report on methodological issues and point out the importance of a two-pronged approach to data collection.},
-booktitle = {Proceedings of the 43rd ACM Technical Symposium on Computer Science Education},
-pages = {21–26},
-numpages = {6},
-keywords = {misconceptions, concept inventories, CS1/2},
-location = {Raleigh, North Carolina, USA},
-series = {SIGCSE '12}
-}
-
-@book{BOOK:DSA/Lewis,
-    title={Data Structures and Their Algorithms},
-    author={Lewis, Harry R. and Denenberg, Larry},
-    year={1991},
-    publisher={HarperCollins},
-}
-
-@book{BOOK:DesignAnalysis/Aho,
-    title={The Design and Analysis of Computer Algorithms},
-    author={Aho, Alfred V. and Hopcroft, John E. and Ullman, Jeffrey D.},
-    year={1974},
-    publisher={Addison-Wesley},
-}
-
-
-@inproceedings{DBLP:conf/els/Nuallain15,
-  author       = {Breannd{\'{a}}n {\'{O}} Nuall{\'{a}}in},
-  editor       = {Julian A. Padget},
-  title        = {Executable Pseudocode for Graph Algorithms},
-  booktitle    = {Proceedings of the 8th European Lisp Symposium {(ELS} 2015), London,
-                  England, April 20-21, 2015},
-  pages        = {47--54},
-  publisher    = {{ELSAA}},
-  year         = {2015},
-  url          = {https://european-lisp-symposium.org/static/proceedings/2015.pdf\#b},
-  timestamp    = {Wed, 13 Nov 2019 17:59:17 +0100},
-  biburl       = {https://dblp.org/rec/conf/els/Nuallain15.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-@book{BOOK:intro/Cormen/Leiserson,
-    title={Introduction to Algorithms},
-    author={Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L. and Stein, Clifford},
-    year={2009},
+@book{whatIsAType,
+    title={Types and programming languages},
+    author={Pierce, Benjamin C},
+    year={2002},
     publisher={MIT press},
-    location={Cambridge, MA},
-    edition={3}
-}
-
-
-@inproceedings{DBLP:conf/kbse/OdaFNHSTN15,
-  author = {Yusuke Oda and Hiroyuki Fudaba and Graham Neubig and Hideaki Hata and Sakriani Sakti and Tomoki Toda and Satoshi Nakamura},
-  editor = {Myra B. Cohen and Lars Grunske and Michael Whalen},
-  title = {Learning to Generate Pseudo-Code from Source Code Using Statistical Machine Translation {(T)}},
-  booktitle = {30th {IEEE/ACM} International Conference on Automated Software Engineering, {ASE} 2015, Lincoln, NE, USA, November 9-13, 2015},
-  pages = {574--584},
-  publisher = {{IEEE} Computer Society},
-  year = {2015},
-  url = {https://doi.org/10.1109/ASE.2015.36},
-  doi = {10.1109/ASE.2015.36},
-  timestamp = {Fri, 24 Mar 2023 00:02:36 +0100},
-  biburl = {https://dblp.org/rec/conf/kbse/OdaFNHSTN15.bib},
-  bibsource = {dblp computer science bibliography, https://dblp.org}
-}
-
-@INPROCEEDINGS{7096016,
-  author={Giordano, Daniela and Maiorana, Francesco},
-  booktitle={2015 IEEE Global Engineering Education Conference (EDUCON)}, 
-  title={Teaching algorithms: Visual language vs flowchart vs textual language}, 
-  year={2015},
-  volume={},
-  number={},
-  pages={499-504},
-  doi={10.1109/EDUCON.2015.7096016}}
-
-@article{DBLP:journals/software/Scanlan89,
-  author    = {David A. Scanlan},
-  title     = {Structured Flowcharts Outperform Pseudocode: An Experimental Comparison},
-  journal   = {{IEEE} Softw.},
-  volume    = {6},
-  number    = {5},
-  pages     = {28--36},
-  year      = {1989},
-  url       = {https://doi.org/10.1109/52.35587},
-  doi       = {10.1109/52.35587},
-  timestamp = {Mon, 08 Jun 2020 22:31:02 +0200},
-  biburl    = {https://dblp.org/rec/journals/software/Scanlan89.bib},
-  bibsource = {dblp computer science bibliography, https://dblp.org}
+    urldate = {2024-04-19}
 }
