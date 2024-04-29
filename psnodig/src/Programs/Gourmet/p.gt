@@ -1,0 +1,62 @@
+/* dette funker ikke:
+
+func printEvenNumbers() {
+    for i := 0, length([1, 2, 3])-1 {
+        print(i)
+    }
+}
+
+men f.eks. n-1 funker! merkelig.. altså: For `String Expression (Expression BinOp Minus (FunctionCall _) Int) [Stmt]` funker ikke
+*/
+
+// tanke: la kantene være lengre? nå som vi har standalone så kan jo dokumentet være så svært som vi selv vil!
+
+// cluet er at den første while-løkka inneholder 2 stmts: indre while og print(ok2). så de kommer alle under hverandre!
+
+func f() {
+    # n := length(A)
+    for i := 0, n - 2 {
+        for j := 0, n - i - 2 {
+            if A[j] > A[j+1] {
+                @{swap A[j] with A[j+1]}{
+                    tmp := A[j]
+                    A[j] := A[j+1]
+                    A[j+1] := tmp
+                }
+            }
+        }
+    }
+
+    return A
+}
+
+f()
+
+func dfs(visited list, graph list, node int) {
+    if not in(node, visited) {
+        print(node)
+        add(node, visited)
+        for nb := get(node, graph) {
+            dfs(visited, graph, nb)
+        }
+    }
+    return 1
+}
+
+func main() {
+    graph := map{
+        5: [3,7],
+        3: [2, 4],
+        7: [8],
+        2: [],
+        4: [8],
+        8: []
+    }
+    visited := set{}
+
+    dfs(visited, graph, 5)
+
+    return 1
+}
+
+main()

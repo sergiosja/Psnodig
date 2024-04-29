@@ -1,0 +1,46 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Merge}{Merge}
+\SetKwFunction{MergeSort}{MergeSort}
+\SetKwFunction{SplitArray}{SplitArray}
+\SetKwFunction{append}{append}
+\SetKwFunction{f}{f}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKwFunction{print}{print}
+\SetKw{KwTo}{to}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\proc{$\Merge(A1, A2, A)$}{
+	$\texttt{i} \gets 0$ \;
+	$\texttt{j} \gets 0$ \;
+	\While{$i < \abs{A1} \land j < \abs{A2}$}{
+		\uIf{$A1[i] < A2[j]$}{
+			$A[i + j] \gets A1[i]$ \;
+			$\texttt{i} \gets i + 1$ \;
+		}
+		\uElse{
+			$A[i + j] \gets A2[j]$ \;
+			$\texttt{j} \gets j + 1$ \;
+		}
+	}
+	\While{$i < \abs{A1}$}{
+		$A[i + j] \gets A1[i]$ \;
+		$\texttt{i} \gets i + 1$ \;
+	}
+	\While{$j < \abs{A2}$}{
+		$A[i + j] \gets A2[j]$ \;
+		$\texttt{j} \gets j + 1$ \;
+	}
+	\Return A \;
+}
+\caption{Merge}
+\end{algorithm}
+
+\end{document}

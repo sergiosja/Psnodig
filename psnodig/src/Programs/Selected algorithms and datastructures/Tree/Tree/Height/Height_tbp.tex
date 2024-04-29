@@ -14,8 +14,6 @@
 \begin{document}
 
 \begin{algorithm}[H]
-\KwIn{Input}
-\KwOut{Output}
 \proc{$\Height(node)$}{
 	$\texttt{h} \gets -1$ \;
 	\uIf{$node = \KwNil$}{
@@ -25,7 +23,8 @@
 		$\texttt{h} \gets \max{h, \Height{v'}}$ \;
 	}
 	\Return 1 + h \;
-}\caption{Height}
+}
+\caption{Height}
 \end{algorithm}
 
 \end{document}

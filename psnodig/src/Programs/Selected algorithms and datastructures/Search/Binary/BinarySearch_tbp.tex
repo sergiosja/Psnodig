@@ -1,0 +1,36 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{BinarySearch}{BinarySearch}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\proc{$\BinarySearch(A, x)$}{
+	$\texttt{low} \gets 0$ \;
+	$\texttt{high} \gets \abs{A} - 1$ \;
+	\While{$low \leq high$}{
+		$\texttt{i} \gets \lfloor $\frac{low + high}{2}$\rfloor$ \;
+		\uIf{$A[i] = x$}{
+			\Return \KwTrue \;
+		}
+		\uElseIf{$A[i] > x$}{
+			$\texttt{high} \gets i - 1$ \;
+		}
+		\uElse{
+			$\texttt{low} \gets i + 1$ \;
+		}
+	}
+	\Return \KwFalse \;
+}
+\caption{BinarySearch}
+\end{algorithm}
+
+\end{document}

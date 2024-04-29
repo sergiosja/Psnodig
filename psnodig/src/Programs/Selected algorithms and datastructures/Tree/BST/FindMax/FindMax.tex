@@ -3,10 +3,9 @@
 \usepackage{amsmath,commath} 
 \usepackage[linesnumbered, ruled]{algorithm2e}
 \SetKwProg{proc}{Procedure}{}{}
-\SetKwFunction{Height}{Height}
+\SetKwFunction{FindMax}{FindMax}
 \SetKwFunction{Tree}{Tree}
 \SetKwFunction{f}{f}
-\SetKwFunction{max}{max}
 \SetKwFunction{print}{print}
 \SetKw{KwNil}{Nil}
 \DontPrintSemicolon
@@ -16,16 +15,15 @@
 \begin{algorithm}[H]
 \KwIn{Input}
 \KwOut{Output}
-\proc{$\Height(node)$}{
-	$\texttt{h} \gets -1$ \;
-	\uIf{$node = \KwNil$}{
-		\Return h \;
+\proc{$\FindMax(root)$}{
+	\uIf{$root = \KwNil$}{
+		\Return $\KwNil$ \;
 	}
-	\For{$v' \in node_{children} $}{
-		$\texttt{h} \gets \max{h, \Height{v'}}$ \;
+	\uIf{$root_{right}  = \KwNil$}{
+		\Return $root$ \;
 	}
-	\Return 1 + h \;
-}\caption{Height}
+	\Return $\FindMax{root_{right} }$ \;
+}\caption{FindMax}
 \end{algorithm}
 
 \end{document}

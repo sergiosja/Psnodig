@@ -1,5 +1,0 @@
-func f() {
-    a := length(A) - 1
-}
-
-f()

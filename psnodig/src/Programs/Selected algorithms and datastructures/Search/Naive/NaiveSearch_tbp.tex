@@ -1,0 +1,27 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{Search}{Search}
+\SetKwFunction{length}{length}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\proc{$\Search(A, x)$}{
+	
+	\For{$i \in A$}{
+		\uIf{$A[i] = x$}{
+			\Return \KwTrue \;
+		}
+	}
+	\Return \KwFalse \;
+}
+\caption{Search}
+\end{algorithm}
+
+\end{document}

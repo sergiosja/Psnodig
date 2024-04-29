@@ -1,4 +1,4 @@
-func BinarySearch(A int*, x int) {
+func BinarySearch(A list, x int) {
     low := 0
     high := length(A) - 1
 

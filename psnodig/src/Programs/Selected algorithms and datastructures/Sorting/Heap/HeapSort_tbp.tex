@@ -1,0 +1,37 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{BubbleDown}{BubbleDown}
+\SetKwFunction{BuildMaxHeap}{BuildMaxHeap}
+\SetKwFunction{HeapSort}{HeapSort}
+\SetKwFunction{floor}{floor}
+\SetKwFunction{length}{length}
+\SetKwFunction{print}{print}
+\SetKw{KwTo}{to}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\proc{$\BubbleDown(A, i, n)$}{
+	$\texttt{largest} \gets i$ \;
+	$\texttt{left} \gets 2 \cdot i + 1$ \;
+	$\texttt{right} \gets 2 \cdot i + 2$ \;
+	\uIf{$left < n \land A[largest] < A[left]$}{
+		\text{swap largest and left} \;
+	}
+	\uIf{$right < n \land A[largest] < A[right]$}{
+		\text{swap largest and right} \;
+	}
+	\uIf{$i \neq largest$}{
+		\text{swap A[largest] and A[i]} \;
+		$\texttt{A} \gets \BubbleDown{A, largest, n}$ \;
+	}
+	\Return A \;
+}
+\caption{BubbleDown}
+\end{algorithm}
+
+\end{document}
