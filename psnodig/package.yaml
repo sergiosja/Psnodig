@@ -43,7 +43,7 @@ library:
     - src
 
 executables:
-  psnodig-exe:
+  psnodig:
     main: Main.hs
     source-dirs: app
     ghc-options:
