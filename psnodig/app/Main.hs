@@ -13,7 +13,7 @@ import Gourmet.GourmetParser (parseGourmet)
 import Gourmet.GourmetWriter (writeGourmet)
 
 -- LaTeX
-import LaTeX.Flowcharts (Stack(..), writeFlowchart)
+import LaTeX.Flowcharts (Environment(..), writeFlowchart)
 import LaTeX.LatexWriter (writeLatex)
 import LaTeX.LatexEnv (extractEnv)
 
@@ -35,22 +35,28 @@ main = do
         [filename] -> do
             p <- readFile filename
             interpret p
-        ["tbp", filename] -> do -- should run 'pdf' if user wants pdf too
+        ["tbp", filename] -> do
             p <- readFile filename
-            transpile p filename
+            makeTBP p filename False
+        ["tbp", "pdf", filename] -> do
+            p <- readFile filename
+            makeTBP p filename True
         ["ibp", filename] -> do
             p <- readFile filename
-            makeFlowchart p filename
+            makeIBP p filename False
+        ["ibp", "pdf", filename] -> do
+            p <- readFile filename
+            makeIBP p filename True
         ["ast", filename] -> do -- should be able to get this in its own file maybe?
             p <- readFile filename
             getAST p
-        ["g2g", filename] -> do
+        ["gourmet", filename] -> do
             p <- readFile filename
             g2g p
         _ -> die "Usage:\n stack run -- <filename>" -- gjøre denne stor og fin! feks ved å skrive <stack run -- "help"> ellerno
 
-transpile :: String -> String -> IO ()
-transpile program filename = do
+makeTBP :: String -> String -> Bool -> IO ()
+makeTBP program filename pdf = do
     let parsed = parse parseGourmet "" program
     case parsed of
         (Right p) -> do
@@ -58,8 +64,19 @@ transpile program filename = do
             let transpiled = execWriter $ runReaderT (writeLatex p) env
             let texfile = gourmet2tex filename
             writeFile texfile transpiled
-            callCommand $ "latexmk -pdf " ++ texfile
+            if pdf then makePDF texfile else return ()
         (Left err) -> putStrLn $ show err
+
+makeIBP :: String -> String -> Bool -> IO ()
+makeIBP program filename pdf = do
+    let parsed = parse parseGourmet "" program
+    case parsed of
+        Right p -> do
+            let flowTex = execWriter $ runStateT (writeFlowchart p) (Environment [] 0 [0] [])
+            let texfile = gourmet2flowTex filename
+            writeFile texfile flowTex
+            if pdf then makePDF texfile else return ()
+        Left err -> putStrLn $ show err
 
 g2g :: String -> IO ()
 g2g program = do
@@ -69,17 +86,6 @@ g2g program = do
             let transpiled = execWriter $ writeGourmet p
             in writeFile "algo.gt" transpiled
         (Left err) -> putStrLn $ show err
-
-makeFlowchart :: String -> String -> IO ()
-makeFlowchart program filename = do
-    let parsed = parse parseGourmet "" program
-    case parsed of
-        Right p -> do
-            let flowTex = execWriter $ runStateT (writeFlowchart p) (Stack [] 0 [0] [])
-            let texfile = gourmet2flowTex filename
-            writeFile texfile flowTex
-            callCommand $ "latexmk -pdf " ++ texfile
-        Left err -> putStrLn $ show err
 
 getAST :: String -> IO ()
 getAST program = do
@@ -105,11 +111,14 @@ interpret program = do
         (Left err) -> putStrLn $ show err
 
 gourmet2tex :: String -> String
-gourmet2tex s = take (length s - 2) s ++ "tex"
+gourmet2tex s = take (length s - 3) s ++ "_tbp.tex"
 
 gourmet2flowTex :: String -> String
-gourmet2flowTex s = take (length s - 3) s ++ "_flowchart.tex"
+gourmet2flowTex s = take (length s - 3) s ++ "_ibp.tex"
 
+makePDF :: String -> IO ()
+makePDF filename = do
+    callCommand $ "latexmk -pdf " ++ filename
 
 -- kjøre helt IN1000 style med
 {-
