@@ -23,6 +23,9 @@ lexer = Token.makeTokenParser emptyDef {
         [ "while", "if", "func", "true", "false"
         , "return", "else", "for", "break", "set"
         , "map", "not", "struct", "continue"
+        -- , "print", "length", "ceil", "floor"
+        -- , "max", "min", "append", "add", "get"
+        -- , "in", "toString"
         ],
     Token.commentStart = "/*",
     Token.commentEnd = "*/",
@@ -101,7 +104,6 @@ parseValue = choice
     , try parseNumber
     , try parseText
     , try parseList
-    -- , try parseStructVal
     ]
     where
         parseNil = reservedOp "nil" *> pure Nil
@@ -119,8 +121,6 @@ parseValue = choice
         parseHashSet =
             HashSet . Set.fromList
                 <$> (reservedOp "set" *> reservedOp "{" *> parseExpr `sepBy` comma <* reservedOp "}")
-        -- parseStructVal =
-            -- ...
 
 parsePair :: Parser (Expression, Expression)
 parsePair = (,) <$> parseExpr <* colon <*> parseExpr
@@ -145,16 +145,18 @@ parseExpr = buildExpressionParser table term
                     , Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
                 ]
         term = choice
-            [ try parseStructFieldExpr
+            [ try parseFunctionCallExp
+            , try parseListIndexExp
+            , try parseStructFieldExpr
             , try parseNotExp
             , try parseStructExpr
             , try parseConstant
-            , try parseListIndexExp
-            , try parseFunctionCallExp
             , try parseVariableExp
             , try $ parens parseExpr
             ]
             where
+                parseStructFieldExpr =
+                    try (StructFieldExp <$> parseStructField) <|> parseExpr1
                 parseNotExp =
                     Not <$> (reservedOp "not" *> parseExpr)
                 parseListIndexExp =
@@ -167,8 +169,6 @@ parseExpr = buildExpressionParser table term
                     Constant <$> parseValue
                 parseStructExpr =
                     StructExpr <$> parseStruct
-                parseStructFieldExpr =
-                    try (StructFieldExp <$> parseStructField) <|> parseExpr1
 
 parseExpr1 :: Parser Expression
 parseExpr1 = buildExpressionParser table term
@@ -188,12 +188,12 @@ parseExpr1 = buildExpressionParser table term
                 , [ Infix (BinaryExp Or <$ reservedOp "||") AssocLeft ]
                 ]
         term = choice
-            [ try parseNotExp
+            [ try parseFunctionCallExp
+            , try parseNotExp
+            , try parseVariableExp
             , try parseStructExpr
             , try parseConstant
             , try parseListIndexExp
-            , try parseFunctionCallExp
-            , try parseVariableExp
             , try $ parens parseExpr
             ]
             where
@@ -252,10 +252,10 @@ parseAssignmentValue = try parseStructValue <|> parseExpressionValue
 
 parseStmt :: Parser Statement
 parseStmt = choice
-    [ try parseBreakStmt
-    , try parseContinueStmt
+    [ try parseHashStmt
     , try parseAnnotationStmt
-    , try parseHashStmt
+    , try parseBreakStmt
+    , try parseContinueStmt
     , try parseAssignment
     , try whileStmt
     , try forEachStmt
