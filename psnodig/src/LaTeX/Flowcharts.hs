@@ -3,6 +3,7 @@ module LaTeX.Flowcharts (Environment(..), writeFlowchart) where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.List (intercalate, sortOn)
+import Text.Read (readMaybe)
 import Control.Monad.Writer
 import Control.Monad.State
 import Syntax
@@ -50,6 +51,11 @@ popCoreId = do
             put currStack { coreId = rest }
             return currentCoreId
 
+peekCoreId :: Flowchart String
+peekCoreId = do
+    (Environment _ _ core _) <- get
+    return . show . head $ core
+
 
 intercalateExprs :: [Expression] -> String
 intercalateExprs exprs =
@@ -64,8 +70,8 @@ intercalateArgs args =
         drawArg :: Argument -> String
         drawArg (Argument x _) = x
 
-toInt :: Expression -> Int
-toInt x = read (drawExpr x) :: Int
+toMaybeInt :: Expression -> Maybe Int
+toMaybeInt x = readMaybe (drawExpr x) :: Maybe Int
 
 hasElse :: Maybe Else -> Bool
 hasElse Nothing = False
@@ -132,6 +138,25 @@ removeBranches :: Int -> Flowchart ()
 removeBranches count = do
     currStack@(Environment { activeBranches = ids }) <- get
     put currStack { activeBranches = drop count ids }
+
+
+drawOpCrementHelper :: Expression -> Expression -> String -> (String, String)
+drawOpCrementHelper expr1 expr2 identifier =
+    case (toMaybeInt expr1, toMaybeInt expr2) of
+        (Just n, Just m) ->
+            let op = if n <= m then " $<$ " else " $>$ "
+                crement = identifier ++ " $\\gets$ " ++ identifier ++
+                    (if n <= m then " + 1" else " - 1")
+            in (op, crement)
+        _ -> (" $<$ ", identifier ++ " $\\gets$ " ++ identifier ++ " + 1")
+
+
+isSpecialStmt :: Statement -> Bool
+isSpecialStmt (Loop _ _) = True
+isSpecialStmt (If _ _ _) = True
+isSpecialStmt (ForEach _ _ _) = True
+isSpecialStmt (For _ _ _ _) = True
+isSpecialStmt _ = False
 
 
 -- Values
@@ -246,11 +271,10 @@ drawStmts (stmt@(If _ _ maybeElse) : x : xs) fromIf = do
     else
         drawStmts (x:xs) (not $ hasElse maybeElse)
 
-drawStmts (stmt@(Loop _ _) : x : xs) fromIf = do
+drawStmts (stmt@(Loop _ _) : rest) fromIf = do
     if fromIf then initiateStmtRight stmt
     else initiateStmtStraight stmt
-    initiateStmtRight x
-    drawStmts xs False
+    drawStmts rest True
 
 drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
     if fromIf then initiateStmtRight stmt
@@ -263,6 +287,13 @@ drawStmts (stmt@(ForEach _ _ _) : x : xs) fromIf = do
     addEdge currentCoreId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
     drawStmts xs False
 
+    -- hvis første x' i xs er ForEach, eller noe annet, så bør den også bli tegnet
+    -- som en `left side of loop`, istedenfor vanlig `initiateStmtStraight`!!
+
+    -- ok, for loops går det. cluet er å ha alt på samme side. da kan man bruke initiateStmtRight som `initiateSpecialStmt` ellerno
+    -- kan også endre `fromIf` til `fromSpecial`. bør egt finne et kult navn for disse 4
+    -- feks `fromDecision`, `fromSpecial`, `fromCompund` ellerno! :))
+
 drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
     if fromIf then initiateStmtRight stmt
     else initiateStmtStraight stmt
@@ -274,10 +305,17 @@ drawStmts (stmt@(For _ _ _ _) : x : xs) fromIf = do
     addEdge currentCoreId currentId "-- node[anchor=east, yshift=0.1cm]{false}"
     drawStmts xs False
 
-drawStmts (stmt : stmts) fromIf = do
-    if fromIf then initiateStmtRight stmt
-    else initiateStmtStraight stmt
-    drawStmts stmts False
+    -- hvis første x' i xs er For, eller noe annet, så bør den også bli tegnet
+    -- som en `left side of loop`, istedenfor vanlig `initiateStmtStraight`!!
+
+drawStmts (stmt : stmts) fromIf =
+    case stmt of
+        HashStmt _ -> drawStmts stmts False
+        AnnotationStmt "" _ -> drawStmts stmts False
+        _ -> do
+            if fromIf then initiateStmtRight stmt
+            else initiateStmtStraight stmt
+            drawStmts stmts False
 
 drawStmt :: Statement -> String -> String -> Flowchart ()
 drawStmt (Assignment target value) currentId pos =
@@ -306,14 +344,13 @@ drawStmt (ForEach identifier expr stmts) currentId pos = do
 
 drawStmt (For identifier expr1 expr2 stmts) currentId pos = do
     drawStatementNode currentId pos (identifier ++ " $\\gets$ " ++ drawExpr expr1)
-    let op = if toInt expr1 <= toInt expr2 then " $<$ " else " $>$ "
+    let (op, crement) = drawOpCrementHelper expr1 expr2 identifier
     decisionId <- show <$> getNewId
+
+    -- This is the node under the one with identifier <- expr1
     drawDecisionNode decisionId ("below of=" ++ currentId) (identifier ++ op ++ drawExpr expr2)
     addEdge currentId decisionId "--"
 
-    let crement = if toInt expr1 <= toInt expr2
-        then identifier ++ " $\\gets$ " ++ identifier ++ " + 1"
-        else identifier ++ " $\\gets$ " ++ identifier ++ " - 1"
     drawForStmts stmts (read decisionId :: Int) crement
 
 drawStmt (CallStmt functionCall) currentId pos =
@@ -351,14 +388,16 @@ drawLoopStmts stmts coreNodeId = do
     case length stmts of
         0 -> return ()
         1 -> do
-            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
+            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=-3cm, below left of=" ++ parentId)
             addEdge parentId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
-            addEdge (show $ coreNodeId + 1) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
-        n -> do
-            drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=-1.5cm, below left of=" ++ parentId)
+            lastStmt <- getLastId
+            addEdge lastStmt (show coreNodeId) "-|"
+        _ -> do
+            drawStmt (head stmts) currentId ("yshift=-1cm, xshift=-4cm, below left of=" ++ parentId)
             addEdge parentId currentId "-- node[anchor=east, yshift=0.1cm]{true}"
-            drawStmts (tail stmts) False
-            addEdge (show $ coreNodeId + n) (show coreNodeId) "-|" -- med mindre main stmt (den før head stmts) er loop!
+            drawStmts (tail stmts) (isSpecialStmt (head stmts))
+            lastStmt <- getLastId
+            addEdge lastStmt (show coreNodeId) "-|"
 
 drawIfStmts :: [Statement] -> String -> Maybe Else -> Flowchart ()
 drawIfStmts stmts currentId maybeElse =
@@ -394,6 +433,7 @@ drawSpecialIf (If expr stmts maybeElse) toBePrinted accumulatedId = do
             drawStmt toBePrinted currentId ("below of=" ++ (show parentId))
 drawSpecialIf _ _ _ = error "Flowchart error: `drawSpecialIf` called from illegal context."
 
+
 drawForEachStmts :: [Statement] -> String -> String -> Int -> Flowchart ()
 drawForEachStmts stmts identifier collection coreNodeId = do
     setCoreId coreNodeId
@@ -403,8 +443,9 @@ drawForEachStmts stmts identifier collection coreNodeId = do
     case length stmts of
         0 -> return ()
         n -> do
-            drawStmts stmts False
+            drawStmts stmts False -- kjør isSpecialStmt her?
             addEdge (show $ coreNodeId + n + 1) (show coreNodeId) "-|"
+
 
 drawForStmts :: [Statement] -> Int -> String -> Flowchart ()
 drawForStmts stmts coreNodeId crement = do
@@ -415,20 +456,21 @@ drawForStmts stmts coreNodeId crement = do
         1 -> do
             drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ parentId)
             addEdge parentId currentId "-- node[anchor=west, yshift=0.1cm]{true}"
-
             crementId <- show <$> getNewId
-            drawStatementNode crementId ("xshift=3cm, below right of=" ++ currentId) crement
-            addEdge currentId crementId "|-"
-            addEdge crementId (show coreNodeId) "|-"
+            drawForCrement crementId currentId crement
         _ -> do
             drawStmt (head stmts) currentId ("yshift=-0.5cm, xshift=1.5cm, below right of=" ++ parentId)
             addEdge parentId currentId "-- node[anchor=west, yshift=0.1cm]{true}"
             drawStmts (tail stmts) False
-
             (crementId, crementParentId) <- getNextEdge
-            drawStatementNode crementId ("xshift=3cm, below right of=" ++ crementParentId) crement
-            addEdge crementParentId crementId "|-"
-            addEdge crementId (show coreNodeId) "|-"
+            drawForCrement crementId crementParentId crement
+
+drawForCrement :: String -> String -> String -> Flowchart ()
+drawForCrement crementId parentId crement = do
+    coreNodeId <- peekCoreId
+    drawStatementNode crementId ("xshift=3cm, below right of=" ++ parentId) crement
+    addEdge parentId crementId "|-"
+    addEdge crementId coreNodeId "|-"
 
 
 -- Functions
@@ -436,7 +478,8 @@ drawForStmts stmts coreNodeId crement = do
 drawFunction :: Function -> Flowchart ()
 drawFunction (Function name args stmts) = do
     tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ intercalateArgs args ++ ")};\n"
-    drawStmts stmts False
+    if null stmts then return ()
+    else drawStmts stmts False
 
 drawFunctionCall :: FunctionCall -> String
 drawFunctionCall (FunctionCall name exprs) = name ++ "(" ++ intercalateExprs exprs ++ ")"
@@ -476,16 +519,18 @@ addEdge fromId toId direction = do
 -- istedenfor å være bundet til startstop, io osv. å legge inn en egen \tikzstyle{sergey_custom} = [rectangle, minimum width=15cm, ..]
 constantConfig :: Flowchart ()
 constantConfig = do
-    tell "\\documentclass[margin=3mm]{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes.geometric, arrows}\n\n"
+    tell "\\documentclass[margin=3mm]{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes, arrows}\n\n"
     tell "\\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]\n"
     tell "\\tikzstyle{statement} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!20]\n"
-    tell "\\tikzstyle{decision} = [ellipse, minimum height=1cm, text centered, draw=black, fill=yellow!30]\n"
+    tell "\\tikzstyle{decision} = [rectangle, minimum height=1cm, text centered, draw=black, fill=yellow!30]\n"
     tell "\\tikzstyle{edge} = [thick, ->, >=stealth]\n\n"
     tell "\\begin{document}\n\\begin{tikzpicture}[node distance=2cm]\n\n"
 
 writeFlowchart :: Program -> Flowchart ()
-writeFlowchart (Program _ _ funcs _) = do
-    constantConfig
-    drawFunction $ head funcs
-    drawEdges
-    tell "\n\\end{tikzpicture}\n\\end{document}"
+writeFlowchart (Program _ _ funcs _) =
+    if null funcs then return ()
+    else do
+        constantConfig
+        drawFunction $ head funcs
+        drawEdges
+        tell "\n\\end{tikzpicture}\n\\end{document}"
