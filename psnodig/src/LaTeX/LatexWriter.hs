@@ -2,6 +2,7 @@ module LaTeX.LatexWriter (writeLatex) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Data.Char (toUpper)
 import Control.Monad.Reader
 import Control.Monad.Writer
 import Syntax
@@ -274,7 +275,12 @@ writeStaticFunctions = do
 writeStaticKeywords :: LatexWriter ()
 writeStaticKeywords = do
     keywords <- asks snd
-    mapM_ (\k -> tell $ "\\SetKw{Kw" ++ take 1 k ++ tail k ++ "}{" ++ k ++ "}\n") keywords
+    mapM_ (\k -> tell $ "\\SetKw{Kw" ++ fstToUpper k ++ "}{" ++ k ++ "}\n") keywords
+
+fstToUpper :: String -> String
+fstToUpper "" = ""
+fstToUpper str =
+    toUpper (head str) : tail str
 
 constantConfig :: LatexWriter ()
 constantConfig = do
@@ -290,11 +296,13 @@ writeProgramDescription (Just (ProgramDescription input output)) = do
 
 funcEnd :: Function -> LatexWriter ()
 funcEnd (Function name _ _) =
-    tell $ "\\caption{" ++ name ++ "}\n\\end{algorithm}\n\n"
+    tell $ "\n\\caption{" ++ name ++ "}\n\\end{algorithm}\n\n\\end{document}"
 
 writeLatex :: Program -> LatexWriter ()
-writeLatex (Program programDescription _ funcs _) = do
-    constantConfig
+writeLatex (Program programDescription _ funcs _) =
     if null funcs then return ()
-    else writeProgramDescription programDescription >> writeFunc (head funcs) >> funcEnd (head funcs)
-    tell "\\end{document}"
+    else do
+        constantConfig
+        writeProgramDescription programDescription
+        writeFunc (head funcs)
+        funcEnd (head funcs)
