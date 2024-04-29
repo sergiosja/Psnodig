@@ -650,7 +650,11 @@ callFunction (FunctionCall "get" args) = do
                 HashMap m -> do
                     case Map.lookup (head args) m of
                         Just v -> evalExpr v
-                        Nothing -> throwError' $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ (show $ head args) ++ " is likely an invalid key."
+                        Nothing -> do
+                            var <- evalExpr (head args)
+                            case Map.lookup (Constant var) m of
+                                Just v -> evalExpr v
+                                Nothing -> throwError' $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ (show $ head args) ++ " is likely an invalid key."
                 _ -> throwError' $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ mapName ++ " is likely an invalid Hashmap."
         _ -> throwError' $ BadArgument "Function 'get' takes two arguments: get( key, map )."
 
@@ -663,7 +667,8 @@ callFunction (FunctionCall "add" args) = do
         maybeSet <- evalExpr (VariableExp setName)
         case maybeSet of
             HashSet hs -> do
-                let newSet = HashSet $ Set.insert (args !! 0) hs
+                newVal <- evalExpr (head args)
+                let newSet = HashSet $ Set.insert (Constant newVal) hs
                 findAndUpdateScope setName newSet
                 return $ Number 1
             _ -> throwError' $ BadArgument "Function 'add'. Second argument is likely not a HashSet."
@@ -672,7 +677,10 @@ callFunction (FunctionCall "add" args) = do
         maybeMap <- evalExpr (VariableExp mapName)
         case maybeMap of
             HashMap hm -> do
-                let newMap = HashMap $ Map.insert (args !! 0) (args !! 1) hm
+                newKey <- evalExpr (head args)
+                newVal <- evalExpr (head (tail args))
+
+                let newMap = HashMap $ Map.insert (Constant newKey) (Constant newVal) hm
                 findAndUpdateScope mapName newMap
                 return $ Number 1
             _ -> throwError' $ BadArgument "Function 'add'. Third argument is likely not a HashMap."
@@ -680,7 +688,7 @@ callFunction (FunctionCall "add" args) = do
 callFunction (FunctionCall "in" args) = do
     when (length args /= 2)
         $ throwError' $ WrongNumberOfArguments "Function 'in' takes 2 arguments: add( value , list/set/map )."
-    let target = args !! 0
+    let target = head args
     maybeCollection <- evalExpr (args !! 1)
     case maybeCollection of
         List l ->
@@ -691,28 +699,60 @@ callFunction (FunctionCall "in" args) = do
             return $ Boolean $ case Map.lookup target hm of
                 Just _ -> True
                 Nothing -> False
-        _ -> throwError' $ BadArgument "Function 'in'. Second argument must be of type List, HashSet, or HashMap."
+        _ -> throwError' $ BadArgument "Second argument of function `in` must be of type List, HashSet, or HashMap."
+
+callFunction (FunctionCall "pop" args) = do
+    when (length args /= 1)
+        $ throwError' $ WrongNumberOfArguments "Function 'pop' takes 1 argument: pop( list )."
+    maybeList <- evalExpr (head args)
+    case maybeList of
+        List list ->
+            if null list
+            then throwError' $ BadArgument $ "Function `pop` takes non-empty list as argument. Make sure the provided list is not empty."
+            else do
+                lastValue <- evalExpr (last list)
+                case head args of
+                    VariableExp listName -> do
+                        let newList = List $ init list
+                        findAndUpdateScope listName newList
+                        return lastValue
+                    ListIndex listName indexes -> do
+                        let newList = List $ init list
+                        updateListVar listName indexes newList
+                        return lastValue
+                    StructFieldExp s@(StructField _ _) -> do
+                        let newList = Constant (List $ init list)
+                        updateStructField s newList
+                        return lastValue
+                    _ -> throwError' $ BadArgument $ "Unreachable?"
+        _ -> throwError' $ BadArgument $ "Function `pop` takes a list as argument. Make sure the provided argument is a list."
 
 callFunction (FunctionCall "append" args) = do
     when (length args /= 2)
         $ throwError' $ WrongNumberOfArguments "Function 'append' takes 2 arguments: append( value , list )."
-    let listExpr = args !! 1
-    maybeList <- evalExpr listExpr
-    case maybeList of
-        List l -> do
-            case listExpr of
+    let targetListExpr = args !! 1
+    maybeList <- evalExpr targetListExpr
+    case maybeList of -- Evaluerer uttrykket for å være sikker på at det har verdien (List _)
+        List list ->
+            case targetListExpr of -- Men hva slags uttrykk ble egentlig sendt som argument?
                 VariableExp listName -> do
-                    val <- evalExpr $ head args
-                    let newList = List $ l ++ [(Constant val)]
+                    newValue <- evalExpr (head args)
+                    let newList = List $ list ++ [(Constant newValue)]
                     findAndUpdateScope listName newList
-                    return $ Number 1
+                    return $ Number 1 -- burde egt returnere listen?
                 ListIndex listName indexes -> do
-                    val <- evalExpr $ head args
-                    let newList = List $ l ++ [(Constant val)]
+                    newValue <- evalExpr (head args)
+                    let newList = List $ list ++ [(Constant newValue)]
                     updateListVar listName indexes newList
+                    return $ Number 1 -- burde egt returnere listen?
+                StructFieldExp s@(StructField _ _) -> do
+                    newValue <- evalExpr (head args)
+                    -- List currList <- evalStructFieldExprMain s
+                    let newList = Constant (List $ list ++ [(Constant newValue)])
+                    updateStructField s newList
                     return $ Number 1
-                _ -> throwError' $ BadArgument "Function 'append' takes two arguments: append( value , list ). The first argument is likely an invalid value."
-        _ -> throwError' $ BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
+                _ -> throwError' $ BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
+        _ -> throwError' $ BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is possibly not a list."
 
 callFunction (FunctionCall "print" args) = do
     values <- mapM evalExpr args
