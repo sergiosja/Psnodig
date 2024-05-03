@@ -178,7 +178,7 @@ testStatements = TestList
            in res
         ~?= "return struct Person(x, y)"
 
-    , "write empty hash stmt"
+    , "write hash stmt"
         ~: let res = execWriter $ writeStmt (HashStmt (Return (VariableExp "x"))) 0
            in res
         ~?= "# return x"
