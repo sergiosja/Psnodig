@@ -152,7 +152,7 @@ testStatements = TestList
         ~: parse parseStmt "" "return struct Person(x, y)"
         ~?= Right (Return (StructExpr (Struct "Person" [VariableExp "x", VariableExp "y"])))
 
-    , "parse empty hash stmt"
+    , "parse hash stmt"
         ~: parse parseStmt "" "# return x"
         ~?= Right (HashStmt (Return (VariableExp "x")))
 
