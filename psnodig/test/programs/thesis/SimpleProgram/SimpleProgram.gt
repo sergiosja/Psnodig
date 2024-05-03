@@ -1,0 +1,9 @@
+func SimpleProgram(x int, y int) {
+    z := x * y
+    if z > x {
+        return y
+    }
+    else {
+        return x
+    }
+}

@@ -1,0 +1,7 @@
+func WhileProgram(bigNumber int) {
+    smallNumber := 0
+    while smallNumber < bigNumber {
+        smallNumber := smallNumber + 1
+    }
+    return smallNumber
+}

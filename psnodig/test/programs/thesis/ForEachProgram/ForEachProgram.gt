@@ -1,0 +1,6 @@
+func ForEachProgram(teams list) {
+    for i := teams {
+        print(i)
+    }
+    return 1
+}

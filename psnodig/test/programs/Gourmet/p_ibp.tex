@@ -10,29 +10,25 @@
 \begin{document}
 \begin{tikzpicture}[node distance=2cm]
 
-\node (0) [startstop] {f()};
-\node (1) [statement, below of=0] {i $\gets$ 0};
-\node (2) [decision, below of=1] {i $<$ n - 2 ?};
-\node (3) [statement, yshift=-0.5cm, xshift=1.5cm, below right of=2] {j $\gets$ 0};
-\node (4) [decision, below of=3] {j $<$ n - i - 2 ?};
-\node (5) [decision, yshift=-0.5cm, xshift=1.5cm, below right of=4] {A[j] $>$ A[j + 1] ?};
-\node (6) [statement, yshift=-0.5cm, xshift=-1.5cm, below left of=5] {swap A[j] with A[j+1]};
-\node (7) [statement, xshift=3cm, below right of=5] {j $\gets$ j + 1};
-\node (8) [statement, xshift=3cm, below right of=3] {i $\gets$ i + 1};
-\node (9) [startstop, yshift=-0.5cm, xshift=-1.5cm, below left of=5] {A};
+\node (0) [startstop] {v(s)};
+\node (1) [statement, below of=0] {mid $\gets$ len(s) / 2};
+\node (2) [statement, below of=1] {last $\gets$ len(s) - 1};
+\node (3) [statement, below of=2] {i $\gets$ 0};
+\node (4) [decision, below of=3] {i $<$ mid ?};
+\node (5) [decision, yshift=-0.5cm, xshift=1.5cm, below right of=4] {s[i] $\neq$ s[last - i] ?};
+\node (6) [startstop, yshift=-0.5cm, xshift=-1.5cm, below left of=4] {False};
+\node (7) [statement, xshift=3cm, below right of=5] {i $\gets$ i + 1};
+\node (8) [startstop, yshift=-0.5cm, xshift=-1.5cm, below left of=5] {True};
 
 \draw [edge] (0) -- (1);
 \draw [edge] (1) -- (2);
-\draw [edge] (2) -- node[anchor=west, yshift=0.1cm]{true} (3);
-\draw [edge] (3) |- (8);
+\draw [edge] (2) -- (3);
 \draw [edge] (3) -- (4);
 \draw [edge] (4) -- node[anchor=west, yshift=0.1cm]{true} (5);
-\draw [edge] (5) -- node[anchor=east, yshift=0.1cm]{false} (9);
+\draw [edge] (5) -- node[anchor=east, yshift=0.1cm]{false} (8);
 \draw [edge] (5) |- (7);
 \draw [edge] (5) -- node[anchor=east, yshift=0.1cm]{true} (6);
-\draw [edge] (6) -- (7);
 \draw [edge] (7) |- (5);
-\draw [edge] (8) |- (5);
 
 \end{tikzpicture}
 \end{document}

@@ -1,0 +1,14 @@
+struct Person {}
+
+func f() {
+	print(1)
+	print(2)
+	@{okok}{
+		print(f)
+		if n + 1 == 2 {
+			return 69
+		}
+	}
+}
+
+f()

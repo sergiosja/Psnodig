@@ -1,3 +1,17 @@
+struct Person {}
+
+func f() {
+    for team := teams {
+        print(team)
+    }
+
+    for index := 0, 10 {
+        print(index)
+    }
+}
+
+f()
+
 /* dette funker ikke:
 
 func printEvenNumbers() {
@@ -12,6 +26,35 @@ men f.eks. n-1 funker! merkelig.. altså: For `String Expression (Expression Bin
 // tanke: la kantene være lengre? nå som vi har standalone så kan jo dokumentet være så svært som vi selv vil!
 
 // cluet er at den første while-løkka inneholder 2 stmts: indre while og print(ok2). så de kommer alle under hverandre!
+
+/*
+f := ((en.to).tre).fire
+
+     [[[_, _], _], _]
+
+f := en.(to.(tre.fire))
+
+    [_, [_, [_, _]]]
+*/
+
+func f() {
+    p := "hei"
+}
+
+f()
+
+struct P {
+    age int,
+    friends list,
+    masha int
+}
+
+func v() {
+    print(1)
+    return 1
+}
+
+v()
 
 func f() {
     # n := length(A)

@@ -1,0 +1,6 @@
+func ForProgramDefault(n int) {
+    for i := 0, n {
+        print(i)
+    }
+    return 1
+}

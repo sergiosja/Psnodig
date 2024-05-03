@@ -1,0 +1,32 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{FizzBuzz}{FizzBuzz}
+\SetKwFunction{print}{print}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{An integer $n$.}
+\KwOut{Nothing.}
+\proc{$\FizzBuzz(n)$}{
+	\uIf{n $\%$ 15 = 0}{
+		\print(FizzBuzz) \;
+	}
+	\uElseIf{n $\%$ 3 = 0}{
+		\print(Fizz) \;
+	}
+	\uElseIf{n $\%$ 5 = 0}{
+		\print(Buzz) \;
+	}
+	\uElse{
+		\print(n) \;
+	}
+}
+\caption{FizzBuzz}
+\end{algorithm}
+
+\end{document}

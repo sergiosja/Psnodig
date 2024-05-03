@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.11)  30 APR 2024 02:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.11)  30 APR 2024 23:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**p_ibp.tex
-(./p_ibp.tex
+**FizzBuzz_ibp.tex
+(./FizzBuzz_ibp.tex
 LaTeX2e <2022-11-01> patch level 1
 L3 programming layer <2023-02-22>
 (/usr/local/texlive/2023/texmf-dist/tex/latex/standalone/standalone.cls
@@ -454,8 +454,8 @@ File: l3backend-pdftex.def 2023-01-16 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count283
 \l__pdf_internal_box=\box83
 )
-(./p_ibp.aux)
-\openout1 = `p_ibp.aux'.
+(./FizzBuzz_ibp.aux)
+\openout1 = `FizzBuzz_ibp.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 10.
 LaTeX Font Info:    ... okay on input line 10.
@@ -502,23 +502,21 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 [1
 
 {/usr/local/texlive/2023/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-(./p_ibp.aux) ) 
+(./FizzBuzz_ibp.aux) ) 
 Here is how much of TeX's memory you used:
- 14809 strings out of 476025
- 329475 string characters out of 5790017
+ 14797 strings out of 476025
+ 329327 string characters out of 5790017
  1858388 words of memory out of 5000000
- 35025 multiletter control sequences out of 15000+600000
+ 35013 multiletter control sequences out of 15000+600000
  512287 words of font info for 32 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,7n,104p,417b,708s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmmi10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/c
-m/cmr10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/
-cmsy10.pfb>
-Output written on p_ibp.pdf (1 page, 33301 bytes).
+ 102i,7n,104p,424b,699s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2023/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmr10.pfb>
+Output written on FizzBuzz_ibp.pdf (1 page, 16615 bytes).
 PDF statistics:
- 26 PDF objects out of 1000 (max. 8388607)
- 16 compressed objects within 1 object stream
+ 16 PDF objects out of 1000 (max. 8388607)
+ 10 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  13 words of extra memory for PDF output out of 10000 (max. 10000000)
 
