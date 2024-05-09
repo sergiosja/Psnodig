@@ -1,13 +1,13 @@
-module Writers.Pytite (testPytiteWriter) where
+module Writers.Python (testPythonWriter) where
 
 import Syntax
-import Pytite.PytiteWriter
+import Python.PythonWriter
     ( writeValue
     , writeProgramDescription
     , writeExpr
     , writeStmt
     , writeClass
-    , writePytite
+    , writePython
     )
 
 import qualified Data.Map as Map
@@ -16,8 +16,8 @@ import Control.Monad.Writer
 import Test.HUnit
 
 
-testPytiteWriter :: Test
-testPytiteWriter = TestList
+testPythonWriter :: Test
+testPythonWriter = TestList
     [ testProgramDescriptions
     , testValues
     , testExpressions
@@ -29,27 +29,27 @@ testPytiteWriter = TestList
 testProgram :: Test
 testProgram = TestList
     [ "write empty program"
-        ~: let res = execWriter $ writePytite (Program Nothing [] [] Nothing)
+        ~: let res = execWriter $ writePython (Program Nothing [] [] Nothing)
            in res
         ~?= ""
 
     , "write program with just description"
-        ~: let res = execWriter $ writePytite (Program (Just (ProgramDescription "There is no program." "Thus nothing is returned.")) [] [] Nothing)
+        ~: let res = execWriter $ writePython (Program (Just (ProgramDescription "There is no program." "Thus nothing is returned.")) [] [] Nothing)
            in res
         ~?= "# Input: There is no program.\n# Output: Thus nothing is returned.\n\n"
 
     , "write program with just struct"
-        ~: let res = execWriter $ writePytite (Program Nothing [StructDecl "Person" [Argument "age" "int"]] [] Nothing)
+        ~: let res = execWriter $ writePython (Program Nothing [StructDecl "Person" [Argument "age" "int"]] [] Nothing)
            in res
         ~?= "class Person:\n\tdef __init__(self, age):\n\t\tself.age = age\n\n\n"
 
     , "write program with just function declaration"
-        ~: let res = execWriter $ writePytite (Program Nothing [] [Function "f" [] [Return (Constant (Number 1))]] Nothing)
+        ~: let res = execWriter $ writePython (Program Nothing [] [Function "f" [] [Return (Constant (Number 1))]] Nothing)
            in res
         ~?= "def f():\n\treturn 1\n\n\n"
 
     , "write simple program"
-        ~: let res = execWriter $ writePytite (Program Nothing
+        ~: let res = execWriter $ writePython (Program Nothing
                                                         []
                                                         [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
                                                         (Just (FunctionCall "f" [Constant (Number 1), Constant (Number 2)])))
@@ -57,7 +57,7 @@ testProgram = TestList
         ~?= "def f(x: int, y: int):\n\treturn x + y\n\n\nf(1, 2)"
 
     , "write program with struct"
-        ~: let res = execWriter $ writePytite (Program Nothing
+        ~: let res = execWriter $ writePython (Program Nothing
                                                         [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
                                                         [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                                                         (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
@@ -65,7 +65,7 @@ testProgram = TestList
         ~?= "class City:\n\tdef __init__(self, lat, lon):\n\t\tself.lat = lat\n\t\tself.lon = lon\n\n\ndef f(x: int, y: int):\n\treturn City(x, y)\n\n\nf(68.04, 16.08)"
 
     , "write full program"
-        ~: let res = execWriter $ writePytite (Program (Just (ProgramDescription "Two decimal numbers x and y." "A new struct with x and y as latitude and longiture values."))
+        ~: let res = execWriter $ writePython (Program (Just (ProgramDescription "Two decimal numbers x and y." "A new struct with x and y as latitude and longiture values."))
                                                         [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
                                                         [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                                                         (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
