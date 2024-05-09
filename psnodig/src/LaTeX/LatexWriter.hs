@@ -1,4 +1,10 @@
-module LaTeX.LatexWriter (writeLatex) where
+module LaTeX.LatexWriter
+    ( writeLatex
+    , writeValue
+    , writeProgramDescription
+    , writeExpr
+    , writeStmt
+    ) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -15,11 +21,16 @@ type LatexWriter = ReaderT Environment (Writer String)
 addIndents :: Int -> String
 addIndents n = replicate n '\t'
 
+writeFuncArgs :: [Expression] -> LatexWriter ()
+writeFuncArgs [] = tell ")"
+writeFuncArgs [x] = writeExpr x False >> tell ")"
+writeFuncArgs (x:xs) = writeExpr x False >> tell ", " >> writeFuncArgs xs
+
 -- Structs
 
 writeStructField :: StructField -> LatexWriter ()
 writeStructField (StructField expr1 expr2) =
-    writeExp expr1 >> tell "_{" >> writeExp expr2 >> tell "} "
+    writeExpr expr1 True >> tell "_{" >> writeExpr expr2 True >> tell "}"
 
 writeStruct :: Struct -> LatexWriter ()
 writeStruct (Struct name args) = do
@@ -27,11 +38,11 @@ writeStruct (Struct name args) = do
     case length args of
         0 -> tell ")"
         1 -> do
-            writeExp $ head args
+            writeExpr (head args) False
             tell ")"
         _ -> do
-            mapM_ (\a -> (writeExp a) >> tell ", ") (init args)
-            (writeExp $ last args) >> tell ")"
+            mapM_ (\a -> (writeExpr a False) >> tell ", ") (init args)
+            (writeExpr (last args) False) >> tell ")"
 
 -- Values
 
@@ -41,24 +52,24 @@ writeValue (Boolean bool) =
     tell $ if bool == True then "\\KwTrue" else "\\KwFalse"
 writeValue (Number n) = tell $ show n
 writeValue (Decimal d) = tell $ show d
-writeValue (Text str) = tell str
+writeValue (Text str) = tell $ show str
 writeValue (List exprs) = do
     tell "["
     case length exprs of
         0 -> tell "]"
-        1 -> (writeExp $ head exprs) >> tell "]"
+        1 -> (writeExpr (head exprs) False) >> tell "]"
         _ -> do
-            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init exprs)
-            (writeExp $ last exprs) >> tell "]"
+            mapM_ (\expr -> (writeExpr expr False) >> tell ", ") (init exprs)
+            (writeExpr (last exprs) False) >> tell "]"
 writeValue (HashSet exprs) = do
     tell "\\{"
     let set = Set.toList exprs
     case length exprs of
         0 -> tell "\\}"
-        1 -> (writeExp $ head set) >> tell "\\}"
+        1 -> (writeExpr (head set) False) >> tell "\\}"
         _ -> do
-            mapM_ (\expr -> (writeExp expr) >> tell ", ") (init set)
-            (writeExp $ last set) >> tell "\\}"
+            mapM_ (\expr -> (writeExpr expr False) >> tell ", ") (init set)
+            (writeExpr (last set) False) >> tell "\\}"
 writeValue (HashMap hmap) = do
     tell "\\{"
     let pairs = Map.toList hmap
@@ -71,38 +82,46 @@ writeValue (HashMap hmap) = do
 writeValue (StructVal _) = undefined -- these aren't parsed
 
 writePair :: (Expression, Expression) -> LatexWriter ()
-writePair (x, y) = writeExp x >> tell ": " >> writeExp y
+writePair (x, y) = writeExpr x False >> tell ": " >> writeExpr y False
 
 -- Expressions
 
-writeExp :: Expression -> LatexWriter ()
-writeExp (Constant v) = writeValue v
-writeExp (VariableExp var) = tell var
-writeExp (BinaryExp op exp1 exp2) = do
+writeExpr :: Expression -> Bool -> LatexWriter ()
+writeExpr (Constant v) _ = writeValue v
+writeExpr (VariableExp var) _ = tell var
+writeExpr (BinaryExp op exp1 exp2) fromMaths = do
     case op of
-        Division -> do
+        Division ->
+            if fromMaths
+            then do
+                tell "\\frac{"
+                writeExpr exp1 False >> tell "}{"
+                writeExpr exp2 False >> tell "}"
+            else do
             tell "$\\frac{"
-            writeExp exp1 >> tell "}{"
-            writeExp exp2 >> tell "}$"
-        _ -> writeExp exp1 >> transpileOp op >> writeExp exp2
-writeExp (CallExp functioncall) = do
+            writeExpr exp1 False >> tell "}{"
+            writeExpr exp2 False >> tell "}$"
+        _ -> writeExpr exp1 fromMaths >> transpileOp op >> writeExpr exp2 fromMaths
+writeExpr (CallExp functioncall) _ = do
     writeFunctionCall functioncall
-writeExp (ListIndex name indexes) = do
+writeExpr (ListIndex name indexes) _ = do
     tell name
-    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes
-writeExp (Not expr) = do
+    mapM_ (\x -> tell "[" >> writeExpr x False >> tell "]") indexes
+writeExpr (Not expr) _ = do
     case expr of
         (CallExp (FunctionCall "in" args)) -> do
-            writeExp $ head args
+            writeExpr (head args) False
             tell $ " $\\notin$ "
-            writeExp $ last args
+            writeExpr (last args) False
         _ -> do
-            tell "\\KwNot \\: "
-            writeExp expr
-writeExp (StructExpr struct) =
+            tell "\\KwNot "
+            writeExpr expr False
+writeExpr (StructExpr struct) _ =
     writeStruct struct
-writeExp (StructFieldExp structField) =
-    writeStructField structField
+writeExpr (StructFieldExp structField) fromMaths =
+    if fromMaths
+    then writeStructField structField
+    else tell "$" >> writeStructField structField >> tell "$"
 
 -- Function related
 
@@ -111,43 +130,38 @@ writeFunctionCall (FunctionCall funcname args) = do
     case funcname of
         "length" -> do
             tell "\\abs{"
-            writeExp $ head args
+            writeExpr (head args) False
             tell "}"
         "ceil" -> do
             tell "\\lceil "
-            writeExp $ head args
+            writeExpr (head args) False
             tell "\\rceil"
         "floor" -> do
             tell "\\lfloor "
-            writeExp $ head args
+            writeExpr (head args) False
             tell "\\rfloor"
         "in" -> do
-            writeExp $ last args
+            writeExpr (last args) False
             tell $ " \\in "
-            writeExp $ head args
+            writeExpr (head args) False
         "append" -> do
             tell "append "
-            writeExp $ args !! 0
+            writeExpr (head args) False
             tell " to "
-            writeExp $ args !! 1
+            writeExpr (args !! 1) False
         "add" -> do
             tell "add "
-            writeExp $ args !! 0
+            writeExpr (head args) False
             tell " to "
-            writeExp $ args !! 1
+            writeExpr (args !! 1) False
         "in" -> do
-            writeExp $ args !! 0
+            writeExpr (head args) False
             tell " in "
-            writeExp $ args !! 1
+            writeExpr (args !! 1) False
             tell "?"
         _ -> do
-            tell $ "\\" ++ funcname ++ "{"
-            case length args of
-                0 -> tell "}"
-                1 -> (writeExp $ head args) >> tell "}"
-                _ -> do
-                    mapM_ (\arg -> (writeExp $ arg) >> tell ", ") (init args)
-                    (writeExp $ last args) >> tell "}"
+            tell $ "\\" ++ funcname ++ "("
+            writeFuncArgs args
 
 getArgumentNames ::  [Argument] -> [String]
 getArgumentNames args = map getArgName args
@@ -170,32 +184,32 @@ writeFunc (Function funcname args stmts) = do
 writeStmt :: Statement -> Int -> LatexWriter ()
 writeStmt (Assignment target value) _ = do
     writeAssignmentTarget target
-    tell "\\gets "
+    tell " $\\gets$ "
     writeAssignmentValue value
-    tell "$ \\;"
+    tell " \\;"
 writeStmt (Loop expr stmts) indent = do
     tell "\\While{$"
-    writeExp expr
+    writeExpr expr True
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (ForEach item expr stmts) indent = do
     tell $ "\\For{$" ++ item ++ " \\in "
-    writeExp expr
+    writeExpr expr True
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (For item from to stmts) indent = do
     tell $ "\\For{$" ++ item ++ " \\gets "
-    writeExp from
+    writeExpr from True
     tell $ "$ \\KwTo $"
-    writeExp to
+    writeExpr to True
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (If expr stmts maybeElse) indent = do
     tell "\\uIf{$"
-    writeExp expr
+    writeExpr expr True
     tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
@@ -204,7 +218,7 @@ writeStmt (If expr stmts maybeElse) indent = do
         Nothing -> return ()
 writeStmt (Return expr) _ = do
     tell "\\Return "
-    writeExp expr
+    writeExpr expr False
     tell " \\;"
 writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
@@ -218,22 +232,23 @@ writeStmt Continue _ =
     tell "\\KwContinue \\;"
 
 writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
-writeAssignmentTarget (VariableTarget var) = tell $ "$\\texttt{" ++ var ++ "} "
+writeAssignmentTarget (VariableTarget var) = tell $ "\\texttt{" ++ var ++ "}"
 writeAssignmentTarget (ListIndexTarget var indexes) = do
-    tell $ "$" ++ var
-    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes >> tell " "
+    tell var
+    mapM_ (\x -> tell "[" >> writeExpr x False >> tell "]") indexes
 writeAssignmentTarget (StructFieldTarget struct) = do
     tell "$"
     writeStructField struct
+    tell "$"
 
 writeAssignmentValue :: AssignmentValue -> LatexWriter ()
-writeAssignmentValue (ExpressionValue expr) = writeExp expr
+writeAssignmentValue (ExpressionValue expr) = writeExpr expr False
 writeAssignmentValue (StructValue struct) = writeStruct struct
 
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
     tell $ "\n" ++ (addIndents indent)
-    tell "\\uElseIf{$" >> writeExp expr >> tell "$}{\n"
+    tell "\\uElseIf{$" >> writeExpr expr True >> tell "$}{\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
     case maybeElse of
@@ -262,7 +277,7 @@ transpileOp op = tell $ case op of
     NotEqual         -> " \\neq "
     And              -> " \\land "
     Or               -> " \\lor "
-    Modulo           -> " % "
+    Modulo           -> " \\% "
 
 
 -- Static stuff
