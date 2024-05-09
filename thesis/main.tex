@@ -1,8 +1,9 @@
 \documentclass[twoside, openright, a4paper,  UKenglish]{report}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[UKenglish]{uiomasterfp}
-\usepackage{amsmath, listings, graphicx, csquotes, amsfonts, commath}
-\usepackage[colorlinks=true, allcolors=black, breaklinks=true]{hyperref}
+\usepackage{amsmath, graphicx, csquotes, amsfonts, commath, qtree}
+\usepackage[multiple]{footmisc}
+\usepackage[colorlinks=true, allcolors=black, breaklinks=true, hyperfootnotes=false]{hyperref}
 \usepackage{listings}
 \usepackage[scale=0.95]{sourcecodepro}
 \definecolor{codebackground}{HTML}{FAFAFA}
@@ -10,23 +11,23 @@
 
 % For different listing styles, see: https://tex.stackexchange.com/questions/45711/defining-lstset-parameters-for-multiple-languages
 \lstset {
-  backgroundcolor=\color{codebackground},
-  basicstyle=\ttfamily\small,
-  breaklines=true,
-  columns=fullflexible,
-  commentstyle=\color{ForestGreen},
-  frameshape={RYR}{Y}{Y}{RYR},
-  framexleftmargin=2ex,
-  keepspaces,
-  keywordstyle=\color{RoyalBlue},
-  language=haskell,
-  mathescape,
-  numberstyle=\tiny,
-  rulecolor=\color{rulecolor},
-  showstringspaces=false,
-  stringstyle=\color{Maroon},
-  tabsize=2,
-  xleftmargin=4ex
+    backgroundcolor=\color{codebackground},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    columns=fullflexible,
+    commentstyle=\color{ForestGreen},
+    frameshape={RYR}{Y}{Y}{RYR},
+    framexleftmargin=2ex,
+    keepspaces,
+    keywordstyle=\color{Mulberry},
+    language=haskell,
+    mathescape,
+    numberstyle=\tiny,
+    rulecolor=\color{rulecolor},
+    showstringspaces=false,
+    stringstyle=\color{RoyalBlue},
+    tabsize=2,
+    xleftmargin=4ex
 }
 
 \usepackage{caption, subcaption, url, cleveref}
@@ -43,6 +44,7 @@
 % Pseudocode
 \usepackage{algorithm2e}
 \SetKwFunction{f}{f}
+\SetKw{KwBreak}{break}
 \usepackage{tikz}
 
 % Avoid automatic indentation
@@ -65,25 +67,31 @@
 % link in text:
 %\href{https://www.overleaf.com/learn}{help library}
 
+% Abstract
+\pagestyle{empty}
+\input{abstract}
+\thispagestyle{empty}
+
+% Acknowledgements
+\pagestyle{empty}
+\input{acknowledgements}
+\thispagestyle{empty}
+
+% Table of contents
+\cleardoublepage
+\pagestyle{plain}
 \pagenumbering{roman}
 \tableofcontents
-\cleardoublepage
 
 % List of figures
-\let\oldchapter\chapter
 \lstlistoflistings
 
-\let\chapter\oldchapter 
-%\cleardoublepage
-
 % List of figures
-\let\oldchapter\chapter
 \listoffigures
 
-\let\chapter\oldchapter
+% Thesis start
 \cleardoublepage
 \pagenumbering{arabic}
-
 
 \input{chapters/1_introduction}
 
@@ -92,6 +100,8 @@
 \input{chapters/3_analysis}
 
 \input{chapters/4_design}
+
+% From now on, nothing new should be introduced!
 
 \input{chapters/5_implementation}
 

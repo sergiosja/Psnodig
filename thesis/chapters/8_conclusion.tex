@@ -1,20 +1,43 @@
 \chapter{Conclusion}
-\begin{itemize}
-    \item Future work
-    \item Optimisations etc.
-    \item Things I would like to have but didn't have time to implement
-    \item Conclude RQs
-    \item Important: Remind the reader of all the good stuff!
-\end{itemize}
 
-- another future work: even stronger correctness! would be cool to try to revert the produced pseudocode back to source code, thus being even more sure that we are consistent!!! \\
+\forsup{Important: Remind the reader of all the good stuff!}
 
-The interpreter has a focus on correctness, and is not particularly optimised for speed. Since it works directly on Psnodig datatypes, it is entirely agnostic to how programs are written. There are also likely edge cases that we have not encountered, as is often the case. The design decisions around things like scoping could be tweaked. \hfill \\
+This section will give a summary of our contributions and discuss future work, before concluding the thesis.
 
-Psnodig ignores types, and types like ``list'' and ``Tree'' is only there for the \LaTeX-writer, since doing e.g. $\backslash Array1$ without having defined $\backslash KwArray\{Array1\}$ is illegal when working with the $algorithm2e$ library. \hfill \\
+\section{Future Work}
 
-The syntax of Psnodig could also have been refined, for instance spacing things out more (as in, instead of having ``ForEach'' and ``For'' statements, we could make them their own datatype and simply having a ``ForStmt'' or something), allowing for more statements and expressions, more types of values, more operations, maybe also allowing programs to be more flexible, allowing global variables etc. These are design decisions that must be thought through thoroughly, and whilst we made decisions based on what we thought was sufficiently powerful and flexible, we \textit{were} to a certain degree limited by the time on our hands, and could have expanded the syntax even more. \hfill \\
+\subsection{Psnodig}
 
-It would also be cool to expand Psnodig to include things like lambda functions, as well as classes more similar to object oriented languages. Since input and output languages are totally independent of each other, Psnodig can, in theory, be as rich as one wants, and then people can decide for themselves what their parsers should pick up and what their readers should produce. \hfill \\
+The syntax of Psnodig contains all the necessary building blocks to write complex computer programs, but as previously mentioned, the syntax shows the maximum available. Parsers and writers can easily utilise as little of the syntax as they want, for instance if we wish to create a simple calculator language. \\
 
-We carried out very limited user testing, and did not include any of that in the thesis, since it was usually quite informal. It was done with friends and others who showed interest in the thesis throughout its course, and included things like, how easy is it to write a program in Gourmet? How satisfied are you with the LaTeX equivalent of the code you wrote? How did you find debugging, as in how descriptive and helpful were error messages? Etc.
+Therefore, it could be interesting to expand Psnodig's syntax to include more things we commonly see today in programming, like lambda functions and more data structures. This would make the language even more flexible, and potentially make it more tempting for people to use.
+
+\subsection{Interpreter}
+
+The interpreter has its primary focus on correctness, and is not particularly optimised for speed. There are parts of the interpreter that could be optimised, utilising Haskell's features to a greater extent. For one, variable scopes are lists of \texttt{(String, Value)}-pairs, but the innermost layer could have been a mapping, which would shrink the ammortised runtime of lookups from $O(n)$ to $O(1)$. \\
+
+Another flaw is that the interpreter will only stop on error or success. For instance, We do not have a way of identifying infinite loops by print statements like we can in many other language. This is because the print statements appear on the screen only when the program has terminated.
+
+\subsection{Writers}
+
+The writers all work in their own right, but there are always improvements to be made. This section covers what we believe to be the ones to make.
+
+\subsubsection{Pytite Writer}
+
+Currently, Pytite is a subset of Python, but we are not sure to what extent we cover the standard Python language. There are things we do not touch upon, like list comprehension, though there are patterns in the Psnodig syntax that could be recognised and converted accordingly.
+
+\subsubsection{Pseudocode Writer}
+
+We have utilised the Algorithm2e package, but there might be a different package we could use.
+
+\subsubsection{Flowchart Writer}
+
+As discussed in Section 7.2.1, the IBP writer struggles with complex flowcharts where we nest the statements types \texttt{While}, \texttt{For}, \texttt{ForEach}, and \texttt{If}. This could be improved by making the edges longer in these cases, or choosing different placement rather than always building flowcharts downwards.
+
+\section{Summary of Contributions}
+
+We introduced an imperative C-like programming language Gourmet, and the Python subset Pytite. \\
+
+We designed a DSL Psnodig, and created an interpreter that runs on its internal representation. \\
+
+We have added four writers to Psnodig, two of them being executable programming languages, and two of them being presentation-only targets.

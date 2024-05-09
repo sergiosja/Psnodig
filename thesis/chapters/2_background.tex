@@ -1,14 +1,6 @@
-\chapter{Background} % nothing of mine
+\chapter{Background}
 
-% utrolig mye bra her: https://www.dei.unipd.it/\~emg/downloads/SIMPAR08-WorkshopProceedings/TeachingWithRobotics/karatrantou.pdf!! veldig mange bra kilder
-
-% og mange eksempler herfra: https://student.cs.uwaterloo.ca/~cs231/resources/pseudocode.pdf
-
-% mer på pseudokode: https://www.researchgate.net/profile/Nicholas-Bennett-6/publication/309410533\_Introduction\_to\_Algorithms\_and\_Pseudocode/links/60a489d04585158ca05c54bc/Introduction-to-Algorithms-and-Pseudocode.pdf
-
-% Bra språk for å snakke om flowcharts: https://www.researchgate.net/publication/234805404_Flowchart_techniques_for_structured_programming
-
-This chapter will cover key concepts one should be familiar with in order to fully understand the rest of this thesis. We start by providing a definition for pseudocode, before we discuss Haskell as an implementation language. Lastly, we discuss transpiling, and how some existing transpilers work.
+This chapter will cover key concepts one should be familiar with in order to fully understand the rest of this thesis. We start by providing a definition for pseudocode, before discussing how transpiling works. Lastly, we discuss Haskell as an implementation language. We will round off by looking at Pandoc, a transpiler written in Haskell.
 
 \section{Pseudocode}
 
@@ -30,8 +22,6 @@ Now, since pseudocode has many faces, we must define what we really mean when we
 \subsection{Traditional Pseudocode}
 
 The most conventional form of pseudocode, commonly found in text books on algorithms, published papers, as well as design documents discussing problems~\cite{pseudocodeInBook1, pseudocodeInBook2, pseudocodeInPaper1, pseudocodeInPaper2}. It is also the form that most closely resembles source code, given that it usually includes line numbers, assign statements, and generally presents the problem solution in an imperative matter~\cite[247]{pseudocodeTendsToBeImperative}. \\
-
-\forsup{Angående siste kilde: Det er side 2 i PDFen (\url{https://dl.acm.org/doi/pdf/10.1145/65294.71222}), men sidetallet på selve dokumentet viser 247. Er det da riktig å referere til side 247 eller 2?}
 
 Since there is no formal set of rules commanding how pseudocode should look, we are prone to viewing different variations of the same algorithms across different literatures. A frequently presented algorithm is \textbf{Binary search}, a search algorithm that finds the position of a target value within a sorted array. If the target value is not found, some sort of default value is usually returned~\cite{pseudocodeInBook1}. \\
 
@@ -69,57 +59,42 @@ The wish for automatic generation of pseudocode has been desired for some time, 
 
 As previously mentioned, pseudocode has a well-established history in university curricula. When learning algorithms, data structures, and programming concepts in general, the focus is really on the underlying ideas. The concepts are generally more important than the specifics of how they are implemented in a particular programming language. Thus, the approach of learning with pseudocode prioritises concept comprehension over language-specific knowledge. \\
 
-The usefulness of having a tool translating source code to pseudocode can also be backed by a number of factors. For one, there exists several online translators like PseudoEditor and Code Kindle.~\footnote{A DSL that can be found at \url{https://pseudoeditor.com/}.}~\footnote{Works with C++ and Python, can be found at \url{https://devpost.com/software/code-kindle}. Its source code is also available at \url{https://github.com/Open-Sourced-Olaf/Code-Kindle}.} There has also been a fair share of research going into the topic, most notably by Oda et al. and Alhefdhi et al.~\cite{pseudogen, pseudocodeGenerator}. Lastly, there are still being created new styles for dislaying pseudocode~\cite{displayingPseudocode}.
+The usefulness of a tool that converts source code to pseudocode can be backed by a number of factors. For one, existing online translators like Code Kindle.\footnote{Works with C++ and Python, can be found at \url{https://devpost.com/software/code-kindle}. Its source code is also available at \url{https://github.com/Open-Sourced-Olaf/Code-Kindle}.} There also exists research on the topic, which we discuss further in Section 3.3.1. Lastly, there are still being created new styles for dislaying pseudocode~\cite{displayingPseudocode}.
 
-% There are several software available for translating source code to pseudocode, The latter utilises statistical machine translation for the translation part, and works with both C++ and Python.~\footnote{SMT is a technique to train a model on previously translated and analyzed information and conversations. It is commonly used to translate between natural languages.} In 2015, Oda et. al introduced Pseudogen~\cite{pseudogen}, which also uses statistical machine translation, and works with Python. The tools that employ statistical machine translation both translate their source programs entirely to natural language. \\
+% There are several software available for translating source code to pseudocode, The latter utilises statistical machine translation for the translation part, and works with both C++ and Python.\footnote{SMT is a technique to train a model on previously translated and analyzed information and conversations. It is commonly used to translate between natural languages.} In 2015, Oda et. al introduced Pseudogen~\cite{pseudogen}, which also uses statistical machine translation, and works with Python. The tools that employ statistical machine translation both translate their source programs entirely to natural language. \\
 
 \subsection{Flowcharts}
 
-Not all programming languages share the same execution flow. For instance, all processes in a VHDL description are executed concurrently~\cite{vhdl}. In languages with term rewriting, like Maude~\cite{maude}, rewriting rules are applied non-deterministically --- if multiple rules can apply to a term, any one of them may be chosen in an arbitrary order. \\
+Flowcharts - in the context of computer science - are a way to model computer programs. Also called flow diagrams, they contain nodes (shapes with text) explaining computational steps, and arrows showing us how the programs proceed. This gives a step-by-step overview of computer programs. \\
 
-Some languages, on the other hand, like Python, will execute their programs line for line. This means that we can almost follow the execution flow by just looking at the order functions are called, and the order of statements within those functions. \\
+Imperative programming languages, like Python, execute their programs line for line. This means that we can almost follow the execution flow by just looking at the order functions are called, and the order of statements within those functions. \\
 
-This way of executing a program opens up for the possibility of converting source code to flowcharts, which still includes text, but also complements it with shapes, arrows and colours. When code stretches over enough lines, it often becomes uniform in appearance and more challenging to comprehend. By contrast, flowcharts explicitly capture the control flow of the program, and makes it possible to direct our focus. \\
+On the other hand, there are languages with different execution flows. For instance, all processes in a VHDL description are executed concurrently~\cite{vhdl}. In languages with term rewriting, like Maude~\cite{maude}, rewriting rules are applied non-deterministically --- if multiple rules can apply to a term, any one of them may be chosen in an arbitrary order. \\
+
+The imperative way of executing a program opens up for the possibility of converting source code to flowcharts, which still includes text, but also complements it with shapes, arrows and colours. When code stretches over enough lines, it often becomes uniform in appearance and more challenging to comprehend. By contrast, flowcharts explicitly capture the control flow of the program, and makes it possible to direct our focus. \\
 
 Images in computer science is nothing new. One of the most notable examples we have are the ones we use for finite state automata (FSA). An FSA is a machine which either accepts or rejects a given string, by running each symbol through a state sequence uniquely determined by said string. We differentiate betwee deterministic and non-deterministic FSAs, although that is not of importance in our context. What they share, is a number of states, a start state, a transition function and an accept state~\cite{introToAutomataTheory}. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=0.46]{assets/dfa.png}
+    \includegraphics[scale=1.1]{assets/chapter2/Automata.pdf}
     \caption{A finite state automata.}
     \label{An example finite state automata.}
 \end{figure}
 
-\Cref{An example finite state automata.} shows an example of an FSA which accepts the word \textbf{pseudo} followed by an arbitrary number of exclamation marks. The FSA has 8 states, and the leftmost arrow indicates that \textbf{1} is the starting state. From here, we can get to the second state if our string starts with the symbol \textbf{p}. Thus, all strings that do not begin with a \textbf{p} are rejected at this point. States 7 and 8 have an additional ring within their circle, which means that they are accepting states. If a combination of symbols have not been rejected at this point, and is finished, it is accepted. \\
+\Cref{An example finite state automata.} shows an example of an FSA which accepts the word \textbf{pseudo} followed by an arbitrary number of exclamation marks. The FSA has 7 states, and the leftmost arrow indicates that \textbf{1} is the starting state. From here, we can get to the second state if our string starts with the symbol \textbf{p}. Thus, all strings that do not begin with a \textbf{p} are rejected at this point. State 7 has an additional ring within its circle, which means that it is an accepting state. If a combination of symbols have not been rejected at this point, and is finished, it is accepted. \\
 
-State 8 has an arrow leading to itself via the symbol \textbf{!}, meaning that it can end with as many exclamation marks as possible. A string like \textbf{pseudo!!p!!!} is not accepted, however, despite starting with \textbf{pseudo!!} and ending with \textbf{!!!}. Once a string has reached state 8, it can \textit{only} be followed by exclamation marks, or else it is rejected. \\
+State 7 has an arrow leading to itself via the symbol \textbf{!}, meaning that it can end with as many exclamation marks as possible. A string like \textbf{pseudo!!p!!!} is not accepted, however, despite starting with \textbf{pseudo!!} and ending with \textbf{!!!}. Once a string has reached state 7, it can \textit{only} be followed by exclamation marks, or else it is rejected. \\
 
-Warren McCulloch and Walter Pitts were among the first researchers to introduce a concept similar to finite automata, all the way back in 1943~\cite{firstFSA}. Their paper presents a simplified computational model of biological neurons. \\
+Warren McCulloch and Walter Pitts were among the first researchers to introduce a concept similar to finite automata, back in 1943~\cite{firstFSA}. Their paper presents a simplified computational model of biological neurons. \\
 
-There have been multiple attempts to create flowchart editors, most notably by Carlisle et al. and Charntaweekhun et al.~\cite{flowchartEditor1, flowchartEditor2}. These allow us to build flowcharts using the drag-and-drop approach, rather than keeping it all in text form. Benefits of learning with help from visual aid is well documented, and when it comes to computer science, visualisations are especially prominent in the context of machine learning~\cite{ML_Visual1, ML_Visual2, ML_Visual3}. \\
+The first flowcharts in computer science - to the best of our knowledge - were introduced a few years later, by Herman H. Goldstine and John Von Neumann. They used them to depict the flow of programs in ``electronic computing instruments''~\cite{flowchartIn40s}. \\
 
-One of few editors that generates flowcharts directly from code is Code2Flow\footnote{Can be found at \url{https://app.code2flow.com/}}. This is a DSL with support for most common programming concepts like statements, loops, conditionals, and more. The editor comes with a comprehensible guide on its syntax. It is also a highly customisable tool: it lets us change the flowcharts' fonts, colours, sizes and even edge height. \Cref{Code2Flow source code and flowchart} shows a side-by-side comparison of a simple program written with Code2Flow and its corresponding flowchart. \\
+Also to the best of our knowledge, there does not exist a flourishing amount of research on converting source code to corresponding flowcharts. For instance, when Zhang et al. converted source code to flowcharts for the purpose of plagiarism detection, they used the paid software Visustin~\cite{paperOnPlagiarism}. There \textit{does} exist software to convert source code to flowcharts on the web, like Code2Flow and Mermaid.\footnote{These software are discussed in more detail in Section 3.3.2.} \\
 
-\begin{figure}[ht]
-\centering
-    \begin{subfigure}{.5\textwidth}
-      \centering
-      \includegraphics[width=1\linewidth]{assets/c2f_c.png}
-      \caption{Screenshot of a program written in Code2Flow source code.}
-      \label{Code2Flow source code}
-    \end{subfigure}
-    \begin{subfigure}{.3\textwidth}
-      \centering
-      \includegraphics[width=1\linewidth]{assets/c2f_r.png}
-      \caption{The compiled result of \Cref{Code2Flow source code}.}
-      \label{Compiled Code2Flow result}
-    \end{subfigure}
+There have been multiple attempts to create flowchart \textit{editors}, most notably by Carlisle et al. and Charntaweekhun et al.~\cite{flowchartEditor1, flowchartEditor2}. These allow us to build flowcharts using the drag-and-drop approach, rather than keeping it all in text form. Benefits of learning with help from visual aid is well documented, and when it comes to computer science, visualisations are especially prominent in the context of machine learning~\cite{ML_Visual1, ML_Visual2, ML_Visual3}. \\
 
-\caption{An algorithm written with Code2Flow, and the corresponding flowchart.}
-\label{Code2Flow source code and flowchart}
-\end{figure}
-
-Given the imperative nature of flowcharts, the way they walk through problems step-by-step, it should be no surprise that people have attempted converting flowcharts to pseudocode. Wu et al. has proposed a structure identification algorithm, which can take an identified flowchart as input and automatically generate code in return~\cite{codeFromFlowcharts}. This gives us even more ground to perceive flowcharts as (an image based form of) pseudocode. \\
+Given the imperative nature of flowcharts, the way they walk through problems step-by-step, it should be no surprise that people have attempted converting flowcharts to pseudocode. Wu et al. has proposed a structure identification algorithm, which can take an identified flowchart as input and automatically generate code in return~\cite{codeFromFlowcharts}. This gives even more ground to perceive flowcharts as (an image based form of) pseudocode. \\
 
 There have been multiple studies documenting the preference for flowcharts when it comes to studying algorithms, already back in the 1980s by Scanlan et al. He recorded how his students overwhelmingly preferred structured flowcharts to pseudocode for comprehending algorithms. Using multiple algorithms of varying complexity, the students most notably indicated that the flowcharts took less time to comprehend, provided fewer errors in understanding, and reduced the number of times they had to look at the algorithms~\cite{flowchartsAreGood1}. \\
 
@@ -127,122 +102,176 @@ More recently, Nita et al. attempted to analyse student's understanding of algor
 
 \subsection{LaTeX}
 
-LaTeX is a document preparation system that is widely used for the production of scientific documents.~\footnote{In fact, this thesis is written in LaTeX.} It is an open-source typesetting system recognized for its capabilities in creating visually appealing documents that meet typographic standards. \\
+LaTeX is a document preparation system that is widely used for the production of scientific documents.\footnote{In fact, this thesis is written in LaTeX.} It is an open-source typesetting system recognized for its capabilities in creating visually appealing documents that meet typographic standards. \\
 
-LaTeX operates similarly to traditional programming, as it requires the user to write code to produce a document. The user typesets the document by typing commands in plain text, specifying the structure and styling of the content. This code is then compiled to produce a formatted document, typically in PDF format.~\footnote{The concept of compilation is discussed more in-depth in Section 2.3} \\
+LaTeX operates similarly to traditional programming, as it requires the user to write code to produce a document. The user typesets the document by typing commands in plain text, specifying the structure and styling of the content. This code is then compiled to produce a formatted document, typically in PDF format.\footnote{The concept of compilation is discussed more in-depth in Section 2.3} \\
 
-This is a contrast to more ubiquitous word processors like Microsoft Word or Google Docs, which abide to WYSIWYG principles.\footnote{Acronym for What You See Is What You Get} This means that they display the final product as it is being edited, and allow users to manipulate the document directly through the GUI. \\
+This is a contrast to more ubiquitous word processors like Microsoft Word or Google Docs, which abide to WYSIWYG principles.\footnote{An acronym for \textbfit{What You See Is What You Get}} This means that they display the final product as it is being edited, and allow users to manipulate the document directly through the GUI. \\
 
-LaTeX builds upon the TeX typesetting system created by Donald Knuth. It added a collection of macros that simplified the use of TeX, and made it more accessible to non-technical users~\cite[7]{latex}. \\
+LaTeX builds upon the TeX typesetting system created by Donald Knuth. It has an additional collection of macros that simplifies the use of TeX, and makes it more accessible to non-technical users~\cite[7]{latex}. \\
 
 A distributed collection of macros in LaTeX is called a package. They allow users to add functionality or modify the behaviour of LaTeX, including refining typography, changing the layout of elements, creating graphics and more. In LaTeX documents, they are included using the \texttt{\textbackslash usepackage\{\}} command. \\
 
-As mentioned in Section 1.3, there are two central LaTeX packages in the context of our contributions: \texttt{Algorithm2e} and \texttt{TikZ}. The former is a package to typeset computer programs, whilst the latter, on the other hand, is arguably the most complex and powerful tool to create graphic elements in LaTeX~\cite{algorithm2e, tikz}. In Section 4.4.1 and 4.5.1 we explain exactly how we utilise them and for what purpose. \\
+As mentioned in Section 1.3, two LaTeX packages are central to  our contributions: \texttt{Algorithm2e} and \texttt{TikZ}. The former is a package to typeset computer programs, whilst the latter, on the other hand, is arguably the most complex and powerful tool to create graphic elements in LaTeX~\cite{algorithm2e, tikz}.\footnote{TikZ was actually used to create the FSA example in \Cref{An example finite state automata.}.}
 
-\forsup{Er det lov å la denne ligge som en teaser, eller bør jeg forklare det litt allerede her?}
+\subsubsection{Algorithm2e}
 
+After importing the Algorithm2e package, we are free to typeset computer programs within an \textbf{algorithm} environment. \\
 
-%Algorithm2e provides an algorithm environment you can access through \\ \textbf{\textbackslash begin\{algorithm2e\}}\footnote{https://www.overleaf.com/learn/latex/Algorithms\#The\_algorithm2e\_package}. TikZ provides an environment you can access through \textbf{\textbackslash begin\{tikzpicture\}}\footnote{https://www.overleaf.com/learn/latex/TikZ\_package}. We must also remember to include \\ \textbf{\textbackslash usepackage\{algorithm2e\}} and \textbf{\textbackslash usepackage\{tikz\}} in our preamble. \\
+There are many macros we can use to typeset our programs. Common ones include \textbf{\textbackslash caption}, to caption our programs, and \textbf{\textbackslash LinesNumbered}, to number the lines of our programs. Each line ends with a semicolon by default, but we can remove them by including \textbf{\textbackslash DontPrintSemicolon}. If we want to add a description of desired input and output above the program, we can do so using \textbf{\textbackslash KwIn\{\}} and \textbf{\textbackslash KwOut\{\}}, respectively. \\
 
-\subsection{Examples of Pseudocode and Flowcharts in LaTeX}
+We can define our own keywords by using the \texttt{\textbackslash SetKw\{\}\{\}} macro. If we define \texttt{\textbackslash SetKw\{KwBreak\}\{break\}}, we can add \texttt{\textbackslash KwBreak} to our LaTeX, which is then displayed as \KwBreak in the compiled version. \\
 
-\Cref{LaTeX program that utilises the Algorithm2e package.} is the LaTeX source code of a program written with the Algorithm2e package, and \Cref{The result of compiling CrefLaTeX.} shows the result of compiling said source code. \\
+There are also more specific macros, like \texttt{\textbackslash SetKwProg\{Prog\}\{Title\}\{is\}\\\{end\}}. \texttt{Prog} is what we refer to in our LaTeX, \texttt{Title} is what is displayed (like \KwBreak in the previous paragraph), \texttt{is} directly follows \texttt{Title}, and \texttt{end} is the last line of the program. We can write multiple programs within the same \textbf{algorithm} environment. Another common macro is \texttt{\textbackslash SetKwFunction\{f\}\{f\}}. This allows us to write \texttt{\textbackslash f\{arg1, .., arg n\}} in LaTeX, to display \f{arg1, .., arg n} in the compiled version. \\
 
-\begin{lstlisting}[caption={LaTeX program that utilises the Algorithm2e package.}, captionpos=b, label={LaTeX program that utilises the Algorithm2e package.}]
-\ documentclass{standalone} % klikker om jeg fjerner
-mellomrommet
-\usepackage[utf8]{inputenc}
-\usepackage{amsmath,commath} 
-\usepackage[linesnumbered, ruled]{algorithm2e}
+Algorithm2e comes with multiple predefined English keywords that are commonly found in computer programs, like \textbf{\textbackslash uIf}, \textbf{\textbackslash uElseIf} and \textbf{\textbackslash uElse} for conditionals, and \textbf{\textbackslash While}, \textbf{\textbackslash For} and \textbf{\textbackslash Repeat} for loops.\footnote{The entire documentation can be found here: \url{https://ctan.mirror.garr.it/mirrors/ctan/macros/latex/contrib/algorithm2e/doc/algorithm2e.pdf}.} \\
 
-\SetKwProg{proc}{Procedure}{}{}
-\SetKwFunction{AreaGreaterThanItaly}{AreaGreaterThanItaly}
-\SetKw{KwFalse}{false}
-\SetKw{KwTrue}{true}
-\DontPrintSemicolon
-\renewcommand{\thealgocf}{}
-\begin{document}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.95]{assets/chapter2/TheFirstAlgorithm2e.pdf}
+    \caption{An example program utilising the Algorithm2e package in LaTeX.}
+    \label{The first Algorithm2e program.}
+\end{figure}
 
-\begin{algorithm}[H]
-\KwIn{Two integers $length$ and $width$}
-\KwOut{A boolean revealing whether or not the input's area is greater than that of the Italian Republic}
-\proc{\AreaGreaterThanItaly(length, width)}{
-    $\texttt{area} \gets length \cdot width$ \;
-    \uIf{$area > 301340$}{
-        \Return \KwTrue \;
-    }
-    \uElse{
-        \Return \KwFalse \;
-    }
-}
-\caption{AreaGreaterThanItaly}
-\end{algorithm}
-\end{document}
+Since we are still in a LaTeX environment, and backslashes are used for macros in standard LaTeX too, we have to be careful. This is because we are not allowed to rename internal macros. For instance, \texttt{\textbackslash begin} is already a macro in LaTeX, thus attempting to compile a file with \texttt{\textbackslash SetKwFunction\{begin\}\{begin\}} will lead to multiple errors and ruin the compiled result. \\
+
+\subsubsection{TikZ}
+
+As previously stated, TikZ is a powerful tool, and can be used to create just about any graphic element in LaTeX. One of them is flowcharts, which can be constructed using three macros: \texttt{\textbackslash tikzstyle}, \texttt{\textbackslash node}, and \texttt{\textbackslash edge}. \texttt{tikzstyle} lets us define the appearance of nodes and edges, whilst \texttt{node} and \texttt{edge} are used to draw nodes and edges, respectively. \\
+
+\Cref{Rough description of tikzstyle attributes.} gives a rough estimate of how a tikzstyle can be constructed. \\
+
+\begin{lstlisting}[caption={Rough description of tikzstyle attributes.}, captionpos=b, label={Rough description of tikzstyle attributes.}]
+\tikzstyle {unique name} =
+    [ <shape>
+    , minimum width = <x> cm
+    , minimum height = <y> cm
+    , text <position>
+    , draw = <colour>
+    , text = <colour'>
+    , fill = <colour''>
+    ]
+\end{lstlisting}
+
+Each tikzstyle has a unique name, so that it can be applied to nodes later on.  The standard shapes are rectangles, but other shapes like diamonds and ellipses can also be imported through libraries. The three colours refer to a node's border-, text- and background colours, respectively. \\
+
+\Cref{How nodes are written with TikZ.} gives a rough estimate of how nodes are written. \\
+
+\begin{lstlisting}[caption={How nodes are written with TikZ.}, captionpos=b, label={How nodes are written with TikZ.}]
+\node (unique name)
+      [metadata]
+      {text displayed on node}
+\end{lstlisting}
+
+All nodes should have a unique name, for the purpose of being referenced later. The square brackets denote metadata, like what the node should look like (by referencing a tikzstyle), or the node's positioning relative to other nodes. The curly brackets is the text displayed within the node body. \\
+
+\Cref{How edges are written with TikZ.} shows how most edges are written. It is important to note that nodes must already be defined prior to being referenced by an edge. \\
+
+\begin{lstlisting}[caption={How edges are written with TikZ.}, captionpos=b, label={How edges are written with TikZ.}]
+\draw [edge] (node) -- (node')
 \end{lstlisting}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=0.5]{assets/def_AGTI_TBP.png}
-    \caption{The result of compiling \Cref{LaTeX program that utilises the Algorithm2e package.}}
-    \label{The result of compiling CrefLaTeX.}
+    \includegraphics[scale=.9]{assets/chapter2/TheFirstFlowchart.pdf}
+    \caption{An example flowchart utilising the TikZ package in LaTeX.}
+    \label{The first Flowchart program.}
 \end{figure}
 
-The first 10 lines of \Cref{LaTeX program that utilises the Algorithm2e package.} is boilerplate code to decide how the package is loaded and configured. We declare keywords like \textbf{\textbackslash SetKwProg\{proc\}\{Procedure\}} and \textbf{\textbackslash SetKw\{KwFalse\}\{false\}} which we use later on. We also exclude semicolons. \\
+\section{Compilers}
 
-We are able to describe input and output through \textbf{\textbackslash KwIn} and \textbf{\textbackslash KwOut}, respectively. We can also add an overall caption to the algorithm with \textbf{\textbackslash caption}, the third last line of our program. \\
-
-We can write the algorithm itself with natural language, while we take advantage of the embedded keywords of Algorithm2e. We use \textbf{\textbackslash uIf}, \textbf{\textbackslash uElse} and \textbf{\textbackslash Return}, as well as mathematical symbols like $\gets$ and $\cdot$ by wrapping them in dollar signs. \\
-
-\Cref{LaTeX program that utilises the TikZ package.} is the LaTeX source code of a program written with the TikZ package, and \Cref{The result of compiling CrefLaTeX_IBP.} shows the result of compiling said code. \\
-
-\begin{lstlisting}[caption={LaTeX program that utilises the TikZ package.}, captionpos=b, label={LaTeX program that utilises the TikZ package.}]
-%\documentclass[margin=3mm]{standalone}
-%\usepackage{tikz}
-%\usetikzlibrary{shapes.geometric, arrows}
-
-%\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]
-%\tikzstyle{statement} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!20]
-%\tikzstyle{decision} = [ellipse, minimum height=1cm, text centered, draw=black, fill=yellow!30]
-%\tikzstyle{edge} = [thick, ->, >=stealth]
-
-%\begin{document}
-%\begin{tikzpicture}[node distance=2cm]
-
-%\node (0) [startstop] {AreaGreaterThanItaly(length, width)};
-%\node (1) [statement, below of=0] {area $\gets$ length $\cdot$ width};
-%\node (2) [decision, below of=1] {area $>$ 301340 ?};
-%\node (3) [startstop, yshift=-0.5cm, xshift=-1.5cm, below left of=2] {True};
-%\node (4) [startstop, yshift=-0.5cm, xshift=1.5cm, below right of=2] {False};
-
-%\draw [edge] (0) -- (1);
-%\draw [edge] (1) -- (2);
-%\draw [edge] (2) -- node[anchor=west, yshift=0.1cm]{false} (4);
-%\draw [edge] (2) -- node[anchor=east, yshift=0.1cm]{true} (3);
-
-%\end{tikzpicture}
-%\end{document}
-\end{lstlisting}
+A compiler is, in simple terms, a tool that reads a program in a high-level language and translates it to an executable target program. It consists of a frontend and a backend. The frontend is often referred to as the analysis part (analysing the source program before constructing an intermediate representation), whilst the backend is referred to as the synthesis part (patches together the desired target program from that intermediate representation)~\cite{whatIsACompiler}. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=0.5]{assets/def_AGTI_iBP.png}
-    \caption{The result of compiling \Cref{LaTeX program that utilises the TikZ package.}}
-    \label{The result of compiling CrefLaTeX_IBP.}
+    \includegraphics[scale=0.7]{assets/chapter2/PhasesOfCompiler.pdf}
+    \caption{The phases of a typical compiler.}
+    \label{compilerPhases}
 \end{figure}
 
-Again, the first lines show how the package is loaded and configured. We add a margin to avoid the flowchart being too cramped, and we load extra shapes from the TikZ library. \\
+The frontend of a compiler is responsible for reading the character stream of a source program, and converting them into appropriate tokens. These tokens are then used to create an intermediate representation of the source program. It is during the analysis part that a compiler will detect a program's syntactic errors, if there are any. \\
 
-Flowcharts with TikZ are constructed in three primary steps:
+Often, the analysis part involves a symbol table, which maintains information about syntactic entities of the source program. This is passed along with the intermediate representation to the synthesis part, for optimisation reasons. Common entities are bindings and typing. \\
 
-\begin{enumerate}
-    \item Defining the style of nodes and edges
-    \item Declaring the nodes
-    \item Declaring the edges
-\end{enumerate}
+The backend of a compiler is responsible for producing the desired target program from the intermediate representation. This target program is intended to be executable. For instance, source code written in C is compiled down to an executable binary. \\
 
-Note that edges \textit{can} be declared before all nodes, as long as the nodes relevant to those edges are already defined. \\
+The typical phases of a compiler is demonstrated in \Cref{compilerPhases}. The orange nodes demonstrate the frontend, whilst the purple node demonstrates the backend. Some compilers also do more work, like optimising the intermediate- or target code, or both.
 
-Each node style has a label and a shape, along with more specific metadata like height and colour. When declaring nodes in the next step, we give them an identifier, a style and the text which occurs in them. When declaring edges, we simply label the style, child and parent. Each edge must be drawn individually. In this example the edges have direction, but this can be changed by omitting the \texttt{->} option on line 12 of \Cref{LaTeX program that utilises the TikZ package.}.
+\subsection{Source-to-Source Compilers}
+
+A transpiler, formally \textbf{source-to-source compiler}, is a tool that converts input source code to output source code, whilst maintaining a similar abstraction level~\cite{whatIsATranspiler}. The first transpiler to our knowledge was developed in 1978 by Intel, with the aim of translating Assembly source code from an 8080/8085 processor to an 8086 processor~\cite{theFirstTranspiler}. \\
+
+JavaScript, the world's most commonly used programming language~\cite{javaScriptIsCommon}, has a rich history of transpilation. As a language in constant development, it faces an issue where not all browsers are always compatible with its newest features. Babel is a transpiler that converts modern JavaScript into a backwards compatible version.\footnote{Babel can be accessed on \url{https://babeljs.io}} According to Nicolini et al., without a transpiler almost 14\% of web users risk facing a JavaScript bug when accessing a website with new JavaScript features~\cite{DBLP:journals/software/NicoliniHF24}. \\
+
+Not only JavaScript can be transpiled to JavaScript. In fact, the list of other programming languages and tools that can be transpiled to JavaScript is so extensive that it could likely be a thesis topic of its own.\footnote{This overview \url{https://gist.github.com/matthiasak/c3c9c40d0f98ca91def1} provides a list of 320 languages and tools that compile to JavaScript.} However, we can bring forward some notable exambles. \\
+
+Contrary to JavaScript, TypeScript is structurally typed. TypeScript is syntactically a superset of JavaScript, adding a layer of static typing. The primary purpose of these types is to enhance the development experience by catching potential errors during compilation, as well as making the code more maintainable. However, before the code is run, TypeScript is transpiled into plain JavaScript, and the types are stripped away~\cite{TypeScript}. \\
+
+AlaSQL is an open-source SQL database for JavaScript~\cite{alaSQL}. It lets us write SQL within a JavaScript context, i.e. creating tables and performing CRUD operations. \Cref{JavaScript AlaSQL.} shows how we can create a table, populate it with a a few italian football teams, before selecting the ones with enough points to our liking. \\
+
+\begin{lstlisting}[caption={JavaScript code to create, populate and select a table with AlaSQL.}, captionpos=b, label={JavaScript AlaSQL.}]
+alasql("CREATE TABLE
+        teams (name string, points number)");
+
+alasql("INSERT INTO teams
+        VALUES ('SSC Napoli', 49),
+               ('Salernitana', 15),
+               ('Atalanta', 51)");
+
+const topHalf = alasql("SELECT *
+                    FROM teams
+                    WHERE points < 40
+                    ORDER BY points
+                    DESC");
+\end{lstlisting}
+
+Despite all the commands being written in SQL, the selected table will have a JavaScript value, as seen in \Cref{The value of topHalf} \\
+
+\begin{lstlisting}[caption={The value of topHalf from \Cref{JavaScript AlaSQL.}}, captionpos=b, label={The value of topHalf}]
+[
+    {
+        "name": "Atalanta",
+        "points": 51
+    },
+    {
+        "name": "SSC Napoli",
+        "points": 49
+    }
+]
+\end{lstlisting}
+
+JavaScript is practically the only Turing-complete programming language that can be used across browsers for web development. Rather than reinventing the wheel, developers have created transpilers to convert programs in their favourite languages to JavaScript. This allows them to write code in their preferred languages, also for web development. Notable examples inlcude GopherJS, Scala.js and Opal, which transpile Go, Scala and Ruby, respectively, to JavaScript. \\
+
+Transpilation is not exclusive to JavaScript, however. It is a common practice in many other programming languages that must interact with or be portable across diverse systems. For instance, the Haskell compiler GHC (Glasgow Haskell Compiler) used to convert the code to C rather than direct native code generation. This enabled Haskell to run on any platform with a C compiler. It also benefitted directly from others' improvements in C code generation~\cite{HaskellToC}. \\
+
+Another example is a transpiler presented by Lunnikiv et. al, where Python is converted to Rust as an intermediate source code step~\cite{PythonToRust}. The paper shows how pre-existing Python implementations that depend on optimised libraries can be semi-automatically transpiled to Rust. This way, the user can keep writing Python whilst simultaneously basking in the glow of Rust's performance optimisation.
+
+\subsection{Parsers and Code Generators}
+
+We mentioned that the frontend of a compiler is tasked with reading source code, and --- given that it is syntactically correct --- building an intermediate representation. The backend of a compiler is tasked with converting that intermediate representation into target code. \\
+
+Having in-depth knowledge about the entire pipeline of a compiler is not necessary to understand the key points of this thesis. Nevertheless, two important aspects of a compiler that \textit{will} be central focus points, are parsers and code generators. Parsers and code generators play a vital role also in a transpiler. In fact, they are all we really need to build a simple transpiler. When the parser has converted the source code to an intermediate representation, the code generator can convert that intermediate representation into a target program. \\
+
+Technically, the parser and the code generator are completely independent from one another. The only thing they must have in common is the ability to read or write the same intermediate representation. There are several advantages to this, like flexibility and modularity. If we want our transpiler to read or write another language, we can just create an additional parser or code generator. When we add a parser, we do not have to do any changes to our code generator, and vice versa, because they work on the same intermediate representation, independent of how the source- and target programs look like. \\
+
+An example of this in practice is the programming language \textbf{Derw}, an ML language mainly inspired by Elm~\cite{derw}. It comes with a single parser (for the Derw language), but multiple code generators (referred to as just generators) which target JavaScript, TypeScript, Elm as well as English and Derw itself. Since it is open source, anyone can fork the repository and add their own code generator, if they so desire. \\
+
+\Cref{LTE in Derw} shows how expressions like \texttt{6 $<=$ 8} are converted from Derw to English. The token \texttt{lessThanOrEqual} has a left- and right pointer, corresponding to the respective integers. These are extracted, and put on each side of the string \texttt{is less than or equal to}.\footnote{The entire English code generator is located at \url{https://github.com/eeue56/derw/blob/main/src/generators/English.derw}} \\
+
+\begin{lstlisting}[caption={The function that converts a \texttt{Less than or equal}-expression in Derw to English.}, captionpos=b, label={LTE in Derw}]
+generateLessThanOrEqual: LessThanOrEqual -> string
+generateLessThanOrEqual lessThanOrEqual =
+    let
+        left: string
+        left =
+            generateExpression lessThanOrEqual.left
+
+        right: string
+        right =
+            generateExpression lessThanOrEqual.right
+    in
+        `$\textdollar${left} is less than or equal to $\textdollar${right}`
+\end{lstlisting}
 
 \section{Haskell}
 
@@ -314,108 +343,13 @@ convertInt 2 = "two"
 convertInt _ = "an integer other than one or two"
 \end{lstlisting}
 
-\subsection{Testing}
+%\subsection{Testing}
 
-Lastly, Haskell allows us to utilise the QuickCheck library, which is a testing library suited for automatic property-based testing.~\footnote{Full documentation can be found at \url{https://hackage.haskell.org/package/QuickCheck}} QuickCheck can be used to prove various properties of our tool~\cite{quickcheck}.
+%Lastly, Haskell allows us to utilise the QuickCheck library, which is a testing library suited for automatic property-based testing.\footnote{Full documentation can be found at \url{https://hackage.haskell.org/package/QuickCheck}} QuickCheck can be used to prove various properties of our tool~\cite{quickcheck}.
 
-\section{Compilers}
+\section{Pandoc}
 
-A compiler is, in simple terms, a tool that reads a program in a high-level language and translates it to an executable target program. It consists of a frontend and a backend. The frontend is often referred to as the analysis part (analysing the source program before constructing an intermediate representation), whilst the backend is referred to as the synthesis part (patches together the desired target program from that intermediate representation)~\cite{whatIsACompiler}. \\
-
-\forsup{Alt under her er hentet fra samme kilde. Bør jeg kildehenvise hvert avsnitt individuelt?}
-
-The frontend of a compiler is responsible for reading the character stream of a source program, and converting them into appropriate tokens. These tokens are then used to create an intermediate representation of the source program. It is during the analysis part that a compiler will detect a program's syntactic errors, if there are any. \\
-
-Often, the analysis part involves a symbol table, which maintains information about syntactic entities of the source program. This is passed along with the intermediate representation to the synthesis part, for optimisation reasons. Common entities are bindings and typing. \\
-
-The backend of a compiler is responsible for producing the desired target program from the intermediate representation. This target program is intended to be executable. For instance, source code written in C is compiled down to an executable binary. \\
-
-\forsup{Skal erstatte denne med en egen.}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[scale=0.35]{assets/compilerOutline.png}
-    \caption{The phases of a typical compiler.}
-    \label{fig:compilerOutline}
-\end{figure}
-
-\subsection{Source-to-Source Compilers}
-
-A transpiler, formally \textbf{source-to-source compiler}, is a tool that converts input source code to output source code, whilst maintaining a similar abstraction level~\cite{whatIsATranspiler}. The first transpiler to our knowledge was developed in 1978 by Intel, with the aim of translating Assembly source code from an 8080/8085 processor to an 8086 processor~\cite{theFirstTranspiler}. \\
-
-JavaScript, the world's most commonly used programming language~\cite{javaScriptIsCommon}, has a rich history of transpilation. As a language in constant development, it faces an issue where not all browsers are always compatible with its newest features. Babel is a transpiler that converts modern JavaScript into a backwards compatible version.~\footnote{Babel can be accessed on \url{https://babeljs.io}} According to Nicolini et al., without a transpiler almost 14\% of web users risk facing a JavaScript bug when accessing a website with new JavaScript features~\cite{DBLP:journals/software/NicoliniHF24}. \\
-
-Not only JavaScript can be transpiled to JavaScript. In fact, the list of other programming languages and tools that can be transpiled to JavaScript is so extensive that it could likely be a thesis topic of its own.~\footnote{This overview \url{https://gist.github.com/matthiasak/c3c9c40d0f98ca91def1} provides a list of 320 languages and tools that compile to JavaScript.} However, we can bring forward some notable exambles. \\
-
-Contrary to JavaScript, TypeScript is structurally typed. TypeScript is syntactically a superset of JavaScript, adding a layer of static typing. The primary purpose of these types is to enhance the development experience by catching potential errors during compilation, as well as making the code more maintainable. However, before the code is run, TypeScript is transpiled into plain JavaScript, and the types are stripped away~\cite{TypeScript}. \\
-
-AlaSQL is an open-source SQL database for JavaScript~\cite{alaSQL}. It lets us write SQL within a JavaScript context, i.e. creating tables and performing CRUD operations. \Cref{JavaScript AlaSQL.} shows how we can create a table, populate it with a a few italian football teams, before selecting the ones with enough points to our liking. \\
-
-\begin{lstlisting}[caption={JavaScript code to create, populate and select a table with AlaSQL.}, captionpos=b, label={JavaScript AlaSQL.}]
-alasql("CREATE TABLE
-        teams (name string, points number)");
-
-alasql("INSERT INTO teams
-        VALUES ('SSC Napoli', 49),
-               ('Salernitana', 15),
-               ('Atalanta', 51)");
-
-const topHalf = alasql("SELECT *
-                    FROM teams
-                    WHERE points < 40
-                    ORDER BY points
-                    DESC");
-\end{lstlisting}
-
-Despite all the commands being written in SQL, the selected table will have a JavaScript value, as seen in \Cref{The value of topHalf} \\
-
-\begin{lstlisting}[caption={The value of topHalf from \Cref{JavaScript AlaSQL.}}, captionpos=b, label={The value of topHalf}]
-[
-    {
-        "name": "Atalanta",
-        "points": 51
-    },
-    {
-        "name": "SSC Napoli",
-        "points": 49
-    }
-]
-\end{lstlisting}
-
-JavaScript is practically the only Turing-complete programming language that can be used across browsers for web development. Rather than reinventing the wheel, developers have created transpilers to convert programs in their favourite languages to JavaScript. This allows them to write code in their preferred languages, also for web development. Notable examples inlcude GopherJS, Scala.js and Opal, which transpile Go, Scala and Ruby, respectively, to JavaScript. \\
-
-Transpilation is not exclusive to JavaScript, however. It is a common practice in many other programming languages that must interact with or be portable across diverse systems. For instance, the Haskell compiler GHC (Glasgow Haskell Compiler) used to convert the code to C rather than direct native code generation. This enabled Haskell to run on any platform with a C compiler. It also benefitted directly from others' improvements in C code generation~\cite{HaskellToC}. \\
-
-Another example is a transpiler presented by Lunnikiv et. al, where Python is converted to Rust as an intermediate source code step~\cite{PythonToRust}. The paper shows how pre-existing Python implementations that depend on optimised libraries can be semi-automatically transpiled to Rust. This way, the user can keep writing Python whilst simultaneously basking in the glow of Rust's performance optimisation.
-
-\subsection{Parsers and Code Generators}
-
-We mentioned that the frontend of a compiler is tasked with reading source code, and --- given that it is syntactically correct --- building an intermediate representation. The backend of a compiler is tasked with converting that intermediate representation into target code. \\
-
-Having in-depth knowledge about the entire pipeline of a compiler is not necessary to understand the key points of this thesis. Nevertheless, two important aspects of a compiler that \textit{will} be central focus points, are parsers and code generators. Parsers and code generators play a vital role also in a transpiler. In fact, they are all we really need to build a simple transpiler. When the parser has converted the source code to an intermediate representation, the code generator can convert that intermediate representation into a target program. \\
-
-Technically, the parser and the code generator are completely independent from one another. The only thing they must have in common is the ability to read or write the same intermediate representation. There are several advantages to this, like flexibility and modularity. If we want our transpiler to read or write another language, we can just create an additional parser or code generator. When we add a parser, we do not have to do any changes to our code generator, and vice versa, because they work on the same intermediate representation, independent of how the source- and target programs look like. \\
-
-An example of this in practice is the programming language \textbf{Derw}, an ML language mainly inspired by Elm~\cite{derw}. It comes with a single parser (for the Derw language), but multiple code generators (referred to as just generators) which target JavaScript, TypeScript, Elm as well as English and Derw itself. As it is open sourced, anyone can fork the repository and add their own code generator, if they so desire. \\
-
-\Cref{LTE in Derw} shows how expressions like \texttt{6 $<=$ 8} are converted. The token \texttt{lessThanOrEqual} has a left- and right pointer, corresponding to the respective integers. These are extracted, and put on each side of the string \texttt{is less than or equal to}.~\footnote{The entire English code generator is located at \url{https://github.com/eeue56/derw/blob/main/src/generators/English.derw}} \\
-
-\begin{lstlisting}[caption={The function that converts a \texttt{Less than or equal}-expression in Derw to English.}, captionpos=b, label={LTE in Derw}]
-generateLessThanOrEqual: LessThanOrEqual -> string
-generateLessThanOrEqual lessThanOrEqual =
-    let
-        left: string
-        left =
-            generateExpression lessThanOrEqual.left
-
-        right: string
-        right =
-            generateExpression lessThanOrEqual.right
-    in
-        `$\textdollar${left} is less than or equal to $\textdollar${right}`
-\end{lstlisting}
-
-Another example is \textbf{Pandoc}, which is software that converts between different markdown formats~\cite{whatIsPandoc}. It includes a Haskell library, as well as a command-line program. It is able to convert documents from 45 source formats to 63 target formats.~\footnote{See the entire list at \url{https://hackage.haskell.org/package/pandoc}} Additionally, Pandoc is able to convert documents in LaTeX, Groff ms and HTML into PDFs. \\
+Pandoc is an example of a transpiler written in Haskell, which converts between different markdown formats~\cite{whatIsPandoc}. It includes a Haskell library, as well as a command-line program. It is able to convert documents from 45 source formats to 63 target formats.\footnote{See the entire list at \url{https://hackage.haskell.org/package/pandoc}} Additionally, Pandoc is able to convert documents in LaTeX, Groff ms and HTML into PDFs. \\
 
 At its core, Pandoc is really just a specification of Haskell data types. A Pandoc document has the type \texttt{Pandoc Meta [Block]}. The first attribute is \texttt{Meta}, a document's metadata like its title, its author(s), the date it was written and more. The second attribute is a list of \texttt{Block}. A block is a more intricate data type, shown in its entirety in \Cref{Block data type in Pandoc}. \\
 
@@ -436,33 +370,53 @@ Div Attr [Block]
 Null
 \end{lstlisting}
 
-The modular design of Pandoc means that adding an input format only requires the program to convert \textit{to} this native representation, whilst an output format only needs to convert \textit{from} it. This is much like parsers and code generators of compilers, but as they are much less intricate, the Pandoc documentation refers to them simply as \texttt{readers} and \texttt{writers}. Throughout this thesis, the words \texttt{writer} and \texttt{code generator} will be used interchangeably.~\footnote{In reality, traditional code generators do much more than directly translating data types to a target program. In the context of this thesis, however, code generators will not be asked to do much more. This is also a way to acknowledge that the writers we ultimately construct are not fully fledged code generators like one might see in compilers.} \\
+The modular design of Pandoc means that adding an input format only requires the program to convert \textit{to} this native representation, whilst an output format only needs to convert \textit{from} it. This is much like parsers and code generators of compilers, but as they are much less intricate, the Pandoc documentation refers to them simply as \texttt{readers} and \texttt{writers}. Throughout this thesis, the words \texttt{writer} and \texttt{code generator} will be used interchangeably.\footnote{In reality, traditional code generators do much more than directly translating data types to a target program. In the context of this thesis, however, code generators will not be asked to do much more. This is also a way to acknowledge that the writers we ultimately construct are not fully fledged code generators like the ones we often see in compilers.} \\
 
 Though it must be said, Pandoc cannot always ensure a completely lossless conversion. As the native representation is less expressive than many of the formats it converts between, details are bound to get lost on the way. For instance, LaTeX is a notoriously rich format, much more so than many of its companions in the Pandoc dynasty. However, Pandoc is an excellent interpreter of lightweight markup languages like Markdown, which are more \textit{neutural} by design~\cite{whatIsPandoc}. \\
 
-An example of conversion with Pandoc is provided in \Cref{A Markdown program converted to LaTeX with Pandoc.}. The input format is Markdown, and the output format is LaTeX. \Cref{internalPandoc} shows the intermediate, native representation in Haskell. Meta contains title and date, while the list entries in Block are of type Header and Para. \\
+To demonstrate an example of how Pandoc works, we provide an example of how a Markdown program can be transpiled to LaTeX. \Cref{markdownProgram} is the Markdown program in question, and \Cref{pandocLatex} partly shows the final LaTeX file.\footnote{The final LaTeX document actually comes with 50 more lines of boilerplate generated by Pandoc. However, we can safely remove them, and leave only what we see in \Cref{pandocLatex}. Compiling this and compiling the original result with boilerplate yields the exact same PDF.} \Cref{internalPandoc} also shows its native representation in Haskell. Meta contains title and date, while the list entries in Block are of type Header and Para. \\
 
-\begin{figure}[ht]
-\centering
-\begin{subfigure}{.6\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{assets/pandocMD.png}
-  \caption{A Markdown program.}
-  \label{markdownProgram}
-\end{subfigure}
-\begin{subfigure}{.6\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{assets/pandocHASKELL.png}
-  \caption{The internal Pandoc AST of \Cref{markdownProgram}.}
-  \label{internalPandoc}
-\end{subfigure}
-\begin{subfigure}{.6\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{assets/pandocLATEX.png}
-  \caption{A LaTeX program, built from the AST in \Cref{internalPandoc}.}
-  \label{latexResultOfPandoc}
-\end{subfigure}
+\begin{lstlisting}[caption={A program written in Markdown.}, captionpos=b, label={markdownProgram}]
+---
+title: Programming languages
+date: 2023-02-01
+---
 
-\caption{A Markdown program converted to LaTeX with Pandoc.}
-\label{A Markdown program converted to LaTeX with Pandoc.}
-\end{figure}
+# Introduction
+
+This is a paragraph about programming languages
+
+\end{lstlisting}
+
+\begin{lstlisting}[caption={The result of transpiling \Cref{markdownProgram} to LaTeX.}, captionpos=b, label={pandocLatex}]
+\$\hspace{0pt}$documentclass[]{article}
+\title{Programming languages}
+\author{}
+\date{2023-02-01}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}\label{introduction}
+
+This is a paragraph about programming languages
+
+\end{document}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={The internal Pandoc AST of \Cref{markdownProgram}.}, captionpos=b, label={internalPandoc}]
+Pandoc
+    (Meta {unMeta = fromList
+        [ ("title", MetaInlines [ Str "Programming"
+                                 , Space
+                                 , Str "languages"])
+        , ("date", MetaInlines [Str "2023-02-01"])
+    ]})
+
+    [ Header 1 ("introduction", [], []) [Str "Introduction"]
+    , Para [ Str "This", Space, Str "is", Space, Str "a"
+           , Space , Str "paragraph", Space, Str "about"
+           , Space, Str "programming", Space, Str "languages"
+           ]
+    ]
+\end{lstlisting}
