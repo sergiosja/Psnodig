@@ -1,11 +1,16 @@
 import Parsers.Gourmet (testGourmetParser)
 import Writers.Gourmet (testGourmetWriter)
-import Writers.Pytite (testPytiteWriter)
+import Writers.Python (testPythonWriter)
 import Writers.Pseudocode (testPseudocodeWriter)
+-- import Writers.Flowchart (testFlowchartWriter)
+import InterpreterTest (testInterpreter)
 import Test.HUnit
 
 main :: IO ()
 main = do
+    putStrLn "TESTING INTERPRETER\n"
+    putStrLn $ runTestTT testInterpreter >>= return . show
+
     putStrLn "\n\n########################################"
 
     putStrLn "TESTING PSNODIG PARSERS\n"
@@ -15,12 +20,7 @@ main = do
 
     putStrLn "\n\nTESTING PSNODIG WRITERS\n"
     mapM_ (\writerTest -> writerTest >>= putStrLn) testSuiteWriters
-
-
-runTest :: String -> String -> Test -> IO String
-runTest name testPart currentTest = do
-    putStrLn $ "\n" ++ name ++ " " ++ testPart ++ ":"
-    runTestTT currentTest >>= return . show
+    
 
 testSuiteParsers :: [IO String]
 testSuiteParsers =
@@ -29,6 +29,13 @@ testSuiteParsers =
 testSuiteWriters :: [IO String]
 testSuiteWriters =
     [ runTest "Gourmet" "Writer" testGourmetWriter
-    , runTest "Pytite" "Writer" testPytiteWriter
+    , runTest "Python" "Writer" testPythonWriter
     , runTest "Pseudocode" "Writer" testPseudocodeWriter
+    -- , runTest "Flowchart" "Writer" testFlowchartWriter
     ]
+
+
+runTest :: String -> String -> Test -> IO String
+runTest name testPart currentTest = do
+    putStrLn $ "\n" ++ name ++ " " ++ testPart ++ ":"
+    runTestTT currentTest >>= return . show
