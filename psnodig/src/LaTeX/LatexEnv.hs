@@ -13,7 +13,7 @@ type Collector = State (Set String, Set String)
 collectNames :: Program -> Collector ()
 collectNames (Program _ structs funcs _) = do
     mapM_ collectStructDeclarations structs
-    mapM_ collectFuncDeclarations funcs
+    collectFuncDeclarations (head funcs)
 
 collectStructDeclarations :: StructDecl -> Collector ()
 collectStructDeclarations (StructDecl name _) = do
