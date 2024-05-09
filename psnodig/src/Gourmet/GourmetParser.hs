@@ -1,4 +1,11 @@
-module Gourmet.GourmetParser (parseGourmet) where
+module Gourmet.GourmetParser
+    ( parseGourmet
+    , parseValue
+    , parseProgramDescription
+    , parseStmt
+    , parseExpr
+    , parseStructDecl
+    ) where
 
 import Syntax
 import Text.Parsec
@@ -23,9 +30,6 @@ lexer = Token.makeTokenParser emptyDef {
         [ "while", "if", "func", "true", "false"
         , "return", "else", "for", "break", "set"
         , "map", "not", "struct", "continue"
-        -- , "print", "length", "ceil", "floor"
-        -- , "max", "min", "append", "add", "get"
-        -- , "in", "toString"
         ],
     Token.commentStart = "/*",
     Token.commentEnd = "*/",
@@ -96,9 +100,9 @@ parseStructField =
 
 parseValue :: Parser Value
 parseValue = choice
-    [ try parseHashMap
+    [ try parseNil
+    , try parseHashMap
     , try parseHashSet
-    , try parseNil
     , try parseBool
     , try parseDecimal
     , try parseNumber
@@ -156,7 +160,7 @@ parseExpr = buildExpressionParser table term
             ]
             where
                 parseStructFieldExpr =
-                    try (StructFieldExp <$> parseStructField) <|> parseExpr1
+                    {-try-} (StructFieldExp <$> parseStructField) -- <|> parseExpr1
                 parseNotExp =
                     Not <$> (reservedOp "not" *> parseExpr)
                 parseListIndexExp =
@@ -317,8 +321,8 @@ parseElse = (try parseElseIf) <|> parsePlainElse
 
 parseProgramDescription :: Parser ProgramDescription
 parseProgramDescription = ProgramDescription
-    <$> (char '?' *> manyTill anyChar (char '?'))
-    <* whiteSpace <*> (char '!' *> manyTill anyChar (char '!'))
+    <$> (char '?' *> whiteSpace *> manyTill anyChar (char '?'))
+    <* whiteSpace <*> (char '!' *> whiteSpace *> manyTill anyChar (char '!'))
     <* whiteSpace
 
 parseGourmet :: Parser Program
