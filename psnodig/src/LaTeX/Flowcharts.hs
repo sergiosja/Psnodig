@@ -161,12 +161,12 @@ isSpecialStmt _ = False
 
 -- Values
 
-drawValue :: Value -> Bool -> String
+drawValue :: Value -> Bool -> String -- kan kanskje fjerne Bool
 drawValue Nil _ = "Nil"
 drawValue (Boolean b) _ = show b
 drawValue (Number n) _ = show n
 drawValue (Decimal d) _ = show d
-drawValue (Text t) b = if b then '\"' : t ++ "\"" else t
+drawValue (Text t) b = show t
 drawValue (List l) _ = drawIterable "[" l "]"
 drawValue (HashSet hs) _ = drawIterable "(" (Set.toList hs) ")"
 drawValue (HashMap hm) _ = drawHMap $ Map.toList hm
@@ -232,7 +232,7 @@ drawOp NotEqual = " $\\neq$ "
 
 drawOp And = " $\\land$ "
 drawOp Or = " $\\lor$ "
-drawOp Modulo = " $%$ "
+drawOp Modulo = " $\\%$ "
 
 drawIndexExprs :: [Expression] -> String
 drawIndexExprs [] = ""
@@ -363,9 +363,10 @@ drawStmt (HashStmt _) _ _ = return ()
 drawStmt (AnnotationStmt text _) currentId pos =
     drawStatementNode currentId pos text
 
-drawStmt Break _ _ = return ()
-drawStmt Continue _ _ = return ()
-
+drawStmt Break currentId pos =
+    drawStatementNode currentId pos "break"
+drawStmt Continue currentId pos =
+    drawStatementNode currentId pos "continue"
 
 drawAssignmentTarget :: AssignmentTarget -> String
 drawAssignmentTarget (VariableTarget v) = v
