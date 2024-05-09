@@ -183,102 +183,102 @@ testStatements = TestList
 testExpressions :: Test
 testExpressions = TestList
     [ "write function call without arguments"
-        ~: let res = execWriter $ runReaderT (writeExpr (CallExp (FunctionCall "f" []))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (CallExp (FunctionCall "f" [])) False) ([], [])
            in res
         ~?= "\\f()"
 
     , "write function call with one argument"
-        ~: let res = execWriter $ runReaderT (writeExpr (CallExp (FunctionCall "f" [Constant (Number 1)]))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (CallExp (FunctionCall "f" [Constant (Number 1)])) False) ([], [])
            in res
         ~?= "\\f(1)"
 
     , "write function call with multiple arguments"
-        ~: let res = execWriter $ runReaderT (writeExpr (CallExp (FunctionCall "f" [Constant (Number 1), Constant (Text "Palermo"), Constant (Decimal 45.72), Constant (List [])]))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (CallExp (FunctionCall "f" [Constant (Number 1), Constant (Text "Palermo"), Constant (Decimal 45.72), Constant (List [])])) False) ([], [])
            in res
         ~?= "\\f(1, \"Palermo\", 45.72, [])"
 
     , "write list index access"
-        ~: let res = execWriter $ runReaderT (writeExpr (ListIndex "list" [Constant (Number 1)])) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (ListIndex "list" [Constant (Number 1)]) False) ([], [])
            in res
         ~?= "list[1]"
 
     , "write nested list index access"
-        ~: let res = execWriter $ runReaderT (writeExpr (ListIndex "list" [Constant (Number 1), Constant (Number 2), Constant (Number 3)])) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (ListIndex "list" [Constant (Number 1), Constant (Number 2), Constant (Number 3)]) False) ([], [])
            in res
         ~?= "list[1][2][3]"
 
     , "write structfield access"
-        ~: let res = execWriter $ runReaderT (writeExpr (StructFieldExp (StructField (VariableExp "struct") (VariableExp "field")))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (StructFieldExp (StructField (VariableExp "struct") (VariableExp "field"))) False) ([], [])
            in res
         ~?= "$struct_{field}$"
 
     , "write nested structfield access"
-        ~: let res = execWriter $ runReaderT (writeExpr (StructFieldExp (StructField (VariableExp "struct") (StructFieldExp (StructField (VariableExp "field") (VariableExp "nested")))))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (StructFieldExp (StructField (VariableExp "struct") (StructFieldExp (StructField (VariableExp "field") (VariableExp "nested"))))) False) ([], [])
            in res
         ~?= "$struct_{field_{nested}}$"
 
     , "write struct expression without arguments"
-        ~: let res = execWriter $ runReaderT (writeExpr (StructExpr (Struct "Person" []))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (StructExpr (Struct "Person" [])) False) ([], [])
            in res
         ~?= "\\Person()"
 
     , "write struct expression with one argument"
-        ~: let res = execWriter $ runReaderT (writeExpr (StructExpr (Struct "Person" [Constant (Number 1)]))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (StructExpr (Struct "Person" [Constant (Number 1)])) False) ([], [])
            in res
         ~?= "\\Person(1)"
 
     , "write struct expression with multiple arguments"
-        ~: let res = execWriter $ runReaderT (writeExpr (StructExpr (Struct "Person" [Constant (Number 1), Constant (Text "Sicilia"), StructExpr (Struct "Country" [Constant (Text "Italia")])]))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (StructExpr (Struct "Person" [Constant (Number 1), Constant (Text "Sicilia"), StructExpr (Struct "Country" [Constant (Text "Italia")])])) False) ([], [])
            in res
         ~?= "\\Person(1, \"Sicilia\", \\Country(\"Italia\"))"
 
     , "write simple variable name"
-        ~: let res = execWriter $ runReaderT (writeExpr (VariableExp "variable")) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (VariableExp "variable") False) ([], [])
            in res
         ~?= "variable"
 
     , "write variable name with symbol"
-        ~: let res = execWriter $ runReaderT (writeExpr (VariableExp "variable'")) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (VariableExp "variable'") False) ([], [])
            in res
         ~?= "variable'"
 
     , "write negated function call"
-        ~: let res = execWriter $ runReaderT (writeExpr (Not (CallExp (FunctionCall "f" [Constant (Number 1)])))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Not (CallExp (FunctionCall "f" [Constant (Number 1)]))) False) ([], [])
            in res
         ~?= "\\KwNot \\f(1)"
 
     , "write negated list index access"
-        ~: let res = execWriter $ runReaderT (writeExpr (Not (ListIndex "list" [Constant (Number 1)]))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Not (ListIndex "list" [Constant (Number 1)])) False) ([], [])
            in res
         ~?= "\\KwNot list[1]"
 
     , "write negated nested list index access"
-        ~: let res = execWriter $ runReaderT (writeExpr (Not (ListIndex "list" [Constant (Number 1), Constant (Number 2), Constant (Number 3)]))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Not (ListIndex "list" [Constant (Number 1), Constant (Number 2), Constant (Number 3)])) False) ([], [])
            in res
         ~?= "\\KwNot list[1][2][3]"
 
     , "write negated struct expression"
-        ~: let res = execWriter $ runReaderT (writeExpr (Not (StructExpr (Struct "Person" [Constant (Number 1)])))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Not (StructExpr (Struct "Person" [Constant (Number 1)]))) False) ([], [])
            in res
         ~?= "\\KwNot \\Person(1)"
 
     , "write negated variable"
-        ~: let res = execWriter $ runReaderT (writeExpr (Not (VariableExp "variable"))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Not (VariableExp "variable")) False) ([], [])
            in res
         ~?= "\\KwNot variable"
 
     , "write text constant"
-        ~: let res = execWriter $ runReaderT (writeExpr (Constant (Text "var"))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Constant (Text "var")) False) ([], [])
            in res
         ~?= "\"var\""
 
     , "write number constant"
-        ~: let res = execWriter $ runReaderT (writeExpr (Constant (Number 1905))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Constant (Number 1905)) False) ([], [])
            in res
         ~?= "1905"
 
     , "write set constant"
-        ~: let res = execWriter $ runReaderT (writeExpr (Constant (HashSet (Set.fromList [Constant (Number 2), Constant (Number 3), Constant (Number 2)])))) ([], [])
+        ~: let res = execWriter $ runReaderT (writeExpr (Constant (HashSet (Set.fromList [Constant (Number 2), Constant (Number 3), Constant (Number 2)]))) False) ([], [])
            in res
         ~?= "\\{2, 3\\}"
     ]
