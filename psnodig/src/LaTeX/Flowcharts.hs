@@ -161,16 +161,16 @@ isSpecialStmt _ = False
 
 -- Values
 
-drawValue :: Value -> Bool -> String -- kan kanskje fjerne Bool
-drawValue Nil _ = "Nil"
-drawValue (Boolean b) _ = show b
-drawValue (Number n) _ = show n
-drawValue (Decimal d) _ = show d
-drawValue (Text t) b = show t
-drawValue (List l) _ = drawIterable "[" l "]"
-drawValue (HashSet hs) _ = drawIterable "(" (Set.toList hs) ")"
-drawValue (HashMap hm) _ = drawHMap $ Map.toList hm
-drawValue (StructVal sf) _ = drawStruct sf
+drawValue :: Value -> String
+drawValue Nil = "Nil"
+drawValue (Boolean b) = show b
+drawValue (Number n) = show n
+drawValue (Decimal d) = show d
+drawValue (Text t) = show t
+drawValue (List l) = drawIterable "[" l "]"
+drawValue (HashSet hs) = drawIterable "(" (Set.toList hs) ")"
+drawValue (HashMap hm) = drawHMap $ Map.toList hm
+drawValue (StructVal sf) = drawStruct sf
 
 drawIterable :: String -> [Expression] -> String -> String
 drawIterable l it r =
@@ -199,14 +199,14 @@ drawStruct fields =
             let fields'' = drawStruct fields'
             in str ++ ": (" ++ fields'' ++ ")"
         drawField (str, val) =
-            let val' = drawValue val False
+            let val' = drawValue val
             in str ++ ": " ++ val'
 
 
 -- Expressions
 
 drawExpr :: Expression -> String
-drawExpr (Constant v) = drawValue v False
+drawExpr (Constant v) = drawValue v
 drawExpr (VariableExp v) = v
 drawExpr (BinaryExp op expr1 expr2) = drawExpr expr1 ++ drawOp op ++ drawExpr expr2
 drawExpr (ListIndex listName exprs) = listName ++ drawIndexExprs exprs
