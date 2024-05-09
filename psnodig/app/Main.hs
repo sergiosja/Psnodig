@@ -8,8 +8,8 @@ import Interpreter
     , runPsnodig
     )
 
--- Pytite
-import Pytite.PytiteWriter (writePytite)
+-- Python
+import Python.PythonWriter (writePython)
 
 -- Gourmet
 import Gourmet.GourmetParser (parseGourmet)
@@ -55,13 +55,13 @@ main = do
         ["ibp", "pdf", filename] -> do
             p <- readFile filename
             makeIBP p filename True
-        ["ast", filename] -> do -- should be able to get this in its own file maybe?
+        ["ast", filename] -> do
             p <- readFile filename
             getAST p
         ["gourmet", filename] -> do
             p <- readFile filename
             g2g p
-        ["pytite", filename] -> do
+        ["python", filename] -> do
             p <- readFile filename
             g2p p
         _ -> die "No parse for provided arguments. Run `psnodig help` to see usage."
@@ -77,7 +77,7 @@ psnodigHelp =
     "<psnodig ibp program>\t\t: Transpiles the program to IBP in LaTeX.\n" ++
     "<psnodig ibp pdf program>\t: The same as above, but also compiles the LaTeX file to a PDF.\n\n" ++
     "<psnodig gourmet program>\t: Transpiles the program to the equivalent in Gourmet.\n" ++
-    "<psnodig pytite program>\t: Transpiles the program to the equivalent in Pytite.\n\n" ++
+    "<psnodig python program>\t: Transpiles the program to the equivalent in Python.\n\n" ++
     "<psnodig help>\t\t\t: Brings you back here!\n"
 
 makeTBP :: String -> String -> Bool -> IO ()
@@ -117,7 +117,7 @@ g2p program = do
     let parsed = parse parseGourmet "" program
     case parsed of
         (Right p) ->
-            let transpiled = execWriter $ writePytite p
+            let transpiled = execWriter $ writePython p
             in writeFile "algo.py" transpiled
         (Left err) -> putStrLn $ show err
 
@@ -153,22 +153,3 @@ gourmet2flowTex s = take (length s - 3) s ++ "_ibp.tex"
 makePDF :: String -> IO ()
 makePDF filename = do
     callCommand $ "latexmk -pdf " ++ filename
-
--- kjøre helt IN1000 style med
-{-
-> Choose parser
-1. Gourmet
-2. Pytite
-3. Other
-> 1
-
-> Choose writer
-1. Gourmet
-2. Pytite
-3. Latex
-4. Flowchart
-> 4
-
-#################
-Your new file algo.pdf is ready
--}
