@@ -1,7 +1,8 @@
-module Interpreter (
-      ExecutionState(..)
-      , RuntimeError(RuntimeErrorWithOutput)
-      , runPsnodig
+module Interpreter
+    ( ExecutionState(..)
+    , RuntimeError(RuntimeErrorWithOutput)
+    , runPsnodig
+    , evalStmt
     ) where
 
 import Syntax
@@ -450,6 +451,7 @@ operate' Equal (Decimal x) (Number y) = Right $ Boolean $ x == (fromInteger y)
 operate' Equal (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) == y
 operate' Equal Nil Nil = Right $ Boolean True
 operate' Equal (Text t1) (Text t2) = Right $ Boolean $ t1 == t2
+operate' Equal (Boolean x) (Boolean y) = Right $ Boolean $ x == y
 operate' Equal _ _ = Right $ Boolean False
 
 operate' NotEqual (Number x) (Number y) = Right $ Boolean $ x /= y
@@ -457,6 +459,7 @@ operate' NotEqual (Decimal x) (Number y) = Right $ Boolean $ x /= (fromInteger y
 operate' NotEqual (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) /= y
 operate' NotEqual Nil Nil = Right $ Boolean False
 operate' NotEqual (Text t1) (Text t2) = Right $ Boolean $ t1 /= t2
+operate' Equal (Boolean x) (Boolean y) = Right $ Boolean $ x /= y
 operate' NotEqual _ _ = Right $ Boolean False
 
 operate' op x y = Left $ "Incompatible operands! Tried to apply " ++
@@ -475,7 +478,7 @@ evalStmts (stmt:stmts) = do
         Right value -> return (Right value)
 
 evalStmt :: Statement -> Psnodig (Either () Value)
-evalStmt (Assignment assTarget assValue) = do -- nødvendig med do her?
+evalStmt (Assignment assTarget assValue) =
     case assValue of
         (ExpressionValue expr) -> do
             value <- evalExpr expr
@@ -537,9 +540,9 @@ evalStmt (HashStmt stmt) =
 evalStmt (AnnotationStmt _ stmts) =
     evalStmts stmts
 
--- fix these ?
-evalStmt (Break) = undefined
-evalStmt (Continue) = undefined
+-- Should be implemented at some point.
+evalStmt Break = throwError' $ BadArgument "No implementation for `Break`. Avoid usage when executing programs."
+evalStmt Continue = throwError' $ BadArgument "No implementation for `Continue`. Avoid usage when executing programs."
 
 
 evalElse :: Else -> Psnodig (Either () Value)
@@ -641,7 +644,7 @@ callFunction (FunctionCall "max" args) = do
 
 callFunction (FunctionCall "get" args) = do
     when (length args /= 2)
-        $ throwError' $ WrongNumberOfArguments "Function 'get' takes 2 arguments: get( value , map )."
+        $ throwError' $ WrongNumberOfArguments "Function 'get' takes 2 arguments: get( key , map )."
     let mapExpr = head $ tail args
     case mapExpr of
         VariableExp mapName -> do
@@ -689,14 +692,17 @@ callFunction (FunctionCall "in" args) = do
     when (length args /= 2)
         $ throwError' $ WrongNumberOfArguments "Function 'in' takes 2 arguments: add( value , list/set/map )."
     let target = head args
-    maybeCollection <- evalExpr (args !! 1)
+    maybeCollection <- evalExpr (head $ tail args)
     case maybeCollection of
-        List l ->
-            return $ Boolean $ elem target l
-        HashSet hs ->
-            return $ Boolean $ Set.member target hs
-        HashMap hm ->
-            return $ Boolean $ case Map.lookup target hm of
+        List l -> do
+            targetValue <- evalExpr target
+            return $ Boolean $ elem (Constant targetValue) l
+        HashSet hs -> do
+            targetValue <- evalExpr target
+            return $ Boolean $ Set.member (Constant targetValue) hs
+        HashMap hm -> do
+            targetValue <- evalExpr target
+            return $ Boolean $ case Map.lookup (Constant targetValue) hm of
                 Just _ -> True
                 Nothing -> False
         _ -> throwError' $ BadArgument "Second argument of function `in` must be of type List, HashSet, or HashMap."
