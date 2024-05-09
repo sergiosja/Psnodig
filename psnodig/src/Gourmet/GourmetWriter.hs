@@ -1,4 +1,11 @@
-module Gourmet.GourmetWriter (writeGourmet) where
+module Gourmet.GourmetWriter
+    ( writeGourmet
+    , writeValue
+    , writeProgramDescription
+    , writeExpr
+    , writeStmt
+    , writeStructDecl
+    ) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -14,8 +21,8 @@ addIndents n = replicate n '\t'
 
 writeArgs :: [Expression] -> String -> GourmetWriter ()
 writeArgs [] b = tell b
-writeArgs [x] b = writeExp x >> tell b
-writeArgs (x:y:ys) b = writeExp x >> tell ", " >> writeArgs (y:ys) b
+writeArgs [x] b = writeExpr x >> tell b
+writeArgs (x:y:ys) b = writeExpr x >> tell ", " >> writeArgs (y:ys) b
 
 -- Writer
 
@@ -32,7 +39,7 @@ writeStructDecl (StructDecl name args) = do
 
 writeStructField :: StructField -> GourmetWriter ()
 writeStructField (StructField expr1 expr2) =
-   writeExp expr1 >> tell "." >> writeExp expr2
+   writeExpr expr1 >> tell "." >> writeExpr expr2
 
 writeStruct :: Struct -> GourmetWriter ()
 writeStruct (Struct name args) = do
@@ -47,7 +54,7 @@ writeValue (Boolean bool) =
     tell $ if bool == True then "true" else "false"
 writeValue (Number n) = tell $ show n
 writeValue (Decimal d) = tell $ show d
-writeValue (Text str) = tell str
+writeValue (Text str) = tell $ "\"" ++ str ++ "\""
 writeValue (List exprs) = do
     tell "["
     writeArgs exprs "]"
@@ -66,28 +73,28 @@ writeValue (HashMap hmap) = do
 writeValue (StructVal _) = undefined -- these aren't parsed
 
 writePair :: (Expression, Expression) -> GourmetWriter ()
-writePair (x, y) = writeExp x >> tell ": " >> writeExp y
+writePair (x, y) = writeExpr x >> tell ": " >> writeExpr y
 
 -- Expressions
 
-writeExp :: Expression -> GourmetWriter ()
-writeExp (Constant v) = writeValue v
-writeExp (VariableExp var) = tell var
-writeExp (BinaryExp op exp1 exp2) = do
-    writeExp exp1
+writeExpr :: Expression -> GourmetWriter ()
+writeExpr (Constant v) = writeValue v
+writeExpr (VariableExp var) = tell var
+writeExpr (BinaryExp op exp1 exp2) = do
+    writeExpr exp1
     writeOp op
-    writeExp exp2
-writeExp (CallExp functioncall) = do
+    writeExpr exp2
+writeExpr (CallExp functioncall) = do
     writeFunctionCall functioncall
-writeExp (ListIndex name indexes) = do
+writeExpr (ListIndex name indexes) = do
     tell name
-    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes
-writeExp (Not expr) = do
+    mapM_ (\x -> tell "[" >> writeExpr x >> tell "]") indexes
+writeExpr (Not expr) = do
     tell $ "not "
-    writeExp expr
-writeExp (StructExpr struct) =
+    writeExpr expr
+writeExpr (StructExpr struct) =
     writeStruct struct
-writeExp (StructFieldExp structField) =
+writeExpr (StructFieldExp structField) =
     writeStructField structField
 
 writeFunctionCall :: FunctionCall -> GourmetWriter ()
@@ -99,12 +106,12 @@ writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
 writeAssignmentTarget (VariableTarget var) = tell var
 writeAssignmentTarget (ListIndexTarget var indexes) = do
     tell var
-    mapM_ (\x -> tell "[" >> writeExp x >> tell "]") indexes >> tell " "
+    mapM_ (\x -> tell "[" >> writeExpr x >> tell "]") indexes
 writeAssignmentTarget (StructFieldTarget struct) =
     writeStructField struct
 
 writeAssignmentValue :: AssignmentValue -> GourmetWriter ()
-writeAssignmentValue (ExpressionValue expr) = writeExp expr
+writeAssignmentValue (ExpressionValue expr) = writeExpr expr
 writeAssignmentValue (StructValue struct) = writeStruct struct
 
 writeStmt :: Statement -> Int -> GourmetWriter ()
@@ -114,27 +121,27 @@ writeStmt (Assignment target value) _ = do
     writeAssignmentValue value
 writeStmt (Loop expr stmts) indent = do
     tell "while "
-    writeExp expr
+    writeExpr expr
     tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (ForEach item expr stmts) indent = do
     tell $ "for " ++ item ++ " := "
-    writeExp expr
+    writeExpr expr
     tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (For item from to stmts) indent = do
     tell $ "for " ++ item ++ " := "
-    writeExp from
+    writeExpr from
     tell ", "
-    writeExp to
-    tell "{\n"
+    writeExpr to
+    tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 writeStmt (If expr stmts maybeElse) indent = do
     tell "if "
-    writeExp expr
+    writeExpr expr
     tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
@@ -143,7 +150,7 @@ writeStmt (If expr stmts maybeElse) indent = do
         Nothing -> return ()
 writeStmt (Return expr) _ = do
     tell "return "
-    writeExp expr
+    writeExpr expr
 writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
 writeStmt (HashStmt stmt) indent = do
@@ -160,7 +167,7 @@ writeStmt Continue _ =
 
 writeElse :: Else -> Int -> GourmetWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
-    tell " else if " >> writeExp expr >> tell " {\n"
+    tell " else if " >> writeExpr expr >> tell " {\n"
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
     case maybeElse of
@@ -197,8 +204,8 @@ writeOp GreaterThan = tell " > "
 writeOp GreaterThanEqual = tell " >= "
 writeOp Equal = tell " == "
 writeOp NotEqual = tell " != "
-writeOp And = tell " and "
-writeOp Or = tell " or "
+writeOp And = tell " && "
+writeOp Or = tell " || "
 writeOp Modulo = tell " % "
 
 writeProgramDescription :: Maybe ProgramDescription -> GourmetWriter ()
