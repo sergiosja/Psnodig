@@ -2,23 +2,30 @@ module Main (main) where
 
 -- Psnodig syntax
 import Syntax
-import Interpreter (ExecutionState(..), RuntimeError(RuntimeErrorWithOutput), runPsnodig)
+import Interpreter
+    ( ExecutionState(..)
+    , RuntimeError(RuntimeErrorWithOutput)
+    , runPsnodig
+    )
 
--- Pytite lang
--- import Petite.PetiteParser (parsePetite)
--- import Petite.PetiteTranspiler (transpilePetite)
+-- Pytite
+import Pytite.PytiteWriter (writePytite)
 
--- Gourmet lang
+-- Gourmet
 import Gourmet.GourmetParser (parseGourmet)
 import Gourmet.GourmetWriter (writeGourmet)
 
--- LaTeX
-import LaTeX.Flowcharts (Environment(..), writeFlowchart)
+-- Pseudocode
 import LaTeX.LatexWriter (writeLatex)
 import LaTeX.LatexEnv (extractEnv)
 
+-- Flowcharts
+import LaTeX.Flowcharts
+    ( Environment(..)
+    , writeFlowchart
+    )
+
 -- External imports
--- import qualified Data.Map as Map
 import System.Environment (getArgs)
 import System.Process (callCommand)
 import System.Exit (die)
@@ -32,6 +39,7 @@ main :: IO ()
 main = do
     args <- getArgs
     case args of
+        ["help"] -> putStrLn psnodigHelp
         [filename] -> do
             p <- readFile filename
             interpret p
@@ -53,7 +61,24 @@ main = do
         ["gourmet", filename] -> do
             p <- readFile filename
             g2g p
-        _ -> die "Usage:\n stack run -- <filename>" -- gjøre denne stor og fin! feks ved å skrive <stack run -- "help"> ellerno
+        ["pytite", filename] -> do
+            p <- readFile filename
+            g2p p
+        _ -> die "No parse for provided arguments. Run `psnodig help` to see usage."
+
+psnodigHelp :: String
+psnodigHelp =
+    "Psnodig - a general transpiler with options for pseudocode and flowcharts.\n\n" ++
+    "Available options:\n\n" ++
+    "<psnodig program>\t\t: Parses the program and runs it through the interpreter.\n\n" ++
+    "<psnodig ast program>\t\t: Prints the program's AST to the terminal.\n\n" ++
+    "<psnodig tbp program>\t\t: Transpiles the program to TBP in LaTeX.\n" ++
+    "<psnodig tbp pdf program>\t: The same as above, but also compiles the LaTeX file to a PDF.\n\n" ++
+    "<psnodig ibp program>\t\t: Transpiles the program to IBP in LaTeX.\n" ++
+    "<psnodig ibp pdf program>\t: The same as above, but also compiles the LaTeX file to a PDF.\n\n" ++
+    "<psnodig gourmet program>\t: Transpiles the program to the equivalent in Gourmet.\n" ++
+    "<psnodig pytite program>\t: Transpiles the program to the equivalent in Pytite.\n\n" ++
+    "<psnodig help>\t\t\t: Brings you back here!\n"
 
 makeTBP :: String -> String -> Bool -> IO ()
 makeTBP program filename pdf = do
@@ -85,6 +110,15 @@ g2g program = do
         (Right p) ->
             let transpiled = execWriter $ writeGourmet p
             in writeFile "algo.gt" transpiled
+        (Left err) -> putStrLn $ show err
+
+g2p :: String -> IO ()
+g2p program = do
+    let parsed = parse parseGourmet "" program
+    case parsed of
+        (Right p) ->
+            let transpiled = execWriter $ writePytite p
+            in writeFile "algo.py" transpiled
         (Left err) -> putStrLn $ show err
 
 getAST :: String -> IO ()
