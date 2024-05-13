@@ -44,14 +44,14 @@ testProgram = TestList
         ~?= "struct Person {\n\tage int\n}\n\n"
 
     , "write program with just function declaration"
-        ~: let res = execWriter $ writeGourmet (Program Nothing [] [Function "f" [] [Return (Constant (Number 1))]] Nothing)
+        ~: let res = execWriter $ writeGourmet (Program Nothing [] [FunctionDecl "f" [] [Return (Constant (Number 1))]] Nothing)
            in res
         ~?= "func f() {\n\treturn 1\n}\n\n"
 
     , "write simple program"
         ~: let res = execWriter $ writeGourmet (Program Nothing
                                                         []
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
+                                                        [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
                                                         (Just (FunctionCall "f" [Constant (Number 1), Constant (Number 2)])))
            in res
         ~?= "func f(x int, y int) {\n\treturn x + y\n}\n\nf(1, 2)"
@@ -59,7 +59,7 @@ testProgram = TestList
     , "write program with struct"
         ~: let res = execWriter $ writeGourmet (Program Nothing
                                                         [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                                                        [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                                                         (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
            in res
         ~?= "struct City {\n\tlat double,\n\tlon double\n}\n\nfunc f(x int, y int) {\n\treturn struct City(x, y)\n}\n\nf(68.04, 16.08)"
@@ -67,7 +67,7 @@ testProgram = TestList
     , "write full program"
         ~: let res = execWriter $ writeGourmet (Program (Just (ProgramDescription "Two decimal numbers x and y." "A new struct with x and y as latitude and longiture values."))
                                                         [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                                                        [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                                                         (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
            in res
         ~?= "? Two decimal numbers x and y. ?\n! A new struct with x and y as latitude and longiture values. !\n\nstruct City {\n\tlat double,\n\tlon double\n}\n\nfunc f(x int, y int) {\n\treturn struct City(x, y)\n}\n\nf(68.04, 16.08)"
@@ -188,12 +188,12 @@ testStatements = TestList
            in res
         ~?= "@{p <- choosePivot(liste)}{\n\tp := liste[0]\n}"
 
-    , "write stmt"
+    , "write break stmt"
         ~: let res = execWriter $ writeStmt Break 0
            in res
         ~?= "break"
 
-    , "write stmt"
+    , "write continue stmt"
         ~: let res = execWriter $ writeStmt Continue 0
            in res
         ~?= "continue"

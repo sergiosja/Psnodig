@@ -33,41 +33,50 @@ testProgram = TestList
         ~?= ""
 
     , "write program with just description"
-        ~: let res = execWriter $ runReaderT (writeLatex (Program (Just (ProgramDescription "There is no program." "Thus nothing is returned.")) [] [] Nothing)) ([], [])
+        ~: let res = execWriter $ runReaderT (writeLatex (Program (Just (ProgramDescription "There is no program." "Thus nothing is returned."))
+                                                                  []
+                                                                  []
+                                                                  Nothing)) ([], [])
            in res
         ~?= ""
 
     , "write program with just struct"
-        ~: let res = execWriter $ runReaderT (writeLatex (Program Nothing [StructDecl "Person" [Argument "age" "int"]] [] Nothing)) ([], [])
+        ~: let res = execWriter $ runReaderT (writeLatex (Program Nothing
+                                                                  [StructDecl "Person" [Argument "age" "int"]]
+                                                                  []
+                                                                  Nothing)) ([], [])
            in res
         ~?= ""
 
     , "write program with just function declaration"
-        ~: let res = execWriter $ runReaderT (writeLatex (Program Nothing [] [Function "f" [] [Return (Constant (Number 1))]] Nothing)) ([], [])
+        ~: let res = execWriter $ runReaderT (writeLatex (Program Nothing
+                                                                  []
+                                                                  [FunctionDecl "f" [] [Return (Constant (Number 1))]]
+                                                                  Nothing)) ([], [])
            in res
         ~?= "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n\\proc{$\\f()$}{\n\t\\Return 1 \\;\n}\n\\caption{f}\n\\end{algorithm}\n\n\\end{document}"
 
     , "write simple program"
         ~: let res = execWriter $ runReaderT (writeLatex (Program Nothing
-                                                        []
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
-                                                        (Just (FunctionCall "f" [Constant (Number 1), Constant (Number 2)])))) ([], [])
+                                                                  []
+                                                                  [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
+                                                                  (Just (FunctionCall "f" [Constant (Number 1), Constant (Number 2)])))) ([], [])
            in res
-        ~?= "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n\\proc{$\\f(x, y)$}{\n\t\\Return x + y \\;\n}\n\\caption{f}\n\\end{algorithm}\n\n\\end{document}"
+        ~?= "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n\\proc{$\\f(x, y)$}{\n\t\\Return x $+$ y \\;\n}\n\\caption{f}\n\\end{algorithm}\n\n\\end{document}"
 
     , "write program with struct"
         ~: let res = execWriter $ runReaderT (writeLatex (Program Nothing
-                                                        [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
-                                                        (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))) ([], [])
+                                                                  [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
+                                                                  [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                                                                  (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))) ([], [])
            in res
         ~?= "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n\\proc{$\\f(x, y)$}{\n\t\\Return \\City(x, y) \\;\n}\n\\caption{f}\n\\end{algorithm}\n\n\\end{document}"
 
     , "write full program"
         ~: let res = execWriter $ runReaderT (writeLatex (Program (Just (ProgramDescription "Two decimal numbers x and y." "A new struct with x and y as latitude and longiture values."))
-                                                        [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
-                                                        (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))) ([], [])
+                                                                  [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
+                                                                  [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                                                                  (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))) ([], [])
            in res
         ~?= "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n\\KwIn{Two decimal numbers x and y.}\n\\KwOut{A new struct with x and y as latitude and longiture values.}\n\\proc{$\\f(x, y)$}{\n\t\\Return \\City(x, y) \\;\n}\n\\caption{f}\n\\end{algorithm}\n\n\\end{document}"
     ]
@@ -93,7 +102,7 @@ testStatements = TestList
         ~: let res = execWriter $ runReaderT (writeStmt (Loop (BinaryExp LessThan (VariableExp "x") (Constant (Number 10)))
                                             [Assignment (VariableTarget "x") (ExpressionValue (BinaryExp Plus (VariableExp "x") (Constant (Number 1))))]) 0) ([], [])
            in res
-        ~?= "\\While{$x < 10$}{\n\t\\texttt{x} $\\gets$ x + 1 \\;\n}"
+        ~?= "\\While{$x < 10$}{\n\t\\texttt{x} $\\gets$ x $+$ 1 \\;\n}"
 
     , "write if without else"
         ~: let res = execWriter $ runReaderT (writeStmt (If (BinaryExp Equal (VariableExp "x") (Constant (Number 10)))
@@ -168,12 +177,12 @@ testStatements = TestList
            in res
         ~?= "\\text{p <- choosePivot(liste)} \\;"
 
-    , "write stmt"
+    , "write break stmt"
         ~: let res = execWriter $ runReaderT (writeStmt Break 0) ([], [])
            in res
         ~?= "\\KwBreak \\;"
 
-    , "write stmt"
+    , "write continue stmt"
         ~: let res = execWriter $ runReaderT (writeStmt Continue 0) ([], [])
            in res
         ~?= "\\KwContinue \\;"

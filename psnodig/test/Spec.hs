@@ -6,10 +6,12 @@ import Writers.Pseudocode (testPseudocodeWriter)
 import InterpreterTest (testInterpreter)
 import Test.HUnit
 
+import Syntax
+
 main :: IO ()
 main = do
     putStrLn "TESTING INTERPRETER\n"
-    putStrLn $ runTestTT testInterpreter >>= return . show
+    runTestTT testInterpreter >>= print
 
     putStrLn "\n\n########################################"
 
@@ -20,7 +22,7 @@ main = do
 
     putStrLn "\n\nTESTING PSNODIG WRITERS\n"
     mapM_ (\writerTest -> writerTest >>= putStrLn) testSuiteWriters
-    
+
 
 testSuiteParsers :: [IO String]
 testSuiteParsers =

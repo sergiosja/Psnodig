@@ -44,33 +44,33 @@ testProgram = TestList
         ~?= "class Person:\n\tdef __init__(self, age):\n\t\tself.age = age\n\n\n"
 
     , "write program with just function declaration"
-        ~: let res = execWriter $ writePython (Program Nothing [] [Function "f" [] [Return (Constant (Number 1))]] Nothing)
+        ~: let res = execWriter $ writePython (Program Nothing [] [FunctionDecl "f" [] [Return (Constant (Number 1))]] Nothing)
            in res
-        ~?= "def f():\n\treturn 1\n\n\n"
+        ~?= "def f():\n\treturn 1\n\n"
 
     , "write simple program"
         ~: let res = execWriter $ writePython (Program Nothing
                                                         []
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
+                                                        [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
                                                         (Just (FunctionCall "f" [Constant (Number 1), Constant (Number 2)])))
            in res
-        ~?= "def f(x: int, y: int):\n\treturn x + y\n\n\nf(1, 2)"
+        ~?= "def f(x: int, y: int):\n\treturn x + y\n\nf(1, 2)"
 
     , "write program with struct"
         ~: let res = execWriter $ writePython (Program Nothing
                                                         [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                                                        [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                                                         (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
            in res
-        ~?= "class City:\n\tdef __init__(self, lat, lon):\n\t\tself.lat = lat\n\t\tself.lon = lon\n\n\ndef f(x: int, y: int):\n\treturn City(x, y)\n\n\nf(68.04, 16.08)"
+        ~?= "class City:\n\tdef __init__(self, lat, lon):\n\t\tself.lat = lat\n\t\tself.lon = lon\n\n\ndef f(x: int, y: int):\n\treturn City(x, y)\n\nf(68.04, 16.08)"
 
     , "write full program"
         ~: let res = execWriter $ writePython (Program (Just (ProgramDescription "Two decimal numbers x and y." "A new struct with x and y as latitude and longiture values."))
                                                         [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                                                        [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                                                        [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                                                         (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
            in res
-        ~?= "# Input: Two decimal numbers x and y.\n# Output: A new struct with x and y as latitude and longiture values.\n\nclass City:\n\tdef __init__(self, lat, lon):\n\t\tself.lat = lat\n\t\tself.lon = lon\n\n\ndef f(x: int, y: int):\n\treturn City(x, y)\n\n\nf(68.04, 16.08)"
+        ~?= "# Input: Two decimal numbers x and y.\n# Output: A new struct with x and y as latitude and longiture values.\n\nclass City:\n\tdef __init__(self, lat, lon):\n\t\tself.lat = lat\n\t\tself.lon = lon\n\n\ndef f(x: int, y: int):\n\treturn City(x, y)\n\nf(68.04, 16.08)"
     ]
 
 
@@ -188,12 +188,12 @@ testStatements = TestList
            in res
         ~?= "p = liste[0]\n"
 
-    , "write stmt"
+    , "write break stmt"
         ~: let res = execWriter $ writeStmt Break 0
            in res
         ~?= "break"
 
-    , "write stmt"
+    , "write continue stmt"
         ~: let res = execWriter $ writeStmt Continue 0
            in res
         ~?= "continue"
