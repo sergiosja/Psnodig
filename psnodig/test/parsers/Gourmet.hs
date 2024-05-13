@@ -42,27 +42,27 @@ testProgram = TestList
 
     , "parse program with just function declaration"
         ~: parse parseGourmet "" "func f() { return 1 }"
-        ~?= Right (Program Nothing [] [Function "f" [] [Return (Constant (Number 1))]] Nothing)
+        ~?= Right (Program Nothing [] [FunctionDecl "f" [] [Return (Constant (Number 1))]] Nothing)
 
     , "parse simple program"
         ~: parse parseGourmet "" "func f(x int, y int) { return x + y } f(1, 2)"
         ~?= Right (Program Nothing
                            []
-                           [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
+                           [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (BinaryExp Plus (VariableExp "x") (VariableExp "y"))]]
                            (Just (FunctionCall "f" [Constant (Number 1), Constant (Number 2)])))
 
     , "parse program with struct"
         ~: parse parseGourmet "" "struct City { lat double, lon double } func f(x int, y int) { return struct City(x, y) } f(68.04, 16.08)"
         ~?= Right (Program Nothing
                            [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                           [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                           [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                            (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
 
     , "parse full program"
         ~: parse parseGourmet "" "?Two decimal numbers x and y.? !A new struct with x and y as latitude and longiture values.! struct City { lat double, lon double } func f(x int, y int) { return struct City(x, y) } f(68.04, 16.08)"
         ~?= Right (Program (Just (ProgramDescription "Two decimal numbers x and y." "A new struct with x and y as latitude and longiture values."))
                            [StructDecl "City" [Argument "lat" "double", Argument "lon" "double"]]
-                           [Function "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
+                           [FunctionDecl "f" [Argument "x" "int", Argument "y" "int"] [Return (StructExpr (Struct "City" [VariableExp "x", VariableExp "y"]))]]
                            (Just (FunctionCall "f" [Constant (Decimal 68.04), Constant (Decimal 16.08)])))
     ]
 
