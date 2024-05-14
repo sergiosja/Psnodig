@@ -1,3 +1,7 @@
 \chapter*{Abstract}
 
-% Coming soon
+Pseudocode is commonly used to provide a description of an algorithm at a suitable level of abstraction. Pseudocode is technically void of any syntax rules, allowing us to omit or de-emphasise certain aspects of our programs. However, with this amount of freedom, it is easy to accidentally misplace parantheses, fail to consistently rename variables, or even demonstrate wrong formulas. Additionally, we are now tasked with maintaining both versions. \\
+
+In this thesis, we present \textbf{Psnodig}, a transpiler which converts source code to presentation-only based formats pseudocode and flowcharts. This way, we are able to write our programs in an imperative, high-level language, test them, and when satisfied, change their abstraction levels for presentation. This way, we are only maintaining one version, and the burden of manually ensuring consistency and searching for the appropriate level of abstraction is lifted off our shoulders. \\
+
+Psnodig aims to be \textbf{extensible} (adding parsers at will), \textbf{executable} (running the source code we write), and \textbf{presentable} (automatically converting the source code to a presentation-only version). To evaluate these properties, selected algorithms from Algorithm Design and Applications by Michael T. Goodrich and Roberto Tamassia were chosen as a case study. The results show us that Psnodig does indeed posess all these traits, being the first of its kind to our knowledge.
