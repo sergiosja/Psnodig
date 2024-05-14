@@ -1,16 +1,22 @@
 \chapter{Implementation}
 
-This chapter will present concrete implementations of Psnodig and its parts. As previously mentioned, Psnodig is really just an intermediate representation of a computer program. The tool is materialised through a parser and multiple writers, all written in Haskell. \\
+This chapter will present concrete implementations of \textbf{Psnodig} and its parts. As previously mentioned, Psnodig is really just an intermediate representation of a computer program. The tool is materialised through a parser and multiple writers, all written in Haskell. \\
 
-First, we will roughly discuss Monads, which are essential to all of the implementations. Then, we will look at how the interpreter, parser and each of our writers are created. \\
+First, we introduce Psnodig's data types in Haskell, before moving on to Monads, which essentially is the heart of all our implementations. Then, we delve deeper into how the interpreter, parser and each of our writers work. Lastly, we explain how we tested each part of the Psnodig tool.
 
 \section{Psnodig}
 
-In the previous chapter, we looked at Psnodig syntax from the point of its EBNF notation. \Cref{Psnodig's data types in Haskell.} shows the raw data types which define the tool's syntax. \\
+\Cref{Psnodig's data types in Haskell.} shows the data types which define Psnodig's syntax.\footnote{The file containing these data types can be accessed here: \url{https://github.com/sergiosja/Master/blob/master/psnodig/src/Syntax.hs}.} The entry point of a Psnodig program is \textbf{Program}, which contains an optional \textbf{Program Description}, a list of \textbf{Struct} declarations, a list of \textbf{Function} declarations, and an optional \textbf{Function Call}. The latter is used as an entry point for execution. The program description is made up of two \textbf{String} values, tailored to produce descriptions for TBP. \\
+
+The \textbf{Argument} type is just like the program description type, made up of two string values. It is used to provide type hints to developers, and is required for both struct- and function declarations. However, the second argument is not considered during execution, and is discarded when transpiling to TBP and IBP. Therefore, we are free to declare arguments like \texttt{x int, y string} if we wish to. \\
+
+The \textbf{Function Call} can be both an expression and a statement. Even though if is not made explicit here, all functions that are executed have to return something. Therefore, doing \texttt{x := f()} will never lead to undefined behaviour, because the interpreter will make sure that \texttt{f} returns an appropriate value. \\
 
 \begin{lstlisting}[caption={Psnodig's data types in Haskell.}, captionpos=b, label={Psnodig's data types in Haskell.}]
-data Program = Program [StructDecl] [Function] 
-                       (Maybe FunctionCall)
+data Program = Program (Maybe ProgramDescription) [StructDecl]
+                       [FunctionDecl] (Maybe FunctionCall)
+
+data ProgramDescription = ProgramDescription String String
 
 data StructDecl = StructDecl String [Argument]
 
@@ -18,7 +24,7 @@ data Struct = Struct String [Expression]
 
 data StructField = StructField Expression Expression
 
-data Function = Function String [Argument] [Statement]
+data FunctionDecl = FunctionDecl String [Argument] [Statement]
 
 data FunctionCall = FunctionCall String [Expression]
 
@@ -89,85 +95,97 @@ data Value =
 
 \section{Monads}
 
-First introduced in a programming context by Philip Wadler back in the 90's, monads allow us to structure computations within programs~\cite{originOfMonads, leifharaldMaster}. They are a fundamental pattern that harmonise the needs of imperative and functional programming. They preserve the benefits of functional purity, whilst elevating the expressiveness of our code. \\
+First introduced in a programming context by Philip Wadler back in the 90's, monads allow us to structure computations within programs. They are a fundamental pattern that harmonise the needs of imperative and functional programming. They preserve the benefits of functional purity, whilst elevating the expressiveness of our code~\cite{originOfMonads, leifharaldMaster}. \\
 
-Haskell is a purely functional programming language~\cite{whatIsHaskell}. In this paradigm, functions' output values are solely determined by their input values. \textit{Side effects} are operations that occur outside a function's scope, somehow affecting or depending on an external state. Monads are a way of keeping the immutable and predictible nature of our functions, whilst simultaneously working with the ``outside world''. \\
+Haskell is a purely \textit{functional} programming language. In this paradigm, functions' output values are solely determined by their input values~\cite{whatIsHaskell}. Operations that occur outside the scope of a function, affecting or depending on an external state, are referred to as \textit{side effects}. Monads are a way of keeping the immutable and predictible nature of our functions, whilst simultaneously working with the ``outside world''. \\
 
-Monads play a vital role in all of our main implementations. For instance, the interpreter uses monads to modify a global state, and our TBP writer uses monads to read from an external environment. \\
+Monads play a vital role in all of our main implementations. For instance, the interpreter uses monads to modify a global state, and our TBP writer uses monads to read from an external environment. To create our parser we employed \textbf{Parsec}, which refers to itself as a \textit{monad transformer}~\cite{parsec}. \\
 
-We also utilise monads for more effective error handling, mainly in our interpreter. We use the \textbf{Maybe} monad, which returns either \texttt{Just value} or \texttt{Nothing}, and the \textbf{Either} monad, which returns either \texttt{Left value} or \texttt{Right value}. \\
+We also take advantage of monads for more effective error handling, mainly in our interpreter. We use the \textbf{Maybe} monad, which returns either \texttt{Just a} or \texttt{Nothing}, and the \textbf{Either} monad, which returns either \texttt{Left a} or \texttt{Right b}. \\
 
-\texttt{Maybe} is used for lookups, for instance when trying to access the value of a variable. Thus, we either return the value, or \texttt{Nothing}, if it is not already bound. \texttt{Either} is used when we expect one of two values, though the left side is often associated with an error. For instance, running a Psnodig program will yield either an error, or the state of the finished program. \\
-
-The remaining implementations in this chapter will for the most part revolve around the monad we opted for.
+\texttt{Maybe} is used for lookups, for instance when trying to access the value of a variable. We either return the value \texttt{a}, or \texttt{Nothing}, if it is not already bound. \texttt{Either} is used when we expect one of two values, though the left side is commonly used to provide an error message. For instance, running a Psnodig program will yield either an error message, or the state of the finished program. \\
 
 \section{Interpreter}
 
 \subsection{Monad}
 
-The interpreter is built around our monad of choice, \textbf{StateT ExecutionState (ExceptT RuntimeError IO)}. It arguably looks a bit heavy, so let us break it down. The main point of our monad is \texttt{StateT}, whose signature is \texttt{StateT s m a}.\footnote{More documentation can be found at~\url{https://hackage.haskell.org/package/transformers-0.6.1.1/docs/Control-Monad-Trans-State-Lazy.html\#g:2}} As you can see, it takes three arguments: some state \texttt{s}, an inner monad \texttt{m}, and lastly \texttt{a}, the type of the result of applying the monad.
+The interpreter is built on a \textbf{StateT ExecutionState (ExceptT RuntimeError IO)} monad. The main point is \texttt{StateT}, whose signature is \texttt{StateT s m a}.\footnote{More documentation can be found here: \url{https://hackage.haskell.org/package/transformers-0.6.1.1/docs/Control-Monad-Trans-State-Lazy.html\#g:2}} As we can see, it takes three arguments: some state \texttt{s}, an inner monad \texttt{m}, and lastly \texttt{a}, the type of the result of applying the monad.
 
 \subsubsection{ExecutionState}
 
-The state we apply is \texttt{ExecutionState}, fleshed out in \Cref{psnodigInterpreterState}. It is a compound type with named fields, and closely resembles a struct in programming languages like Go and C. Applying \texttt{StateT} allows us to maintain and operate on this state throughout computations. \\
+The state we apply to our monad is \texttt{ExecutionState}, fleshed out in \Cref{psnodigInterpreterState}. It is a compound type with named fields, and closely resembles a struct in programming languages like Go and C.\footnote{And Gourmet, for that matter.} Using \texttt{StateT} allows us to maintain and operate on this state throughout computations. \\
 
 \begin{lstlisting}[caption={The Psnodig interpreter's state.}, captionpos=b, label={psnodigInterpreterState}]
 type StructDecls = Map.Map String [String]
-type FuncEnv = Map.Map String Function
+type FuncDecls = Map.Map String FunctionDecl
 type Scope = [[(String, Value)]]
 type ScopeStack = [Scope]
 
 data ExecutionState = ExecutionState
     { structDecls :: StructDecls
-    , funcEnv     :: FuncEnv
+    , funcDecls   :: FuncDecls
     , scopeStack  :: ScopeStack
     , output      :: [String]
     }
 \end{lstlisting}
 
-It contains \texttt{structDecls}, which is a declaration of structs. This is a mapping from struct names to their corresponding fields. For instance, the value \texttt{StructDecl "Person" [Argument "name" "txt", Argument "age" "int"]} is saved as a mapping from \texttt{"Person"} to \texttt{["name", "age"]}. \\
+The state contains \texttt{structDecls}, which is a declaration of structs. This is a mapping from struct names to their corresponding fields. For instance, the value \texttt{StructDecl "Person" [Argument "name" "txt", Argument "age" "int"]} is saved as a mapping from \texttt{"Person"} to \texttt{["name", "age"]}. As previously mentioned, the second value of arguments types is simply discarded. \\
 
-We also have \texttt{funcEnv}, which is a declaration of functions. It is a mapping from function names to the corresponding function values. If we call a function, we can look it up, bind the arguments to temporary values, and run the statements within the function body. The use of \texttt{Map} was primarily chosen due to its O(log n) lookups,\footnote{The entire Map documentation can be found at \url{https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html}} which beats the O(n) lookups of its \texttt{List} counterpart.\footnote{The entire List documentation can be found at \url{https://hackage.haskell.org/package/base-4.19.1.0/docs/Data-List.html}} \\
+We also have \texttt{funcDecls}, which is a declaration of functions. It is a mapping from function names to that function's values. If we call a function in our code, the interpreter looks it up, binds the arguments to temporary values, and runs the statements in the function body. The use of \texttt{Map} was primarily chosen due to its O(log n) lookups, which beats the O(n) lookups of its \texttt{List} counterpart~\cite{haskellMap, haskellList}. \\
 
 The third value in our state is the \texttt{scopeStack}. This is a triple nested list of \texttt{(String, Value)} pairs. A pair of this type is a binding, so writing \texttt{x := 23} will create the binding \texttt{("x", Number 23)}. The initial scope list is intended to be the base level scope of a function. \\
 
-The nesting accounts for loops and if-statements. Upon entering e.g. a while-loop, we push a new scope to the stack, and all variables created within this loop will die when we exit the loop. The last nesting introduced by \texttt{ScopeStack} accounts for functions. Each function has their own scope, much like any other programming language. \\
+The nesting accounts for loops and if-statements. Upon entering e.g. a while-loop, we push a new scope to the stack, and all variables created within this loop will die when we exit the loop. The last nesting introduced by \texttt{ScopeStack} accounts for functions: each function has its own scope. \\
 
 Lastly, our state takes care of \texttt{output}, which is a list of strings. This stores whatever we pass to the \texttt{print} function. If a program crashes, only the print-calls up until the crash will be presented in the terminal, which makes it a great tool for debugging. If a program runs uninterrupted, all print-calls will be presented in the terminal.
 
 \subsubsection{ExceptT}
 
-The inner monad that StateT operates over is \texttt{ExceptT RuntimeError IO}. This allows us to augment the \texttt{IO} monad with a value of type \texttt{RuntimeError}. The latter is several types of custom error messages, to locate the source of error easier. The entire list is shown in \Cref{psnodigErrorMsgs}. \\
+The inner monad that StateT operates over is \texttt{ExceptT RuntimeError IO}. This allows us to augment the \texttt{IO} monad with a value of type \texttt{RuntimeError}. The latter is a data type that encapsulates the various errors we can encounter at runtime, accompanied with a fitting error message. The entire list is presented in \Cref{psnodigErrorMsgs}. \\
 
-\begin{lstlisting}[caption={All error messages to be encountered in Psnodig.}, captionpos=b, label={psnodigErrorMsgs}]
+\begin{lstlisting}[caption={All error messages we can encounter in Psnodig.}, captionpos=b, label={psnodigErrorMsgs}]
 data RuntimeError =
       VariableNotFound String
+    | OutOfBounds String
     | FunctionNotFound String
     | StructNotFound String
     | ArithmeticError String
+    | ListNotFound String
     | BadArgument String
+    | InvalidStructField String
+    | NoImplementationError String
     | WrongNumberOfArguments String
     | NoReturnError String
-    | Error String
+    | MissingEntryPoint String
     | RuntimeErrorWithOutput [String] RuntimeError
-    deriving (Show)
 \end{lstlisting}
 
-What this really means is that we have a computation that does IO (prints to the terminal). If we encounter an error condition, we do not proceed with further computations, and instead return the error, which is also displayed in the terminal. This is also what allows us to print errors, by joining the current print calls to \texttt{RuntimeErrorWithOutput}, and followingly displaying them to the terminal before the error message.
+What this really means is that we have a computation that does IO (prints to the terminal). If we encounter an error condition, we do not proceed with further computations. Instead, we join the current print calls to \texttt{RuntimeErrorWithOutput}, and display them to the terminal before the error message. If we do not encounter any errors, we only output the results of the print calls.
 
-\subsection{Deviations from Psnodig Syntax}
+\subsection{Constraints}
 
-Even though Psnodig's syntax opens up for it, the interpreter does not currently support Break- and Continue statements. This would require a significant refactoring of our monad, and potentially a larger refactoring of the entire interpreter. \\
+Even though Psnodig's syntax opens up for it, the interpreter does not currently support break- and continue statements. This would require a significant refactoring of our monad, and potentially a larger refactoring of the entire interpreter. \\
 
-\section{Gourmet}
+The syntax also includes the statement value \texttt{ForEach String Expression [Statement]}. However, the interpreter only allows expressions that can be iterated: \texttt{Text}, \texttt{List}, \texttt{HashSet}, and \texttt{HashMap}. \\
 
-There are two tools related to Gourmet: a parser and a writer.
+As previously mentioned, every function invoked during execution must return a value. This is because function calls are also expressions, and the interpreter evaluated functions before applying them. \\
 
-\subsection{Parser}
+Take the function shown in \Cref{hashStmtInAction}, which does not return anything. Assigning its result to a variable or using it in a conditional statement within a loop is illogical. However, the program presented in \Cref{crazyProg} is syntactically correct, despite being semantically flawed. \\
 
-We used the Haskell library Parsec to write the parser for Gourmet. Parsec is an industrial-strength parser library, being simple, safe, and well documented.\footnote{The entire Parsec documentation can be found at \url{https://hackage.haskell.org/package/parsec}} It is monadic parser combinator library, which roughly means that it combines multiple smaller parsers using monadic abstraction. This allows us to write a parser very succinctly, describing each rule in more or less natural language. \\
+\begin{lstlisting}[caption={A syntactically correct Gourmet program, including three function call expressions.}, captionpos=b, label={crazyProg}]
+func g() {
+    x := f()
+    if x == f() {
+        return f()
+    }
+}
+\end{lstlisting}
 
-Parsec also lets us write our lexer and parser in one. The entire lexer is presented in \Cref{The Gourmet lexer.}, which takes up just 20 lines. It could have been presented with even fewer lines, but we have focused on readability instead of showboating. The lexer mainly defines the form of identifiers, comments and reserved names. \\
+\section{Gourmet Parser}
+
+We used the Haskell library \textbf{Parsec} to write the parser for Gourmet. Parsec is an industrial-strength parser library, being simple, safe, and well documented~\cite{parsec}. It is monadic parser combinator library, which roughly means that it combines multiple smaller parsers using monadic abstraction. This allows us to write a parser very succinctly, describing each rule in more or less natural language. \\
+
+Parsec also lets us write our lexer and parser in one. The entire lexer is presented in its entirety in \Cref{The Gourmet lexer.}, taking up no more than 20 lines. It specifies the syntax for identifiers and comments, and establishes reserved terms for operators and keywords. \\
 
 \begin{lstlisting}[caption={The Gourmet lexer.}, captionpos=b, label={The Gourmet lexer.}]
 lexer :: Token.TokenParser ()
@@ -192,21 +210,23 @@ lexer = Token.makeTokenParser emptyDef {
 }
 \end{lstlisting}
 
-\Cref{parsingGourmet} shows the entry function, and how programs are parsed. We parse all struct declarations, function declarations, and potentially a function call, before the program returns the resulting AST in a Parser context. \texttt{Many} means 0 or more, and \texttt{optionMaybe} means 0 or 1. This also reveals that any text written after the function call is simply ignored. \\
+\Cref{parsingGourmet} shows the entry function, and how programs are parsed. We parse all struct declarations, function declarations, and potentially a function call, before the program returns the accumulated AST in a Parser context. \texttt{Many} means 0 or more, and \texttt{optionMaybe} means 0 or 1. This also reveals that any text written after the function call is simply ignored. \\
 
 \begin{lstlisting}[caption={Parsing Gourmet programs.}, captionpos=b, label={parsingGourmet}]
 parseGourmet :: Parser Program
 parseGourmet = do
     whiteSpace
+    programDescription <- optionMaybe parseProgramDescription
     structs <- many parseStructDecl
-    funcs <- many parseFunction
+    funcs <- many parseFunctionDecl
     functioncall <- optionMaybe parseFunctionCall
-    return $\$$ Program structs funcs functioncall
+    return $\$$ Program programDescription structs funcs
+                     functioncall
 \end{lstlisting}
 
-We have opted for an applicative programming style when developing the parser, which means that we use applicative functors. The four central ones are \texttt{$<$\$$>$}, \texttt{$<$*$>$}, \texttt{*$>$}, and \texttt{$<$*}. An example where all are applied can be seen in \Cref{Parsing Gourmet function calls.}, where we parse function calls. Remember, the Psnodig FunctionCall data type is \texttt{FunctionCall String [Expression]}. \\
+We have opted for an applicative programming style when developing the parser, which means that we use applicative functors. The four we use are \texttt{$<$\$$>$}, \texttt{$<$*$>$}, \texttt{*$>$}, and \texttt{$<$*}. An example where all are applied can be seen in \Cref{Parsing Gourmet function calls.}, where we parse function calls. Remember, the Psnodig FunctionCall data type is \texttt{FunctionCall String [Expression]}. \\
 
-\texttt{$<$\$$>$} allows us to put everything on the right as arguments to \texttt{FunctionCall}. \texttt{$<$*} means that we parse both the left side and the right side, but only keep the left side. \texttt{*$>$} means the opposite. \texttt{$<$*$>$} means that we keep both. \\
+\texttt{$<$\$$>$} allows us to populate the type on the left side with the values on the right side. \texttt{$<$*} means that we parse both the left side and the right side, but only keep the left side. \texttt{*$>$} means the opposite. \texttt{$<$*$>$} means that we parse and subsequently keep both. \\
 
 \begin{lstlisting}[caption={Parsing Gourmet function calls.}, captionpos=b, label={Parsing Gourmet function calls.}]
 parseFunctionCall :: Parser FunctionCall
@@ -218,49 +238,73 @@ parseFunctionCall =
         <* reserved ")"
 \end{lstlisting}
 
-\subsection{Writer}
+\section{Gourmet Writer}
 
-Creating a writer when you already have a parser is manageable. In fact, the writer is more or less just a reverse engineering of the parser. The only potential difference between a Gourmet program we write, and the corresponding Gourmet program Psnodig can give us, is the formatting. \\
+The Gourmet writer lets us transpile programs written in Gourmet back to themselves. It is created by the same principles as the Gourmet parser: where our parser converts \texttt{1 + 1} to \texttt{BinaryExp Plus (Constant 1) (Constant 1)}, our writer converts \texttt{BinaryExp Plus (Constant 1) (Constant 1)} to \texttt{1 + 1}. \\
 
-Since Psnodig does not take formatting into consideration, it has no way of knowing the combination of whitespace we used in our program. Therefore, we use the function in \Cref{helperFunc} to add indentation. This is used when entering new scopes in loops and if-statements, to add readability to our programs. Thus, in a way Psnodig works like a linter: By transpiling our Gourmet programs, we receive semantically identical programs, but with the intended amount of whitespace. \\
+However, since Psnodig does not store information about formatting, the AST has no way of letting us know what combinations of whitespace existed in the original program. Therefore, the programs we write and the transpiled results we receive by Psnodig might vary when it comes to indentation and newlines. \\
 
-\begin{lstlisting}[caption={A function for adding indentation.}, captionpos=b, label={helperFunc}]
-addIndents :: Int -> String
-addIndents n = replicate n '\t'
-\end{lstlisting}
+The writer adds a tab when entering new scopes in loops and if-statements, and the statements inside a function are indented with a tab by default. Thus, in a way Psnodig works like a linter: by transpiling our Gourmet programs, we receive semantically identical programs, but with the intended amount of whitespace. \\
 
-The monad we opted for here is a simple \texttt{Writer String}. This allows computations to produce a String as the final result. We traverse the AST and use the \texttt{tell} function to write the corresponding Gourmet syntax. The final result is therefore just a combination of strings added together.
+The writer is built on a \texttt{Writer String} monad. We traverse the AST and use the \texttt{tell} function (a key function within the Writer monad) to convert AST nodes to the Gourmet equivalents in string form. Essentially, the function takes a string value and adds it to the monad's maintained log. As such, the final result is just a concatenated string.
 
 \section{Python Writer}
 
-The Python writer works exactly like the Gourmet writer, with the exception of a few differences in syntax, like using colons over curly braces. Except for this, the monad is the same, as well as helper functions like the one presented in \Cref{helperFunc}.
+The Python writer works exactly like the Gourmet writer, but converts ASTs to Python rather than Gourmet, naturally.
 
 \section{Pseudocode Writer}
 
-The monad we opted for was similar to the one of the Gourmet writer. However, before we write our pseudocode, another program skims the AST and grabs some valuable information. This informations, like function names and whether or not there are return statements, is then stored in a tuple of sets. The first set contains function names, and the second set contains keywords. The TBP writer then uses this information to utilise Algorithm2e better. \\
+The monad of choice for the pseudocode writer is similar to the one we used for the Gourmet- and Python writers. However, before converting the intermediate representation to pseudocode, another program skims the AST and extracts function names and relevant keywords. This information is stored in a tuple of sets, and the TBP writer uses the information to better take advantage of Algorithm2e formatting. \\
 
-The monad is \texttt{ReaderT Environment (Writer String)}. The last part is already covered in the previous section. However, we are now also working with \texttt{ReaderT Environment}. \texttt{ReaderT} adds the ability to read from a fixed environment. In our case, \texttt{Environment} is the set tuple that contains all the information collected from the AST.
+The pseudocode writer is built on a \texttt{ReaderT Environment (Writer String)} monad. The last part is already covered in the previous section. However, we are now also working with \texttt{ReaderT Environment}. \texttt{ReaderT} adds the ability to read from a fixed environment. In our case, \texttt{Environment} is the tuple that contains the information collected from the AST. \\
+
+We have two separate functions for adding function names and keywords as macros, presented in \Cref{writeFD} and \Cref{writeKW}, respectively. Calling \texttt{asks fst} gives us the set containing function declarations, and calling \texttt{asks snd} gives us the set containing keywords. The sets are then mapped over to create macros that utilise Algorithm2e's formatting. \\
+
+The syntax \texttt{(\textbackslash x -> ...)} is a way to write anonymous functions on the spot in Haskell. In this case, the function takes one argument: \texttt{x}. The code on the right hand side of the arrow is the function body. \texttt{++} is used to concatenate strings. \\
+
+\begin{lstlisting}[caption={Creating LaTeX macros for function declarations.}, captionpos=b, label={writeFD}]
+writeFunctionDecls :: Pseudocode ()
+writeFunctionDecls = do
+    funcs <- asks fst
+    mapM_ (\x -> tell ("\\SetKwFunction{" ++ x ++
+                       "}{" ++ x ++ "}\n"))
+          funcs
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Creating LaTeX macros for keywords.}, captionpos=b, label={writeKW}]
+writeKeywords :: Pseudocode ()
+writeKeywords = do
+    keywords <- asks snd
+    mapM_ (\x -> tell ("\\SetKw{Kw" ++ fstToUpper x ++
+                       "}{" ++ x ++ "}\n"))
+          keywords
+\end{lstlisting}
+
 
 \section{Flowchart Writer}
 
-The monad we used for the IBP monad is very similar to the one of the TBP writer, but instead of using \texttt{ReaderT}, we opted for \texttt{StateT}, like with our interpreter. \Cref{The IBP monad's environment type} shows the Environment type in its entirety. \\
+The flowchart writer is built on a \texttt{StateT Environment (Writer String)} monad. It is almost a combination of our interpreter and TBP writer: we maintain and operate on the state \texttt{Environment}, and the final result is a concatenated string. \Cref{The IBP monad's environment type} presents the state in question. \\
 
-\begin{lstlisting}[caption={The IBP monad's environment type.}, captionpos=b, label={The IBP monad's environment type}]
+\begin{lstlisting}[caption={The IBP writer's state.}, captionpos=b, label={The IBP monad's environment type}]
 data Environment = Environment
     { edges :: [(Int, String)]
     , lastId :: Int
-    , coreId :: [Int]
+    , coreIds :: [Int]
     , activeBranches :: [String]
     }    
 \end{lstlisting}
 
-Since we update node ids every time we enter a new statement, it can be challenging to keep track of which nodes should correspond to which statements. Because we wish to write out all the edges \textit{after} writing out all the nodes, we have decided to save them in the \textbf{edges} data type. The corresponding integer will be the id of the sender node. This lets us sort the list and write all edges after we have written our nodes. \\
+Since we update node ids every time we enter a new statement, it can be challenging to keep track of which nodes should correspond to which statements. Because we wish to write out all the edges \textit{after} writing out all the nodes, we have decided to save them in a list of integer-string pairs we call \texttt{edges}. \\
 
-All nodes should have a unique id to make them referenceable later on, and to know which ids we have already generated, we keep a global \textbf{lastId}. Also, when working with e.g. \texttt{while} statements, we need to know which node we have to point back to. This is what we use \textbf{coreId} for. It is a list, in the case of nested special statements, so that we do not lose the original core id before we reference it. \\
+The integer is the id of the node with the outgoing edge. This is useful when we finally write the edges, because we can sort them, and make the output a little bit more tidy. \\
 
-\forsup{Ordet jeg tenker på er noe som ``outgoing node'' istedenfor ``sender'', men sliter med å plassere det.}
+All nodes must have a unique id, to make them referenceable in the future. To know which ids we have already generated, we maintain an integer \texttt{lastId}. With each new node, the value is incremented by one. \\
 
-Lastly, we use \textbf{activeBranches} to deal with branches of if statements. As mentioned in Section 4.something, the last statement in an \texttt{If} must point to the next statement outside of the current \texttt{If}, as long as it is not a return statement. We populate this list with the id of all of these last statements (converted to strings, as we do not do arithmetic with them and they have to be converted at some point anyway). Later, after having processed the If statement, we use the ids to populate the \textbf{edges} list, pointing to the current id.
+Also, when working with the four control flow statements \texttt{Loop}, \texttt{ForEach}, \texttt{For}, and \texttt{If}, it is essential to track the original node. \Cref{flochartForEach} shows how the last inner statement of a \texttt{Loop} points back to the original condition, and \forsup{if exmpl} shows how we continue the program flow from the false-branch after writing the inner statements of the true-branch. \\
+
+Since each statement will force \texttt{lastId} to be updated, we keep a stack of integers named \texttt{coreIds}. This allows us to preserve the reference to each starting node, even when we process nested control flow statements. \\
+
+Lastly, we use \texttt{activeBranches} to deal with branches of if statements that do not end with a return statement. As mentioned in section 4.6.1, the last statement of an active branch must have an edge to the next statement outside of that branch. After processed the entire if-statement, we use these ids to create edges from them to the next generated id, before we put them in the \texttt{edges} list discussed earlier. \\
 
 \section{Testing}
 
@@ -306,14 +350,26 @@ We tested the same parts as we did with the Gourmet parser.\footnote{The Python 
 
 \subsubsection{Pseudocode}
 
-We also have test the conversion to TBP. When looking at smaller ASTs, the difference in TBP and Gourmet/Python is not that big. However, we lean heavily on the Algorithm2e when it comes to statements, and the test show that we utilise the package well. The tests also help us see that we balance the dollar signs (for math mode) well. \\
+We have tested the conversion to TBP. When looking at smaller ASTs, the difference in TBP and Gourmet/Python is not that big. However, we lean heavily on the Algorithm2e when it comes to statements, and the test show that we utilise the package well. The tests also help us see that we balance the dollar signs (for math mode) well. \\
 
-We have tested the same ASTs as before, except for the ones containing struct declarations, as they are not converted to TBP anyway.\footnote{The Pseudocode writer test suite can be accessed here: \url{https://github.com/sergiosja/Master/blob/master/psnodig/test/writers/Pseudocode.hs}}
+We have tested the same ASTs as before, except for the ones containing struct declarations, as they are not converted to TBP anyway.\footnote{The Pseudocode writer test suite can be accessed here: \url{https://github.com/sergiosja/Master/blob/master/psnodig/test/writers/Pseudocode.hs}.}
 
 \subsubsection{Flowcharts}
 
-\forsup{Not done yet}
+\forsup{Må legge inn}
 
 \subsection{Interpreter}
 
-\forsup{Not done yet}
+The interpreter is a big part of Psnodig, thus it was important to make sure that it is able to interpret individual parts of a Psnodig AST. We have 10 test suites in total, ranging from positive and negative statement tests, to custom functions tailored specifically to Psnodig. \\
+
+Binary expressions are tested thoroughly. This includes arithmetic operations with both single-type operands and multi-type operands. We have also tested all the relational operands, as well as the logical operands. This also includes negative tests, to make sure that we avoid things like argument mismatch, and that division by zero is handled by our interpreter rather than attempted executed. \\
+
+Since binary expressions take expressions as arguments, we have also tested that all constant expressions are successfully interpreted and evaluated to their corresponding values, to make sure that the binary expression tests are indeed receiving expected input. \\
+
+For the most part, the interpreter does not return anything when evaluating individual statements. Therefore, we have tested that providing legal arguments to statements types like assignment does not yield any errors. We have also tested compound statements, like For, ForEach, While, and If. Also here do we include negative tests, like trying to use undefined variables and structs. \\
+
+Two integral parts of Psnodig that make its grammar stand out from other grammars, are the Hash- and Annotation statements. We have tested that they work as intended: Hash statements are interpreted and evaluated like any other statements. The first argument of an Annotation statement is ignored, whilst the statements in its second argument are interpreted and evaluated. \\
+
+An integral part of the interpreter itself, are the built-in functions introduced in Section 4.2.2. They have all been tested to make sure they return values as expected. \\
+
+Lastly, we have tested entire programs, showing the interplay between their different parts. This includes working with structs, variables, as well as making sure that various built-in functions actually perform expected side effects.\footnote{The Pseudocode writer test suite can be accessed here: \url{https://github.com/sergiosja/Master/blob/master/psnodig/test/InterpreterTest.hs}.}

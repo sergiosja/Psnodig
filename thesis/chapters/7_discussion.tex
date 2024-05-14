@@ -4,15 +4,11 @@ In this chapter, we discuss the results we obtained in Section 6.
 
 \section{Reflections}
 
-\subsection{Usefulness}
-
-The Psnodig tool has not been user tested, thus it is difficult to mesure its concrete usefulness. However, we know multiple things. For one, there has been conducted research on tools transpiling source code to pseudocode. There has also been research promoting the use of flowcharts in education at the higher level. This leads us to believe that there \textit{is} use in a tool like Psnodig.
-
 \subsection{Notation}
 
-The TBP- and IBP writers work on a different abstraction level than those of Gourmet and Pytite. Where the two last ones are restricted to ASCII-based keywords like \texttt{!=} and \texttt{floor(x)}, the two first ones allow us to use more precise mathematical notation like \texttt{$\neq$} and \texttt{$\lfloor$x$\rfloor$}.
+The TBP- and IBP writers work on a different abstraction level than those of Gourmet and Python. Where the two last ones are restricted to ASCII-based keywords like \texttt{!=} and \texttt{floor(x)}, the two first ones allow us to use more precise mathematical notation like \texttt{$\neq$} and \texttt{$\lfloor$x$\rfloor$}.
 
-\subsection{Adding parsers}
+\subsection{Extensible}
 
 We currently only have one parser, for the Gourmet programming language. However, we do believe that similar parsers could be added, without much extra work. The parser is currently 336 lines, and we have also preferred readability to conciseness, so we believe it could be done in even fewer. \\
 
@@ -20,15 +16,23 @@ We currently only have one parser, for the Gourmet programming language. However
 
 An additional point is that the parser clearly works, as discussed in Section 5.8.1, but it is also able to produce the computer programs we wanted to evaluate with ease. Given the general nature of Psnodig, we believe one could follow more or less the same steps that we have, to add a new parser.
 
-\subsection{Adding writers}
+\subsubsection{Adding writers}
+
+\forsup{nei, ikke snakk om dette. men kanskje prøv å trekk en linje mellom str på gourmet parser og writer, og python writer, og si at det muligens kan være en liknende mengde jobb å legge til en parser (og parsere for liknende språk).}
+
+\forsup{husk, gourmet- og python writer er egt ikke målet med thesisen. det er FRA soruce code TIL pseudokode og flytdiagram.}
 
 Currently, Psnodig boasts four writers. Two of them are for programming languages, whilst the other two are presentation-only targets. \\
 
 The Gourmet writer works, as we are able to losslessly transpile Gourmet code back to itself. We saw it in Section 6.1, and we were also able to run the transpiled versions and obtain the same results as we did with the original ones. The Gourmet writer spans 224 lines of code, showing the general effort of adding a writer. \\
 
-The Pytite writer also works, as we are able to run the transpiled versions on the Python interpreter, and receive the same output as we did with Gourmet. The Pytite writer spans exactly 300 lines of code, showing the general effort of adding a writer for a subset of an existing language. \\
+The Python writer also works, as we are able to run the transpiled versions on the Python interpreter, and receive the same output as we did with Gourmet. The Python writer spans exactly 300 lines of code, showing the general effort of adding a writer for a subset of an existing language. \\
 
 The two presentation-only writers both target LaTeX. Both are able to convert a Psnodig AST to LaTeX, despite the formats being somewhat different. Particularly the IBP writer works on a very different abstraction level, primarily consisting of nodes and edges. However, in the end it worked well, and the writers span 323 and 538 lines of code, respectively.
+
+\subsection{Executable}
+
+It is clearly executable.
 
 \subsection{Does it hold up against the problem as a whole?}
 
@@ -36,15 +40,19 @@ We believe that Psnodig \textit{does} hold up against the problem definition int
 
 \section{Limitations}
 
-\subsection{Complex flowcharts}
+\subsection{Presentable}
+
+% Complex flowcharts
 
 We are able to successfully transpile all Psnodig data types to flowcharts on their own, and also construct more complex flowcharts, combining statements, expressions and more. \\
 
-However, a limitation is that of nested special statements, being \texttt{While}, \texttt{For}, \texttt{ForEach}, and \texttt{If}. The biggest problem is that each edge has a fixed size, and when nesting these types of statements, we risk them crashing into each other. This can be seen in \Cref{deleteBSTIBP}, where one of the statements shadow parts of another. We also see, in \Cref{dfsIBP}, that edges sometime interfere with nodes, making it a bit difficult to know where they actually point.
+However, a limitation is that of nested control flow statements, being \texttt{While}, \texttt{For}, \texttt{ForEach}, and \texttt{If}. The biggest problem is that each edge has a fixed size, and when nesting these types of statements, we risk them crashing into each other. This can be seen in \Cref{deleteBSTIBP}, where one of the statements shadow parts of another. We also see, in \Cref{dfsIBP}, that edges sometime interfere with nodes, making it a bit difficult to know where they actually point.
 
-\subsection{Paradigm}
+\subsection{Extensible}
 
-Psnodig is primarily built to work with imperative languages, like Go and Python. This made it comfortable to write a parser for Gourmet, as well as the writers for Gourmet and Pytite. However, if the languages come from different paradigms, it might make it more challenging. \\
+% Paradigm
+
+Psnodig is primarily built to work with imperative languages, like Go and Python. This made it comfortable to write a parser for Gourmet, as well as the writers for Gourmet and Python. However, if the languages come from different paradigms, it might make it more challenging. \\
 
 We believe it might be more challenging to add a parser for logic languages like Prolog, formal specification languages like TLA+, query languages like SQL etc. This is because they work in a different, and more specific way than general, imperative languages do. \\
 
@@ -53,3 +61,7 @@ It might also prove challenging to add a writer for these languages, especially 
 \forsup{Implementation language}
 
 To add a parser or writer to Psnodig in the first place, they must be written in Haskell.\footnote{Technically, they can be written in a different language and \textit{transpiled} to Haskell.}
+
+\subsection{Executable}
+
+Doesn't capture infinite loops!

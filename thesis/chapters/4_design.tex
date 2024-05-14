@@ -4,7 +4,7 @@ In this chapter, we properly introduce Psnodig and relevant design decisions beh
 
 \section{Proposed Solution}
 
-To solve the problem we are dealing with, we introduce Psnodig. We believe that Psnodig offers something unique in the context of this problem. Psnodig is a transpiler, first and foremost intended to convert executable programs to equivalent presentation-only programs. \\
+To solve the problem we are dealing with, we introduce \textbf{Psnodig}. We believe that Psnodig offers something unique in the context of this problem. Psnodig is a transpiler, first and foremost intended to convert executable programs to equivalent presentation-only programs. \\
 
 We wish to alleviate common frustrations associated with pseudocode, like unbalanced parentheses, forgetting to consistently rename variables, issues related to performance and more. At the same time, we aim to preserve the good things that pseudocode let us have, like flexibility and abstraction, and using more precise mathematical notation. \\
 
@@ -38,7 +38,8 @@ All of this leads to a feeling of predictability: We write our source code in an
 Currently, Psnodig offers multiple command line arguments. By running \texttt{psnodig help} in the command line, we are presented with \Cref{psnodigCMDoptions}, which discloses our remaining options. \\
 
 \begin{lstlisting}[caption={The command line options for Psnodig, presented by running \texttt{psnodig help} in the terminal.}, captionpos=b, label={psnodigCMDoptions}]
-Psnodig - a general transpiler with options for pseudocode and flowcharts.
+Psnodig - a general transpiler with options for pseudocode and
+          flowcharts.
 
 Available options:
 
@@ -135,7 +136,7 @@ func printEvenNumbers(numbers list, length int) {
 printEvenNumbers([47, 46, 79, 22, 93], 5)
 \end{lstlisting}
 
-As seen from the syntax in \Cref{Psnodig's data types in Haskell.}, Psnodig programs consist of four parts: An optional program description, a list of struct declarations (which can be empty), a list of function declarations (which can also be empty), and lastly, an optional function call. The function call works as the interpreter's entry point, but is ignored by the both pseudocode writers.
+As seen from the syntax in \Cref{Psnodig's data types in Haskell.}, Psnodig programs consist of four parts: An optional program description, a list of struct declarations (which can be empty), a list of function declarations (which can also be empty), and lastly, an optional function call. The function call is the interpreter's entry point, much like a \texttt{main} function in compiler languages like Go, Kotlin and Java.
 
 \subsubsection{Scope}
 
@@ -343,6 +344,12 @@ Non-terminals are symbols that can be substituted. All the symbols on the left s
 
 \texttt{NAME} works as a placeholder for an identifier, e.g. the name of a function. \texttt{TEXT} is any combination of UTF-8 characters. It is used to provide program descriptions, and to serve as the first value of an Annotation statement. \texttt{STRING} is similar to \texttt{TEXT}, but requires the character sequence to be wrapped in double quotes. \texttt{INTEGER} is any $n \in \mathbb{N}$. \texttt{DECIMAL} is any $q \in \mathbb{Q}$. \texttt{BOOLEAN} is a $b \in \{\top, \bot \}$. Lastly, \texttt{NIL} is meant to indicate the absence of a value. \\
 
+Since the first argument of \texttt{STRUCTFIELD} is \texttt{EXPRESSION}, and the former also appears on the right hand side of the latter, we risk running into a \textit{left-recursive cycle}. A cycle of this nature occurs when the parser attempts to match the same rule again and again, without actually consuming any input. \\
+
+Therefore, we have an additional non-terminal \texttt{EXPRESSION1}, identical to \texttt{EXPRESSION} with the exception of not having a \texttt{STRUCTFIELD} non-terminal on its right hand side. This allows us to change the right hand side of \texttt{STRUCTFIELD} to \texttt{EXPRESSION1 "." EXPRESSION 2}. \\
+
+% Syns alltid left-recursion er vanskelig å forklare men tenk det her. vi fyller hele tiden inn expression med structfield og vice versa. vi leser ikke noe faktisk input, vi bygger bare et giga ast.
+
 \begin{lstlisting}[caption={Gourmet's grammar in EBNF notation.}, captionpos=b, label={The EBNF grammar of the Gourmet programming language.}]
 PROGRAM            $\Leftarrow$ [ PROGRAMDESCRIPTION ] { STRUCTDECL }
                       { FUNCTIONDECL } [ FUNCTIONCALL ]
@@ -356,11 +363,10 @@ FUNCTION           $\Leftarrow$ "func" NAME "(" [ ARGUMENT { ","
 
 ARGUMENT           $\Leftarrow$ NAME NAME
 
-STATEMENT          $\Leftarrow$ "break" | "continue" | ANNOTATIONSTMT
-                      | "#" STATEMENT | ASSIGNMENT | WHILE
+STATEMENT          $\Leftarrow$ "#" STATEMENT | ANNOTATIONSTMT | "break"
+                      | "continue" | ASSIGNMENT | WHILE
                       | FOREACH | FOR | IF
                       | "return" EXPRESSION | FUNCTIONCALL
-
 
 ASSIGNMENT         $\Leftarrow$ ASSIGNMENTTARGET ":=" ASSIGNMENTVALUE
 
@@ -385,10 +391,15 @@ ASSIGNMENTVALUE    $\Leftarrow$ EXPRESSION | STRUCT
 
 ELSE               $\Leftarrow$ "else" IF | "else" "{" { STATEMENT } "}"
 
-EXPRESSION         $\Leftarrow$ VALUE | NAME | LISTINDEX
-                      | EXPRESSION OPERATOR EXPRESSION
-                      | FUNCTIONCALL | "not" EXPRESSION
-                      | STRUCT | STRUCTFIELD
+EXPRESSION         $\Leftarrow$ BINARYEXP | FUNCTIONCALL | LISTINDEX
+                      | STRUCTFIELD | "not" EXPRESSION
+                      | STRUCT | VALUE | NAME
+
+EXPRESSION1        $\Leftarrow$ BINARYEXP | FUNCTIONCALL | LISTINDEX
+                      | "not" EXPRESSION | STRUCT | VALUE
+                      | NAME
+
+BINARYEXP          $\Leftarrow$ OPERATOR EXPRESSION EXPRESSION
 
 LISTINDEX          $\Leftarrow$ NAME "[" EXPRESSION "]" { "["
                       EXPRESSION "]" }
@@ -399,19 +410,19 @@ OPERATOR           $\Leftarrow$ "+" | "-" | "*" | "/" | "<" | "<="
 
 STRUCT             $\Leftarrow$ NAME "(" EXPLIST ")"
 
-STRUCTFIELD        $\Leftarrow$ EXPRESSION "." EXPRESSION
+STRUCTFIELD        $\Leftarrow$ EXPRESSION1 "." EXPRESSION
 
-VALUE              $\Leftarrow$ "map" "{" [ PAIR { "," PAIR } ] "}"
-                      | "set" "{" EXPLIST "}" | "nil"
-                      | "true" | "false" | DECIMAL
+VALUE              $\Leftarrow$ "nil"
+                      | "map" "{" [ PAIR { "," PAIR } ] "}"
+                      | "set" "{" EXPLIST "}" | BOOL | DECIMAL
                       | NUMBER | STRING | "[" EXPLIST "]"
+
+BOOL               $\Leftarrow$ "true" | "false"
 
 PAIR               $\Leftarrow$ EXPRESSION ":" EXPRESSION
 
 EXPLIST            $\Leftarrow$ [ EXPRESSION { "," EXPRESSION } ]
 \end{lstlisting}
-
-\forsup{Note: Håndterer expressions på en mye mer rotete måte enn det jeg viser til over. Har LL-parsing å gjøre. Skal finpusse det og endre den biten her og :)}
 
 \subsubsection{Precedence and Associativity}
 
@@ -466,7 +477,7 @@ Additionally, since Gourmet boasts most of the characteristics of other dynamica
 
 \section{Python Writer}
 
-As mentioned in Section 4.3, Gourmet's syntax is mainly inspired by Go and Python. As they are far richer languages, and Gourmet almost resembles a subset of Go, we decided to create an additional writer which converts ASTs to Python-like syntax.
+As mentioned in Section 4.3, Gourmet's syntax is mainly inspired by Go and Python. As they are far richer languages, and Gourmet almost resembles a subset of Go, we decided to create an additional writer which converts ASTs to Python-like syntax. \\
 
 The Gourmet and Python writers are very similar, only with a few notable differences, like \texttt{=} over \texttt{:=} for assignment, and colons over curly brackets. The biggest difference, however, is handling structs, as Python does not have them. Instead, they have \textit{classes}. \Cref{The Python equivalent of an empty struct in Gourmet.} shows how we translate an empty struct \texttt{struct Struct\{\}} into a class. \\
 
@@ -476,9 +487,11 @@ class Struct:
         pass
 \end{lstlisting}
 
+An important difference between Gourmet and Python, is that Python does not allow variable names to end with quotes (like the ones we introduced in Section 4.3.1.1). This means that, if we transpile a program containing variable names like \texttt{var'}, the Python interpreter will raise a syntax error during execution. \\
+
 Additionally, while Gourmet allows all type hints, Python only allows a few (without importing external libraries). Therefore, if a type hint is not \texttt{int}, \texttt{float}, \texttt{double}, \texttt{str}, \texttt{boolean}, or \texttt{nil}, they are simply removed from the final Python version. \\
 
-Most of Psnodig's built-in functions have equivalents in Python, but not all. For instance, to use \texttt{min} and \texttt{max}, we would have to install the \texttt{math} package. Other than those, we translate \texttt{length} to \texttt{len}, \texttt{get(key, hashmap)} to \texttt{hashmap[key]} etc., given that the correct number of arguments is provided. \\
+Most of Psnodig's built-in functions have equivalents in Python, but not all. For instance, to use \texttt{min} and \texttt{max}, we would have to import the \texttt{math} package. Other than those, we translate \texttt{length} to \texttt{len}, \texttt{get(key, hashmap)} to \texttt{hashmap[key]} etc., given that the correct number of arguments is provided. \\
 
 Python does not inherently have hash- and annotation statements. However, while these are statements that are intended to be hidden during presentation, they are essential to a program's runtime. Therefore, we have decided to convert them to regular statements in Python, also ignoring the first argument of annotation statements. \\
 
@@ -509,7 +522,7 @@ Structs and the initial function call are not converted to pseudocode. For one, 
 
 \subsection{Compatibility with Psnodig}
 
-As already mentioned in Section 4.2.2.3, all Psnodig library functions are taken into consideration by the TBP writer. The function call \texttt{ceil(decimal)} is transpiled with mathematical symbols to $\lceil decimal \rceil$. The function call \texttt{append(x, xs)} is transpiled to the natural language description \texttt{append x to xs}. \\
+As already mentioned in Section 4.2.2.3, all built-in Psnodig functions are taken into consideration by the TBP writer. The function call \texttt{ceil(decimal)} is transpiled with mathematical symbols to $\lceil decimal \rceil$. The function call \texttt{append(x, xs)} is transpiled to the natural language description \texttt{append x to xs}. \\
 
 Mathematical expressions are also taken into account. For instance, the value \texttt{BinaryExp Division (Constant (Number 2)) (Constant (Number 1))} will show $\frac{2}{1}$, rather than something like \texttt{2/1}. Similarly, an expression with multiplication will be displayed as \texttt{m $\cdot$ n} rather than \texttt{m * n}. To work with mathematical symbols in LaTeX we use the packages \texttt{amsmath} and \texttt{commath}. They are always included, regardless of the rest of the program. \\
 
@@ -570,73 +583,87 @@ The start node and all return nodes have the same theme of rectangles with white
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.5]{assets/def_FlowchartColours.png}
+    \includegraphics[scale=.75]{assets/chapter5/SimpleProgram_ibp.pdf}
     \caption{A program showcasing all the different node types the Flowchart generator produces.}
     \label{flowchartColours}
 \end{figure}
 
-Just like the TBP writer, the IBP writer uses mathematical notation where appropriate. For instance, \texttt{x \&\& y} is transpiled to \texttt{x $\land$ y}. Contrary to the TBP writer however, Psnodig's library functions are not considered. That means that code like \texttt{length(collection)} will look identical both in the source code and the corresponding flowchart. \\
+Just like the TBP writer, the IBP writer uses mathematical notation where appropriate. For instance, \texttt{x \&\& y} is transpiled to \texttt{x $\land$ y}. Contrary to the TBP writer however, Psnodig's built-in functions are not considered. That means that code like \texttt{length(collection)} will look identical both in the source code and the corresponding flowchart. \\
 
-There are a few design choices worth noting. Return expressions do not explicitly say \texttt{return}, as their context is given by the node theme. Also, recursive function calls do not have an arrow back to the original node stating the function name, but are instead written as their own nodes. For one, there is no straightforward way of creating arrows on this form with TikZ, but we also believe a flowchart with too many arrows looks confusing. \\
+\newpage
 
-All statements are displayed in a simple rectangular box, but \texttt{Loop}-, \texttt{ForEach}-, \texttt{For}-, and \texttt{If}-statements are - as previously mentioned - given their own node themes. This is because they break with the standard linear pattern, and contain statements of their own. \\
+All statements are displayed in a simple rectangular box, but \texttt{ForEach}-, \texttt{For}-, \texttt{Loop}-, and \texttt{If}-statements are, as previously mentioned, given their own node themes. This is because they break with the standard linear pattern, and contain statements of their own. \\
 
-\texttt{\textbf{For} identifier from to statements} starts with assigning \\ \texttt{identifier} to \texttt{fromRange}. The next node is a light yellow rectangle. If \texttt{from} and \texttt{to} are both numericals, the rectangles text will be either \texttt{from < to ?} or \texttt{from > to ?}, depending on their values. If they are not both numericals, the default is \texttt{from < to ?} since we do not evaluate expressions, and have no way of knowing their actual values. \\
+\texttt{\textbf{ForEach} identifier collection statements} starts with a light yellow rectangle asking if we have iterated \texttt{collection}. From here there are two arrows. The first is labeled \texttt{true} and points to the subsequent statement following the current \texttt{\textbf{ForEach}} (if there are any). \\
 
-From this light yellow rectangle, we have an edge labeled \texttt{true} which points to the next statement \textit{after} the current \texttt{\textbf{For}} (if there are any). In the opposite way, an edge labeled \texttt{false} points to the first statement in \texttt{statements}. After the last of these, there is an assignment statement, either incrementing or decrementing \texttt{identifier}, before pointing back to the light yellow rectangle. \\
-
-\Cref{forExample1}, \Cref{forExample2}, and \Cref{forExample3} shows the three different ways a \texttt{\textbf{For}}-statement can be transpiled to a flowchart. \\
+The other one is labeled \texttt{false} and points to a statement stating \texttt{identifier $\gets$ next element in collection}. Then, each statement in \texttt{statements} is presented. After the last of these, there is an arrow pointing back to the light yellow rectangle. A working example is presented in \Cref{flochartForEach}. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.38]{assets/def_ForExample2.png}
-    \caption{A \texttt{For}-statmenet where \texttt{from < to}.}
-    \label{forExample1}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[scale=.38]{assets/def_ForExample3.png}
-    \caption{A \texttt{For}-statmenet where \texttt{from > to}.}
-    \label{forExample2}
-\end{figure}
-
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[scale=.38]{assets/def_ForExample2.png}
-    \caption{A \texttt{For}-statmenet where \texttt{from} and \texttt{to} are not both numericals.}
-    \label{forExample3}
-\end{figure}
-
-\texttt{\textbf{ForEach} identifier collection statements} starts with a light yellow rectangle asking if we have iterated \texttt{collection}. From here there are two arrows. The first is labeled \texttt{true} and points to the next statement after the current \texttt{\textbf{ForEach}} (if there are any). \\
-
-The other one is labeled \texttt{false} and points to a statement stating \texttt{identifier $\gets$ next element in collection}. Then each statement in \texttt{statements} is presented. After the last of these, there is an arrow pointing back to the light yellow rectangle. A working example is presented in \Cref{flochartForEach}. \\
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[scale=0.39]{assets/def_ForEachExample.png}
+    \includegraphics[scale=.75]{assets/chapter5/ForEachProgram_ibp.pdf}
     \caption{A \texttt{ForEach}-statement, iterating a variable \texttt{teams}.}
     \label{flochartForEach}
 \end{figure}
 
 \texttt{\textbf{While} condition statements} largely follows the pattern of \texttt{\textbf{ForEach}}. The statement starts with a light yellow rectangle displaying \texttt{condition} followed by a question mark. \\
 
-There are again two edges: The first is labeled \texttt{true} and points to the next statement after the current \texttt{\textbf{While}} (if there are any). The other is labeled \texttt{false} and points to the first statement in \texttt{statements}. The last of these points back to the light yellow rectangle. A working example is presented in \Cref{flochartWhile}. \\
+There are again two edges: The first is labeled \texttt{true} and points to the subsequent statement following the current \texttt{\textbf{While}} (if there are any). The other is labeled \texttt{false} and points to the first statement in \texttt{statements}. The last of these points back to the light yellow rectangle. A working example is presented in \Cref{flochartWhile}. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=0.39]{assets/def_WhileExample.png}
+    \includegraphics[scale=.75]{assets/chapter5/WhileProgram_ibp.pdf}
     \caption{A \texttt{While}-statement, iterating until \texttt{i} reaches the value of \texttt{bigNumber}.}
     \label{flochartWhile}
 \end{figure}
 
-\texttt{\textbf{If} condition statements else} is the most intricate statement of the four discussed in this section. Again we start with a yellow rectangle displaying \texttt{condition} followed by a question mark. An edge labeled \texttt{true} points to the first statement in \texttt{statements}. Another edge labeled \texttt{false} points to either \texttt{else}, the next statement after the current \texttt{\textbf{If}}, or nothing, since both are optional. \\
+\texttt{\textbf{For} identifier from to statements} starts with assigning \\ \texttt{identifier} to \texttt{fromRange}. The next node is a light yellow rectangle. If \texttt{from} and \texttt{to} are both numericals, the rectangles text will be either \texttt{from < to ?} or \texttt{from > to ?}, depending on their values. If they are not both numericals, the default is \texttt{from < to ?} since we do not evaluate expressions, and have no way of knowing their actual values. \\
 
-If last statement in \texttt{statements} is not a \texttt{Return}-statement, it must point to the next statement outside the current \texttt{\textbf{If}} (if there is one). If \texttt{else} is present, the same applies to its statement list. \\
+From this light yellow rectangle, we have an edge labeled \texttt{true} which points to the subsequent statement following the current \texttt{\textbf{For}} (if there are any). In the opposite way, an edge labeled \texttt{false} points to the first statement in \texttt{statements}. After the last of these, there is an assignment statement, either incrementing or decrementing \texttt{identifier}, before pointing back to the light yellow rectangle. \\
 
-If the last statement in \texttt{statements} is a \texttt{Return}-statement, and the same is the case for all subsequent \texttt{else}s, the next statement after the current \texttt{\textbf{If}} is unreachable. If our code still has this structure, we are told in the command line, and the transpilation is interrupted. \\
+\Cref{forExample1}, \Cref{forExample2}, and \Cref{forExample3} shows the three different ways a \texttt{\textbf{For}}-statement can be transpiled to a flowchart. \\
 
-\forsup{Her skal jeg vise en del eksempler}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.62]{assets/chapter5/ForProgramPositive_ibp.pdf}
+    \caption{A \texttt{For}-statmenet where \texttt{from < to}.}
+    \label{forExample1}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.62]{assets/chapter5/ForProgramNegative_ibp.pdf}
+    \caption{A \texttt{For}-statmenet where \texttt{from > to}.}
+    \label{forExample2}
+\end{figure}
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=.62]{assets/chapter5/ForProgramDefault_ibp.pdf}
+    \caption{A \texttt{For}-statmenet where \texttt{from} and \texttt{to} are not both numericals.}
+    \label{forExample3}
+\end{figure}
+
+\texttt{\textbf{If} condition statements else} is the most intricate statement of the four discussed in this section. Again we start with a yellow rectangle displaying \texttt{condition} followed by a question mark. An edge labeled \texttt{true} points to the first statement in \texttt{statements}. Another edge labeled \texttt{false} points to either \texttt{else}, the subsequent statement following the current \texttt{\textbf{If}}, or nothing, since both cases are actually optional.
+
+The first example of this section, \Cref{flowchartColours}, actually shows an If-statement. \\
+
+If \texttt{statements} does not contain a \texttt{Return} statement, its last statement must point to the subsequent statement following the current \texttt{\textbf{If}} (if there is one). If \texttt{else} is present, the same applies to its list of statements.\footnote{As we can see in both \Cref{The EBNF grammar of the Gourmet programming language.} and \Cref{Psnodig's data types in Haskell.}, the Else type carries its own list of statements.} \Cref{flowchartIf} depicts a program flow where the \texttt{\textbf{If}} has two \texttt{else} clauses. Since neither the statement list in the original if or the first clause contain a return statement, their final statements point to the subsequent statement following the current If. However, the last \texttt{else} clause does contain a return, and therefore does not point any further. \\
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.72]{assets/chapter5/IfElseProgram_ibp.pdf}
+    \caption{An \texttt{If}-statement with two clauses.}
+    \label{flowchartIf}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.72]{assets/chapter5/SimpleIfProgram_ibp.pdf}
+    \caption{An \texttt{If}-statement without any else-clauses.}
+    \label{flowchartIf2}
+\end{figure}
+
+If the last statement in \texttt{statements} is a \texttt{Return}-statement, and the same is the case for all subsequent \texttt{else}s, the next statement after the current \texttt{\textbf{If}} is unreachable. If our code still has this structure, we are told in the command line, and the transpilation is interrupted.
 
 \subsection{Output}
 

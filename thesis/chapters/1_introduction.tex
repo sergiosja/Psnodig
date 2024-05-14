@@ -2,7 +2,7 @@
 
 Pseudocode is commonly used to provide a description of an algorithm at a suitable level of abstraction. It is meant to work as a comprimise between a low-level implementation in a specific programming language, and a natural language description of a problem solution~\cite{whatIsPseudocode}. \\
 
-An advantage of pseudocode is the lack of standardisation, therefore authors are not tied down to the syntax of any particular programming language. This gives them complete freedom to omit or de-emphasize certain aspects of their algorithms. Consequently, pseudocode is first and foremost aimed to serve as a tool for presentation. \\
+An advantage of pseudocode is the lack of standardisation, therefore authors are not tied down to the syntax of any particular programming language. This gives them complete freedom to omit or de-emphasise certain aspects of their algorithms. Consequently, pseudocode is first and foremost aimed to serve as a tool for presentation. \\
 
 Consequently, as pseudocode is not executable, there is no omniscient way to verify its correctness. This can, in turn, lead to accidental inclusion of critical inaccuracies. When working within an integrated development environment, most popular languages have support for static analysis tools that detect anti-patterns and warn about bad practices~\cite{manyLinters, whatIsALinter}. 
 When writing pseudocode, on the other hand, we are left to our own devices, as identification of anti-patterns and bad practices generally relies on the existence of established standards. \\
@@ -11,7 +11,7 @@ When writing pseudocode, on the other hand, we are left to our own devices, as i
 
 Correct presentations are important in education where the goal is to teach students concepts they were previously unfamiliar with. At university level, concepts within algorithms and data structures have traditionally proved challenging for undergraduates~\cite{algorithmsAreHard1, algorithmsAreHard2, algorithmsAreHard3}. If their first impression of an algorithm is an incorrect presentation, their path is already hampered. \\
 
-In this thesis we present a tool called \textbf{Psnodig} (pronounced snoo-dee\footnote{Imagine the \textbf{sn} in \textbfit{snow}, the \textbf{oo} in \textbfit{cool}, and the \textbf{dee} in \textbfit{deep}. The silent \textbf{p} is an ode to the silent p in the word \textbfit{pseudocode}, naturally.}), which allows us to convert source code to other, perhaps less technical presentations. The presentation targets in this thesis are pseudocode and flowcharts. The target audience is people who study or work with algorithms. \\
+In this thesis we present a tool called \textbf{Psnodig} (pronounced snoo-dee\footnote{Imagine the \textbf{sn} in \textbfit{snow}, the \textbf{oo} in \textbfit{cool}, and the \textbf{dee} in \textbfit{deep}. The silent \textbf{p} is an ode to the silent p in the word \textbfit{pseudocode}, naturally.}), which allows us to convert source code to other, less technical presentations. The presentation targets in this thesis are mainly pseudocode and flowcharts. The target audience is people who study or work with algorithms. \\
 
 The positive effect of teaching algorithms with flowcharts as an alternative to traditional code has been researched since at least the 1980's, and is still being researched this decade~\cite{flowchartsAreGood1, flowchartsAreGood2, flowchartsAreGood3}. However, tools for direct conversion from source code to flowcharts does not seem to be widespread. \\
 
@@ -27,11 +27,11 @@ The overall goal of this thesis is to construct a tool with the following proper
 
 \begin{itemize}
     \item \textbf{Extensible}, users can add parsers and code generators to Psnodig.
-    \item \textbf{Presentable}, users can use Psnodig to convert their source code to a different level of abstraction.
     \item \textbf{Executable}, users can run the source code they have written.
+    \item \textbf{Presentable}, users can use Psnodig to convert their source code to a different level of abstraction.
 \end{itemize}
 
-We will evaluate to which degree the tool posesses these properties in Chapter 6. We will them examine the results closer and discuss them in Chapter 7.
+We will use selected algorithms from \cite{pseudocodeInBook2} to evaluate to which degree the tool posesses these properties in Chapter 6. We will then discuss them more in depth in Chapter 7.
 
 \section{Contributions}
 
@@ -43,8 +43,8 @@ We are able to add parsers and writers to Psnodig at will, making it a flexible 
 
 \begin{itemize}
     \item A parser for an imperative, C-like programming language we have coined \textbf{Gourmet}.
-    \item Two writers converting Psnodig ASTs to Gourmet and Python.
     \item Two writers converting Psnodig ASTs to pseudocode and flowcharts.
+    \item Two writers converting Psnodig ASTs to C-like programs and Python-like programs.
 \end{itemize}
 
 To the best of our knowledge, Psnodig is the first tool of its kind for transpiling source code to these formats, in additional to being openly available and extensible.

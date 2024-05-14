@@ -1,56 +1,52 @@
 \chapter{Evaluation}
 
-In this chapter, we will evaluate the Psnodig tool against the goals we set in Section 1. We will look at the general effort to add a new parser, correctness and performance of our interpreter, and whether or not our writers are able to produce satisfactory output. We will also attempt to reproduce the examples in the tools introduced in Section 3, and compare it to our results. Unfortunately, only the ones relating to IBP are currently publicly available. \\
+In this chapter, we will evaluate the Psnodig tool against the goals we set in Section 1. We will look at the general effort to add a new parser, correctness and performance of our interpreter, and whether or not our writers are able to produce satisfactory output. \\
 
-All the Psnodig examples in this chapter will be created entirely through the command line interface, to ensure that - as of writing this - all examples are reproducable. To keep a common thread going through this chapter, as well as keeping it fair to all parts of the tool, there are a few algorithms that all will be evaluated against: \texttt{Naive search}, \texttt{Bubble sort}, \texttt{Deletion in a Binary search tree} and \texttt{Depth-first search}. The results are presented in Section 6.3 and onwards. \\
-
-On one hand, the evaluation is somewhat limited. For instance, there are almost no benchmarks that we go against. It is \textit{we} who select the computer programs, and it is \textit{we} who decide whether or not the results are adequate. \\
-
-On the other hand, we do believe that we have chosen varied enough programs to test against. In addition, there \textit{are} some subjective standards that we can lean on, particulartly when it comes to our flowchart writer.
+All the Psnodig examples in this chapter will be created entirely through the command line interface, to ensure that the examples are reproducable. To keep a common thread going through this chapter, as well as keeping it fair to all parts of the tool, there are four algorithms that we will use for evaluation: \texttt{Naive search}, \texttt{Bubble sort}, \texttt{Deletion in a Binary search tree} and \texttt{Depth-first search}.
 
 \subsubsection{Naive search}
 
-Naive search is a simple algorithm where we look for a particular element in a list. It is naive because it iterates the list in a simple start-to-end fashion, without applying any heuristics, like the Binary search algorithm mentioned in Section 2.1.1.
+Naive search is a simple algorithm where we look for a particular element in a list. It is naive because it iterates the list in a simple start-to-end fashion, without applying any heuristics, contrary to the \textbf{Binary search} algorithm mentioned in Section 2.1.1.
 
 \subsubsection{Bubble sort}
 
-Bubble sort is one of the most straightforward sorting algorithms we have available. It is used to sort a list, making sure that for all elements, the elements on the left are smaller, and the elements on the right are bigger. Bubble sort is not used particularly often to solve real problems, and is mostly intended as a tool to teach students about sorting algorithms as a concept. \\
+Bubble sort is one of the most straightforward sorting algorithms we have available. It is used to sort a list, making sure that for all elements, the element on the left is smaller, and the element on the right is bigger. Bubble sort is seldom applied to solve real problems, but is a popular algorithm for teaching students about sorting algorithms as a concept. \\
 
-If the list only contains one element or is empty, we return it as it is. Otherwise, we compare the elements on index 0 and 1, and if the first is larger than the second, we swap them. Then we continue to compare the elements on index 1 and 2, and so on. We do this \texttt{n} times, where \texttt{n} equals the length of the list minus one. In each passing, the unsorted largest element in the list is placed in its proper position towards the end of the list.
+If the input list only contains one element or is empty, we return it as it is. Otherwise, we compare the elements on index 0 and 1, and if the first is larger than the second, we swap them. Then we continue to compare the elements on index 1 and 2, and so on. We do this \textbf{n} times, where \textbf{n} equals the length of the list minus one. In each passing, the unsorted largest element in the list is placed in its proper position towards the end of the list.
 
 \subsubsection{Deletion in a Binary search tree}
 
-Binary search trees are common data structures in computer science. Each node has at most two child nodes, and all nodes are descendents of a single root node. Additionally, for all nodes \texttt{nd}, every node to the left of \texttt{nd} must have a value smaller than or equal to \texttt{nd}, and every node to the right must have a value greater than or equal to \texttt{nd}. \\
+Binary search trees are a common data structure in computer science. Each node has at most two child nodes, and all nodes are descendents of a single root node. Additionally, for all nodes \textbf{nd}, every node to the left of \textbf{nd} must have a value smaller than or equal to \textbf{nd}, and every node to the right must have a value greater than or equal to \textbf{nd}. \\
 
 Deletion in a binary search tree involves finding a node with a specific value, and removing it whilst preserving the search tree's properties. There are three cases to consider: deletion of a node with no children, deletion of a node with one child, and deletion of a node with two children. \\
 
-If a node has no children, we can simply remove it. If a node has one child, that child takes the place of its parent. If a node has two children, we substitute it with either the node with the smallest value on its right hand side, or the node with the largest value on its left hand side, before removing it.
+If the node has no children, we can simply remove it. If the node has one child, that child takes the place of its parent. If the node has two children, we substitute it with the right subtree's smallest-value node or the left subtree's largest-value node, before removing the original node.
 
 \subsubsection{Depth-first search}
 
-Depth-first search, also referred to as DFS, is an algorithm for traversing a graph data structure. We begin at an arbitrary node of the graph, and ``visit'' neighbouring nodes, following each path as far possible. \\
+Depth-first search, also referred to as DFS, is an algorithm for traversing a graph data structure. We begin at an arbitrary node of the graph, and ``visit'' neighbouring nodes, following each path as far as possible. \\
 
-It is commonly used to identify all nodes within a connected component. If the graph we are working on is also unweighted, we can use DFS to find its shortest path.
+It is commonly used to identify all nodes within a connected component. If the graph we are working with is also unweighted, we can use DFS to find its shortest path.
 
-\section{Extensibility}
+\section{Extensible}
 
 The first goal of Psnodig is extensibility: we should be able to add parsers that are able to convert source code to an internal representation of Psnodig. We have successfully written a parser for an imperative, C-like programming language that we coined \textbf{Gourmet}.
 
 \subsection{Gourmet parser}
 
-Writing a parser on its own is no new feat, and Section 4.3 and Section 5.4.1 elaborate on the design and implementation of the Gourmet parser. What we aim to evaluate, is whether or not the parser is compatible with Psnodig. The Psnodig grammar is a limitation of how rich a program can look before it is converted by a writer. This means that a parser can at most parse all data types, but at the very least a `Program`, as it is the entry point of all Psnodig programs. \\
+What we aim to evaluate here, is whether or not the parser is compatible with Psnodig. The Psnodig grammar is a limitation of how rich a program can look before it is converted by a writer. This means that a parser can at most parse all data types, but at the very least a `Program`, as it is the entry point of all Psnodig programs. \\
 
-A minimal example is an empty program. The Gourmet parser is capable of parsing empty files, producing an AST of a single \texttt{Program Nothing [] [] Nothing} value. Since a \texttt{Program} contains \texttt{Statement}, and the latter can be compound \texttt{Statement} values, we cannot produce a maximal example.\footnote{We could interpret a maximal example to be a program limited by our computer’s memory, but theoretically Psnodig programs can be infinitely big.} \\
+A minimal example is an empty program. The Gourmet parser is capable of parsing empty files, producing an AST of a \texttt{Program Nothing [] [] Nothing} value. We cannot produce a maximal example, because \texttt{Program} contains a list of \texttt{FunctionDecl} values, which again contain a list of \texttt{Statement} values. These values can be compound, and in effect go on forever.\footnote{We could interpret a maximal example to be a program limited by our computer’s memory, but theoretically Psnodig programs can be infinitely big.} \\
 
-The Gourmet parser is built up of many smaller parsers, parsing each Psnodig data type individually. This way, we can look at it almost like a checklist, proving that we do indeed parse all Psnodig data types. \\
+To evaluate if we have successfully extended Psnodig with a parser, we will implement the four algorithms. We will then run them on a function that parses the programs, and produces either a Psnodig AST or a parse error. \\
 
-\Cref{naiveSearchGourmet}, \Cref{bubbleSortGourmet}, \Cref{deleteBSTGourmet}, and \Cref{dfsGourmet} show implementations of the four programs mentioned in the beginning. \\
+\Cref{naiveSearchGourmet} shows an implementation of Naive search in Gourmet, and \Cref{nsAST} shows the Psnodig AST generated from parsing the program. \\
 
-\forsup{se på den under feks. \textbackslash in blir evaluert!}
+\forsup{gjør eksemplene pene! bytt ut bst greia, dessverre. men finn noe annet bst-relatert?}
 
 \begin{lstlisting}[caption={Naive search implementation in Gourmet.}, captionpos=b, label={naiveSearchGourmet}]
-? A list $A$ and an integer $x$?
-! True if $x \in A$ and false if not!
+? A list A and an integer x?
+! True if x $\$$\in$\$$ A and false if not!
 
 func NaiveSearch(A list, x int) {
     # n := length(A)
@@ -63,14 +59,48 @@ func NaiveSearch(A list, x int) {
 }
 \end{lstlisting}
 
+\begin{lstlisting}[caption={The Psnodig AST generated by parsing \Cref{naiveSearchGourmet}.}, captionpos=b, label={nsAST}]
+Program
+  (Just (ProgramDescription
+    "A list A and an integer x"
+    "True if x $\$$\in$\$$ A and false if not"))
+  []
+  [ FunctionDecl
+      "NaiveSearch"
+      [ Argument "A" "list", Argument "x" "int" ]
+      [ HashStmt
+          (Assignment
+              (VariableTarget "n")
+              (ExpressionValue
+                (CallExp
+                    (FunctionCall "length" [VariableExp "A"])))
+          ),
+        ForEach
+          "i"
+          (VariableExp "A")
+          [ If
+              (BinaryExp Equal
+                (VariableExp "i")
+                (VariableExp "x"))
+              [Return (Constant (Boolean True))]
+              Nothing
+          ],
+        Return (Constant (Boolean False))
+      ]
+  ]
+  Nothing
+\end{lstlisting}
+
+\Cref{bubbleSortGourmet} shows an implementation of Bubble sort in Gourmet, and \Cref{bsAST} shows the Psnodig AST generated from parsing the program. \\
+
 \begin{lstlisting}[caption={Bubble sort implementation in Gourmet.}, captionpos=b, label={bubbleSortGourmet}]
-? A list $A$?
-! The list $A$, but ordered from smallest value to largest!
+? A list A?
+! The list A, but ordered from smallest value to largest!
 
 func BubbleSort(A list) {
     # n := length(A)
-    for i := 0, n - 1 {
-        for j := 0, n - i - 1 {
+    for i := 0, n - 2 {
+        for j := 0, n - i - 2 {
             if A[j] > A[j+1] {
                 @{swap A[j] with A[j+1]}{
                     tmp := A[j]
@@ -84,7 +114,103 @@ func BubbleSort(A list) {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[caption={Deletion in binary search tree implementation in Gourmet.}, captionpos=b, label={deleteBSTGourmet}]
+\begin{lstlisting}[caption={The Psnodig AST generated by parsing \Cref{bubbleSortGourmet}.}, captionpos=b, label={bsAST}]
+Program
+  ( Just
+      ( ProgramDescription
+          "A list A"
+          "The list A, but ordered from smallest value to largest"
+      )
+  )
+  []
+  [ FunctionDecl
+      "BubbleSort"
+      [Argument "A" "list"]
+      [ HashStmt
+          ( Assignment
+              (VariableTarget "n")
+              ( ExpressionValue
+                  ( CallExp
+                      (FunctionCall "length" [VariableExp "A"])
+                  )
+              )
+          ),
+        For
+          "i"
+          (Constant (Number 0))
+          ( BinaryExp
+              Minus
+              (VariableExp "n")
+              (Constant (Number 1))
+          )
+          [ For
+              "j"
+              (Constant (Number 0))
+              ( BinaryExp
+                  Minus
+                  ( BinaryExp
+                      Minus
+                      (VariableExp "n")
+                      (VariableExp "i")
+                  )
+                  (Constant (Number 1))
+              )
+              [ If
+                  ( BinaryExp
+                      GreaterThan
+                      (ListIndex "A" [VariableExp "j"])
+                      ( ListIndex
+                          "A"
+                          [ BinaryExp
+                              Plus
+                              (VariableExp "j")
+                              (Constant (Number 1))
+                          ]
+                      )
+                  )
+                  [ AnnotationStmt
+                      "swap A[j] with A[j+1]"
+                      [ Assignment
+                          (VariableTarget "tmp")
+                          ( ExpressionValue
+                              (ListIndex "A" [VariableExp "j"])
+                          ),
+                        Assignment
+                          (ListIndexTarget "A" [VariableExp "j"])
+                          ( ExpressionValue
+                              ( ListIndex
+                                  "A"
+                                  [ BinaryExp
+                                      Plus
+                                      (VariableExp "j")
+                                      (Constant (Number 1))
+                                  ]
+                              )
+                          ),
+                        Assignment
+                          ( ListIndexTarget
+                              "A"
+                              [ BinaryExp
+                                  Plus
+                                  (VariableExp "j")
+                                  (Constant (Number 1))
+                              ]
+                          )
+                          (ExpressionValue (VariableExp "tmp"))
+                      ]
+                  ]
+                  Nothing
+              ]
+          ],
+        Return (VariableExp "A")
+      ]
+  ]
+  Nothing
+\end{lstlisting}
+
+\Cref{deleteBSTGourmet} shows an implementation of Deletion in a binary tree in Gourmet, and \Cref{dbstAST} shows the Psnodig AST generated from parsing the program. \\
+
+\begin{lstlisting}[caption={Deletion in a binary search tree implementation in Gourmet.}, captionpos=b, label={deleteBSTGourmet}]
 ? The root node in a tree and the value of a node to be deleted?
 ! The updated tree with one less node!
 
@@ -129,21 +255,26 @@ func FindMax(root Tree) {
 }
 \end{lstlisting}
 
+\begin{lstlisting}[caption={The Psnodig AST generated by parsing \Cref{deleteBSTGourmet}.}, captionpos=b, label={dbstAST}]
+Program (Just (ProgramDescription "The root node in a tree and the value of a node to be deleted" "The updated tree with one less node")) [StructDecl "Tree" [Argument "value" "int",Argument "left" "Tree",Argument "right" "Tree"]] [FunctionDecl "Delete" [Argument "node" "Tree",Argument "val" "int"] [If (BinaryExp Equal (VariableExp "node") (Constant Nil)) [Return (Constant Nil)] (Just (ElseIf (BinaryExp LessThan (StructFieldExp (StructField (VariableExp "node") (VariableExp "value"))) (VariableExp "val")) [Assignment (StructFieldTarget (StructField (VariableExp "node") (VariableExp "right"))) (ExpressionValue (CallExp (FunctionCall "Delete" [StructFieldExp (StructField (VariableExp "node") (VariableExp "right")),VariableExp "val"]))),Return (VariableExp "node")] (Just (ElseIf (BinaryExp GreaterThan (StructFieldExp (StructField (VariableExp "node") (VariableExp "value"))) (VariableExp "val")) [Assignment (StructFieldTarget (StructField (VariableExp "node") (VariableExp "left"))) (ExpressionValue (CallExp (FunctionCall "Delete" [StructFieldExp (StructField (VariableExp "node") (VariableExp "left")),VariableExp "val"]))),Return (VariableExp "node")] Nothing)))),If (BinaryExp Equal (StructFieldExp (StructField (VariableExp "node") (VariableExp "left"))) (Constant Nil)) [Return (StructFieldExp (StructField (VariableExp "node") (VariableExp "right")))] (Just (ElseIf (BinaryExp Equal (StructFieldExp (StructField (VariableExp "node") (VariableExp "right"))) (Constant Nil)) [Return (StructFieldExp (StructField (VariableExp "node") (VariableExp "left")))] Nothing)),Assignment (VariableTarget "node'") (ExpressionValue (CallExp (FunctionCall "FindMax" [StructFieldExp (StructField (VariableExp "node") (VariableExp "left"))]))),Assignment (StructFieldTarget (StructField (VariableExp "node") (VariableExp "value"))) (ExpressionValue (StructFieldExp (StructField (VariableExp "node'") (VariableExp "value")))),Assignment (StructFieldTarget (StructField (VariableExp "node") (VariableExp "left"))) (ExpressionValue (CallExp (FunctionCall "Delete" [StructFieldExp (StructField (VariableExp "node") (VariableExp "left")),StructFieldExp (StructField (VariableExp "node") (VariableExp "value"))]))),Return (VariableExp "node")],FunctionDecl "FindMax" [Argument "root" "Tree"] [If (BinaryExp Equal (StructFieldExp (StructField (VariableExp "root") (VariableExp "right"))) (Constant Nil)) [Return (StructFieldExp (StructField (VariableExp "root") (VariableExp "value")))] Nothing,Return (CallExp (FunctionCall "FindMax" [StructFieldExp (StructField (VariableExp "root") (VariableExp "right"))]))]] Nothing
+\end{lstlisting}
+
+\Cref{dfsGourmet} shows an implementation of Naive search in Gourmet, and \Cref{dfsAST} shows the Psnodig AST generated from parsing the program. \\
+
 \begin{lstlisting}[caption={DFS implementation in Gourmet.}, captionpos=b, label={dfsGourmet}]
 ? A list of booleans, a stack of nodes, a graph and a starting node?
 ! The list of booleans!
 
 func dfs(visited list, stack list, graph list, node int) {
-    visited[node] := true
+    add(node, visited)
     append(node, stack)
 
     while length(stack) > 0 {
         m := pop(stack)
-        print(m)
 
         for nb := get(m, graph) {
-            if visited[nb] == false {
-                visited[nb] := true
+            if not in(nb, visited) {
+                add(nb, visited)
                 append(nb, stack)
             }
         }
@@ -152,29 +283,27 @@ func dfs(visited list, stack list, graph list, node int) {
 }
 \end{lstlisting}
 
+\begin{lstlisting}[caption={The Psnodig AST generated by parsing \Cref{dfsGourmet}.}, captionpos=b, label={dfsAST}]
+Program
+    (Just (ProgramDescription "A list of booleans, a stack of nodes, a graph and a starting node" "The list of booleans"))
+    []
+    [FunctionDecl "dfs" [Argument "visited" "list", Argument "stack" "list", Argument "graph" "list", Argument "node" "int"] [CallStmt (FunctionCall "add" [VariableExp "node", VariableExp "visited"]), CallStmt (FunctionCall "append" [VariableExp "node", VariableExp "stack"]), Loop (BinaryExp GreaterThan (CallExp (FunctionCall "length" [VariableExp "stack"])) (Constant (Number 0))) [Assignment (VariableTarget "m") (ExpressionValue (CallExp (FunctionCall "pop" [VariableExp "stack"]))), ForEach "nb" (CallExp (FunctionCall "get" [VariableExp "m", VariableExp "graph"])) [If (Not (CallExp (FunctionCall "in" [VariableExp "nb", VariableExp "visited"]))) [CallStmt (FunctionCall "add" [VariableExp "nb", VariableExp "visited"]), CallStmt (FunctionCall "append" [VariableExp "nb", VariableExp "stack"])] Nothing]], Return (VariableExp "visited")]]
+    Nothing
+\end{lstlisting}
+
 \section{Executable}
 
-Another goal from Section 1 was that our tool should be executable. Therefore, Psnodig comes with an interpreter working directly on the internal representation. When a parser has successfully converted a source program to Psnodig, we want to be able to run that code. This way, no matter what langauge you use to write your program, it is the converted version that is ultimately executed. \\
+The second goal from Section 1 was that our tool should be executable. Therefore, Psnodig comes with an interpreter working directly on the internal representation. When a parser has successfully converted a source program to Psnodig, we want to be able to run that code. This way, no matter what langauge we use to write our program, it is the converted version that is ultimately executed. \\
 
-Naturally, we would like all programs to be executable. However, the interpreter currently stands without an implementation for `Break` and `Continue` statemenets. If a program flow runs into either of them, the program will terminate with a warning. Except for these, all Psnodig data types are handled by the interpreter.
+Naturally, we would like all programs to be executable. However, the interpreter currently stands without an implementation for the statement types \textbf{Break} and \textbf{Continue}. If a program flow runs into either of them, the program will terminate with a warning. Except for these, all Psnodig data types are handled by the interpreter. \\
 
-\subsection{Correctness}
+Now we can try to execute the programs we mentioned earlier. We use the Gourmet programs from earlier to give us the internal representation, rather than constructing them ourselves through variables, because we believed them to be satisfactory.
 
-Now we can try to execute the programs we mentioned earlier. We use the Gourmet programs from earlier to give us the internal representation, rather than constructing them ourselves through variables, because we believed them to be satisfactory. \\
+\section{Presentable}
 
-\forsup{kunne teknisk sett kjørt quickcheck her?}
+\forsup{se på goals igjen. gourmet og python er faktisk deler av exteisble, ikke executable. presentable handler utelukkende om tbp og ibp. python writer brukes kinda som benchmark for å se hvor mye effort det er å lage python parser (kan sammenligne gourmet parser og writer her)}
 
-\forsup{eller hente AST og kjøre flere unit tester}
-
-\subsection{Performance}
-
-\forsup{Bare om jeg har tid igjen. Kan antakeligvis bruke \url{https://hackage.haskell.org/package/timeit}}
-
-The interpreter is not written with performance in mind, and is not expected to run at the same speed as e.g. the Go compiler or even the Python interpreter. However, for smaller programs, we believe that our implementation is able to stand its ground, and at is not necessarily annoyingly slower. \\
-
-To evaluate this, we used \forsup{this and this tool, to time the programs from earlier. We put that stuff in the interpreter, so it printed the time along the results. The programs were ran N times in an attempt to expose outliers. This was the time:}
-
-\section{Gourmet writer}
+\subsection{Gourmet writer}
 
 The last part of our evaluation is the set of writers we currently have available. We will evaluate all four individually, and we start with the Gourmet writer. This is the one where flaws are easiest to locate, as the output programs should be more or less 1-to-1 with the source programs. \\
 
@@ -278,13 +407,13 @@ func dfs(visited list, stack list, graph list, node int) {
 }
 \end{lstlisting}
 
-\section{Pytite writer}
+\subsection{Python writer}
 
-The next writer we evaluate is the Pytite writer. The output will be relatively similar to Gourmet, since the latter also employs indentation. However,  \\
+The next writer we evaluate is the Python writer. The output will be relatively similar to Gourmet, since the latter also employs indentation. However,  \\
 
-\Cref{naiveSearchPytite}, \Cref{bubbleSortPytite}, \Cref{deleteBSTPytite}, and \Cref{dfsPytite} show the results of transpiling Gourmet to Pytite. There are syntactic differences, like using colons over curly braces, and writing hash- and annotation statements like regular statements. We also see structs being replaced by classes, and Psnodig functions being replaced by Python ones. \\
+\Cref{naiveSearchPython}, \Cref{bubbleSortPython}, \Cref{deleteBSTPython}, and \Cref{dfsPython} show the results of transpiling Gourmet to Python. There are syntactic differences, like using colons over curly braces, and writing hash- and annotation statements like regular statements. We also see structs being replaced by classes, and Psnodig functions being replaced by Python ones. \\
 
-\begin{lstlisting}[caption={The result of transpiling \Cref{naiveSearchGourmet} to Pytite.}, captionpos=b, label={naiveSearchPytite}]
+\begin{lstlisting}[caption={The result of transpiling \Cref{naiveSearchGourmet} to Python.}, captionpos=b, label={naiveSearchPython}]
 # Input: A list $A$ and an integer $x$
 # Output: True if $x \in A$ and false if not
 
@@ -298,7 +427,7 @@ def NaiveSearch(A, x: int):
     return False
 \end{lstlisting}
 
-\begin{lstlisting}[caption={The result of transpiling \Cref{bubbleSortGourmet} to Pytite.}, captionpos=b, label={bubbleSortPytite}]
+\begin{lstlisting}[caption={The result of transpiling \Cref{bubbleSortGourmet} to Python.}, captionpos=b, label={bubbleSortPython}]
 # Input: A list $A$
 # Output: The list $A$, but ordered from smallest value to largest
 
@@ -317,7 +446,7 @@ def BubbleSort(A):
     return A
 \end{lstlisting}
 
-\begin{lstlisting}[caption={The result of transpiling \Cref{deleteBSTGourmet} to Pytite.}, captionpos=b, label={deleteBSTPytite}]
+\begin{lstlisting}[caption={The result of transpiling \Cref{deleteBSTGourmet} to Python.}, captionpos=b, label={deleteBSTPython}]
 # Input: The root node in a tree and the value of a node to be deleted
 # Output: The updated tree with one less node
 
@@ -356,7 +485,7 @@ def FindMax(root):
     return FindMax(root.right)
 \end{lstlisting}
 
-\begin{lstlisting}[caption={The result of transpiling \Cref{dfsGourmet} to Pytite.}, captionpos=b, label={dfsPytite}]
+\begin{lstlisting}[caption={The result of transpiling \Cref{dfsGourmet} to Python.}, captionpos=b, label={dfsPython}]
 # Input: A list of booleans, a stack of nodes, a graph and a starting node
 # Output: The list of booleans
 
@@ -376,11 +505,11 @@ def dfs(visited, stack, graph, node: int):
     return visited
 \end{lstlisting}
 
-As an extra test, since Pytite is supposed to be a true subset of Python, we will also run the final transpiled code with the Python interpreter, and compare the results with those of the Psnodig interpreter. \\
+As an extra test to see if we really are able to transpile programs to syntactically correct Python equivalents, we will run the final transpiled code with the Python interpreter, and compare the results with those of the Psnodig interpreter. \\
 
 \forsup{men hvordan presentere det??}
 
-\section{Pseudocode writer}
+\subsection{Pseudocode writer}
 
 The pseudocode writer converts the intermediate representation to a much different abstraction level than we saw in the two previous writers. Now, the code is no longer executable. \\
 
@@ -416,9 +545,9 @@ This writer gives us a LaTeX file, accompanied by the compiled result in a PDF i
     \label{dfsTBP}
 \end{figure}
 
-\section{Flowchart writer}
+\subsection{Flowchart writer}
 
-The flowchart writer is the most advanced of the four, working on yet another level of abstraction. While the pseudocode writer produces TBP, which at least resembles executable code, the IBP we produce here does not. Whilst expressions are fitted into boxes, special statemenets like loops and ifs risk colliding when nested. \\
+The flowchart writer is the most advanced of the four, working on yet another level of abstraction. While the pseudocode writer produces TBP, which at least resembles executable code, the IBP we produce here does not. Whilst expressions are fitted into boxes, control flow statemenets like loops and ifs risk colliding when nested. \\
 
 \Cref{naiveSearchIBP}, \Cref{bubbleSortIBP}, \Cref{deleteBSTIBP}, and \Cref{dfsIBP} show the results of transpiling Gourmet to flowcharts. \\
 

@@ -71,11 +71,13 @@ The notation stays much the same, but since flowcharts are not executable, we ca
 
 \section{Previous work}
 
-This section covers selected works and software that have already solved parts of the problem, in their own right. The first section shows different approaches to convert source code to pseudocode, by applying machine learning. The second section shows interplay between source code and flowcharts, converting one to the other. We also discuss the most basic way of converting between these formats: by doing it manually.
+This section covers selected works and software that have already solved parts of the problem, in their own right. The first section shows different approaches to convert source code to pseudocode, by applying machine learning. \\
+
+The second section shows interplay between source code and flowcharts, converting one to the other. We also discuss the most basic way of converting between these formats: by doing it manually.
 
 \subsection{Pseudocode}
 
-Despite TBP being used in so many textbooks, online courses and published papers, there are not an overwhelming amount of source code-to-pseudocode editors currently available online. To the best of our knowledge, majority of research on this topic - if not all - centers around machine learning approaches. We will discuss two of these.
+Despite TBP being used in so many textbooks, online courses and published papers, there are not an overwhelming amount of source code-to-pseudocode editors currently available online. Majority of research on this topic, to the best of our knowledge, seems to be centered around machine learning approaches.
 
 \subsubsection{Manual Approach}
 
@@ -84,8 +86,6 @@ The benefits of manually pseudocode manually, is that we are void of any restric
 The biggest downside is the extra effort it requires to maintain two versions of our computer programs. We might change our source code but forget to update the pseudocode. Sometimes we might fail to consistently rename variables, or accidentally misplace parentheses and demonstrate a wrong formula.
 
 \subsubsection{Machine Learning Approach}
-
-To the best of our knowledge, most of the research regarding conversion of source code to pseudocode involves machine learning. Understanding the different machine learning concepts used utilised in these papers is outside the scope of this thesis, but we will give a rough introduction to their main points. \\
 
 In 2015, Oda et al. introduced \textbf{Pseudogen}, a tool for converting Python source code to pseudocode using a statistical machine translation (SMT) approach~\cite{pseudogen}. The pseudocode produced is really a line-for-line description of the Python program provided as input. \\
 
@@ -139,27 +139,37 @@ NMT is another variant of machine translation, inspired by neural networks in th
 
 \Cref{code2Pseudocode} shows an excerpt taken from the 2018 paper where Code2Pseudocode is presented. It is similar to \Cref{pseudogenExample1} in nature: Python source code on the left, and generated psudocode on the right. The program tries to remove a file from the computer, and raises an error if it fails. \\
 
-Since neither Pseudogen nor Code2Pseudocode have knowledge of Python itself, the descriptions they provide are very general. For instance, the pseudocode in \Cref{pseudogenExample1} does not explain what an ``exception'' is, or what it really means to ``throw an exception''. Likewise, the pseudocode in \Cref{code2Pseudocode} does not tell us that \texttt{os.remove(fname)} will actually remove \texttt{fname} from our computer, only that it calls \texttt{os.remove()} with \texttt{fname} as argument.
+Since neither Pseudogen nor Code2Pseudocode have knowledge of Python itself, the descriptions they provide are very general. For instance, the pseudocode in \Cref{pseudogenExample1} does not explain what an ``exception'' is, or what it really means to ``throw an exception''. Likewise, the pseudocode in \Cref{code2Pseudocode} does not tell us that \texttt{os.remove(fname)} will actually remove \texttt{fname} from our computer, only that it calls \texttt{os.remove()} with \texttt{fname} as argument. \\
 
-%Pseudogen does seem like an excellent tool for translating Python to English, and shows that something like this is indeed possible. However, it is clear that the target audience for its output formats must be people with little to no experience with reading and writing code. Psnodig's intended target audience is somewhat broader, and therefore we believe Pseudogen alone is not enough to solve the problem we are dealing with.
+Truthfully, recent advancements in artificial intelligence are able to do much of this for us now. For instance, the freely available prompt-based tool ChatGPT is now able to do this job entirely on its own.\footnote{It is currently available here: \url{https://chat.openai.com/}.} Additionally, rather than giving a line-for-line translation, it is able to give a concise summary of what the program actually does. \Cref{gptfizz} and \Cref{gptos} are examples of asking it to summarise the Python programs we saw in \Cref{pseudogenExample1} and \Cref{code2Pseudocode}, respectively. \\
 
-%What the examples in the 2015 paper, as well as a video on their website show,\footnote{The Pseudogen website can be found at \url{https://ahclab.naist.jp/pseudogen/}} is really a line-for-line translation to English. This could be desired in cases where business people on a team are particularly curious about what the product is really doing under the hood (without having to refactor the code base to Cobol). \\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.45]{assets/chapter3/gptFizzbuzz.png}
+    \caption{ChatGPT giving a summary of the Python code from \Cref{pseudogenExample1}.}
+    \label{gptfizz}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=.45]{assets/chapter3/gptOS.png}
+    \caption{ChatGPT giving a summary of the Python code from \Cref{code2Pseudocode}.}
+    \label{gptos}
+\end{figure}
 
 \subsection{Flowcharts}
 
-There is a good deal of research advocating for using flowcharts as an alternative to traditional code when demonstrating computer science concepts~\cite{flowchartsAreGood1, flowchartsAreGood2, flowchartsAreGood3}. Research on ways to construct corresponding flowcharts from source code, however, is not plentiful. \\
+There is a good deal of research advocating for using flowcharts as an alternative to traditional code when demonstrating computer science concepts~\cite{flowchartsAreGood1, flowchartsAreGood2, flowchartsAreGood3}. Research on ways to construct corresponding flowcharts from source code, however, is not plentiful. In this section, we will look at a 2015 paper, as well as online editors providing our desired transpilation. \\
 
-In this section we will look at a few different approaches: the naive approach (doing it manually), a flowchart-first approach (writing the flowchart with drag and drop), and a code-first approach (converting programs in domain-specific language to flowcharts).
+\subsubsection{Manual Approach}
 
-\subsubsection{Naive Approach}
+Like with TBP, the main benefit of translating our source code to flowchart manually is the lack of restrictions. We are free to use our preferred drawing tool, and can choose to emphasise parts of our program just the way we like - with colours, shapes, arrows, and more. \\
 
-Yet again, calling it a naive approach might not be entirely accurate, but manually translating our code to flowcharts does introduce some intricacies. For one, like with TBP, we have to maintain both versions, and if we change too much of our main idea, then the time spent on making the IBP version is - to a certain extent - wasted. \\
+However, if we were to change the main ideas of our code, we would have to draw the flowchart again from scratch. This means that the time spent on making the original IBP version is - to a certain extent - wasted. \\
 
-Another flaw is that we have to spend time thinking about how the flowchart should look like, which parts could and should be abstracted, how they should be presented instead (or if they should be removed altogether) etc. Which colours should the frames have? How should the arrows look? Which font should be used? By automating this process, we do not have to worry about details unrelated to the actual program logic. \\
+Another burden is that we are entirely responsible for how the corresponding flowchart should look. By doing this process manually, we have to spend time on the design, which is actually unrelated to the actual program logic.
 
-The perk of doing it this way, however, is that we can do it entirely our way. We can choose which tools we want to use, and if we are already proficient in making flowcharts based on source code, then this actually seems like a natural choice. If we also like spending time on details like colours, fonts, shapes etc., then at least the naive approach does not limit our creativity in any way.
-
-\subsubsection{Flowchart-first Approach}
+\subsubsection{Research-driven Approach}
 
 In 2015, Kosower et al. introduced \textbf{Flowgen}, a flowchart-based documentation framework for C++. The tool converts annotated C++ programs to high-level UML activity diagrams, providing a description of the code's dynamic behaviour~\cite{flowgen}. \\
 
@@ -192,16 +202,7 @@ int main()
     \label{flowgenExample}
 \end{figure}
 
-In 2006, Charntaweekhun and Wangsiripitak propsed a tool that converts flowcharts to an equivalent C program, which is then compiled and executed~\cite{flow2c}. \Cref{flow2cExample} shows an example of converting a flowchart to a C program using their tool, taken from their original 2006 paper. \\
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[scale=0.6]{assets/chapter3/bangkok.png}
-    \caption{A flowchart converted to an equivalent C++ program. This example is not generated by us, but taken directly from~\cite{flow2c}.}
-    \label{flow2cExample}
-\end{figure}
-
-\subsubsection{Code-first Approach}
+\subsubsection{Online Tools}
 
 \textbf{Code2Flow} is a tool that lets us create flowcharts with natural language, decorated with a C-inspired syntax. Their website states that we might get away with pasting syntactically correct C programs, but that this is purely incidental. This goes to show that the Code2Flow team have indeed developed a DSL with their own syntax. \\
 
@@ -249,11 +250,11 @@ flowchart TD
 
 Just like with Code2Flow, the text inside these nodes can be anything. \Cref{A mermaid.js program.} shows a program written with Mermaid.js, and \Cref{A mermaid.js flowchart.} shows the corresponding flowchart. Contrary to Code2Flow, comments are ignored by the parser, and solely exist to aid the programmer. They must also be on their own lines. \\
 
+The biggest drawback of Mermaid.js is that the syntax is very different from any programming language. This means pasting our source code will not yield any result, and we have to carefully translate our code every time. It also means that it is fully our responsability to maintain the abstraction level we want. Like Code2Flow, Mermaid.js has no way of letting us test our code. \\
+
 \begin{figure}[ht]
     \centering
     \includegraphics[scale=.07]{assets/chapter3/MermaidProgram.png}
     \caption{The resulting flowchart from transpiling the Mermaid.js code in \Cref{A mermaid.js program.}}
     \label{A mermaid.js flowchart.}
 \end{figure}
-
-The biggest drawback of Mermaid.js is that the syntax is very different from any programming language. This means pasting our source code will not yield any result, and we have to carefully translate our code every time. It also means that it is fully our responsability to maintain the abstraction level we want. Like Code2Flow, Mermaid.js has no way of letting us test our code.
