@@ -1,9 +1,3 @@
-# Master
+# Psnodig
 
-Sources relevant to the master's degree will be placed here
-
-## Pushing to the repo
-
-```
-git push https://username:password@github.uio.no/sergeyj/Master
-```
+A transpiler I built for my master's thesis! More info coming soon
