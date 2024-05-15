@@ -91,27 +91,27 @@ writeExpr (Constant v) _ = writeValue v
 writeExpr (VariableExp var) _ = tell var
 writeExpr (BinaryExp op exp1 exp2) fromMaths = do
     case op of
-        Division ->
-            if fromMaths
-            then do
-                tell "\\frac{"
-                writeExpr exp1 False >> tell "}{"
-                writeExpr exp2 False >> tell "}"
-            else do
-            tell "$\\frac{"
-            writeExpr exp1 False >> tell "}{"
-            writeExpr exp2 False >> tell "}$"
-        _ -> writeExpr exp1 fromMaths >> transpileOp op >> writeExpr exp2 fromMaths
+        Division -> do
+            tell $ if not fromMaths then "$" else ""
+            tell "\\frac{"
+            writeExpr exp1 True >> tell "}{"
+            writeExpr exp2 True >> tell "}"
+            tell $ if not fromMaths then "$" else ""
+        _ -> do
+            writeExpr exp1 fromMaths
+            if not fromMaths then tell " $" >> transpileOp op >> tell "$ "
+            else tell " " >> transpileOp op >> tell " "
+            writeExpr exp2 fromMaths
 writeExpr (CallExp functioncall) _ = do
     writeFunctionCall functioncall
 writeExpr (ListIndex name indexes) _ = do
     tell name
     mapM_ (\x -> tell "[" >> writeExpr x False >> tell "]") indexes
-writeExpr (Not expr) _ = do
+writeExpr (Not expr) fromMaths = do
     case expr of
         (CallExp (FunctionCall "in" args)) -> do
             writeExpr (head args) False
-            tell $ " $\\notin$ "
+            tell $ if fromMaths then " \\notin " else " $\\notin$ "
             writeExpr (last args) False
         _ -> do
             tell "\\KwNot "
@@ -130,35 +130,37 @@ writeFunctionCall (FunctionCall funcname args) = do
     case funcname of
         "length" -> do
             tell "\\abs{"
-            writeExpr (head args) False
+            writeExpr (head args) True
             tell "}"
         "ceil" -> do
-            tell "\\lceil "
+            tell "$\\lceil$"
             writeExpr (head args) False
-            tell "\\rceil"
+            tell "$\\rceil$"
         "floor" -> do
-            tell "\\lfloor "
+            tell "$\\lfloor$"
             writeExpr (head args) False
-            tell "\\rfloor"
+            tell "$\\rfloor$"
         "in" -> do
-            writeExpr (last args) False
-            tell $ " \\in "
             writeExpr (head args) False
+            tell $ " \\in "
+            writeExpr (last args) False
+            tell "?"
         "append" -> do
             tell "append "
             writeExpr (head args) False
             tell " to "
-            writeExpr (args !! 1) False
+            writeExpr (last args) False
         "add" -> do
             tell "add "
-            writeExpr (head args) False
+            if length args == 2
+            then do
+                tell "("
+                writeExpr (head args) False >> tell ", "
+                writeExpr (args !! 1) False >> tell ")"
+            else
+                writeExpr (head args) False
             tell " to "
-            writeExpr (args !! 1) False
-        "in" -> do
-            writeExpr (head args) False
-            tell " in "
-            writeExpr (args !! 1) False
-            tell "?"
+            writeExpr (last args) False
         _ -> do
             tell $ "\\" ++ funcname ++ "("
             writeFuncArgs args
@@ -167,8 +169,8 @@ getArgumentNames ::  [Argument] -> [String]
 getArgumentNames args = map getArgName args
     where getArgName (Argument name _) = name
 
-writeFunc :: Function -> LatexWriter ()
-writeFunc (Function funcname args stmts) = do
+writeFunc :: FunctionDecl -> LatexWriter ()
+writeFunc (FunctionDecl funcname args stmts) = do
     tell $ "\\proc{$\\" ++ funcname ++ "("
     case length args of
         0 -> tell ")$}{\n"
@@ -263,32 +265,32 @@ writeElse (Else stmts) indent = do
 
 -- Operators
 
-transpileOp :: Operator -> LatexWriter () -- the outer expression should ALWAYS be wrapped in $
+transpileOp :: Operator -> LatexWriter ()
 transpileOp op = tell $ case op of
-    Plus             -> " + "
-    Minus            -> " - "
-    Times            -> " \\cdot "
-    Division         -> " / "
-    LessThan         -> " < "
-    LessThanEqual    -> " \\leq "
-    GreaterThan      -> " > "
-    GreaterThanEqual -> " \\geq "
-    Equal            -> " = "
-    NotEqual         -> " \\neq "
-    And              -> " \\land "
-    Or               -> " \\lor "
-    Modulo           -> " \\% "
+    Plus             -> "+"
+    Minus            -> "-"
+    Times            -> "\\cdot"
+    Division         -> "/"
+    LessThan         -> "<"
+    LessThanEqual    -> "\\leq"
+    GreaterThan      -> ">"
+    GreaterThanEqual -> "\\geq"
+    Equal            -> "="
+    NotEqual         -> "\\neq"
+    And              -> "\\land"
+    Or               -> "\\lor"
+    Modulo           -> "\\%"
 
 
 -- Static stuff
 
-writeStaticFunctions :: LatexWriter ()
-writeStaticFunctions = do
+writeFunctionDecls :: LatexWriter ()
+writeFunctionDecls = do
     funcs <- asks fst
     mapM_ (\f -> tell $ "\\SetKwFunction{" ++ f ++ "}{" ++ f ++ "}\n") funcs
 
-writeStaticKeywords :: LatexWriter ()
-writeStaticKeywords = do
+writeKeywords :: LatexWriter ()
+writeKeywords = do
     keywords <- asks snd
     mapM_ (\k -> tell $ "\\SetKw{Kw" ++ fstToUpper k ++ "}{" ++ k ++ "}\n") keywords
 
@@ -300,7 +302,7 @@ fstToUpper str =
 constantConfig :: LatexWriter ()
 constantConfig = do
     tell "\\documentclass{standalone}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath,commath} \n\\usepackage[linesnumbered, ruled]{algorithm2e}\n\\SetKwProg{proc}{Procedure}{}{}\n"
-    writeStaticFunctions >> writeStaticKeywords
+    writeFunctionDecls >> writeKeywords
     tell "\\DontPrintSemicolon\n\\renewcommand{\\thealgocf}{}\n\\begin{document}\n\n\\begin{algorithm}[H]\n"
 
 writeProgramDescription :: Maybe ProgramDescription -> LatexWriter ()
@@ -309,8 +311,8 @@ writeProgramDescription (Just (ProgramDescription input output)) = do
     tell $ "\\KwIn{" ++ input ++ "}\n"
     tell $ "\\KwOut{" ++ output ++ "}\n"
 
-funcEnd :: Function -> LatexWriter ()
-funcEnd (Function name _ _) =
+funcEnd :: FunctionDecl -> LatexWriter ()
+funcEnd (FunctionDecl name _ _) =
     tell $ "\n\\caption{" ++ name ++ "}\n\\end{algorithm}\n\n\\end{document}"
 
 writeLatex :: Program -> LatexWriter ()

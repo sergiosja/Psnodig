@@ -19,8 +19,8 @@ collectStructDeclarations :: StructDecl -> Collector ()
 collectStructDeclarations (StructDecl name _) = do
     modify(\(funcs, keywords) -> (Set.insert name funcs, keywords))
 
-collectFuncDeclarations :: Function -> Collector ()
-collectFuncDeclarations (Function name _ stmts) = do
+collectFuncDeclarations :: FunctionDecl -> Collector ()
+collectFuncDeclarations (FunctionDecl name _ stmts) = do
     modify (\(funcs, keywords) -> (Set.insert name funcs, keywords))
     mapM_ collectStmt stmts
 
