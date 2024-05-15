@@ -229,68 +229,55 @@ testCustomToString = TestList
 testBval :: Test
 testBval = TestList
     [ "bval nil"
-        ~: let res = bval Nil
-           in res
+        ~: (bval Nil)
         ~?= False
 
     , "bval positive number"
-        ~: let res = bval (Number 68)
-           in res
+        ~: (bval (Number 68))
         ~?= True
 
     , "bval negative number"
-        ~: let res = bval (Number (- 5))
-           in res
+        ~: (bval (Number (- 5)))
         ~?= False
 
     , "bval positive decimal"
-        ~: let res = bval (Decimal 0.00001)
-           in res
+        ~: (bval (Decimal 0.00001))
         ~?= True
 
     , "bval negative decimal"
-        ~: let res = bval (Decimal 0.0)
-           in res
+        ~: (bval (Decimal 0.0))
         ~?= False
 
     , "bval empty text"
-        ~: let res = bval (Text "")
-           in res
+        ~: (bval (Text ""))
         ~?= False
 
     , "bval text"
-        ~: let res = bval (Text "siamo ragazzi di palermo")
-           in res
+        ~: (bval (Text "siamo ragazzi di palermo"))
         ~?= True
 
     , "bval empty list"
-        ~: let res = bval (List [])
-           in res
+        ~: (bval (List []))
         ~?= False
 
     , "bval list"
-        ~: let res = bval (List [(Constant (Text "ciao bonzo"))])
-           in res
+        ~: (bval (List [(Constant (Text "ciao bonzo"))]))
         ~?= True
 
     , "bval empty hashset"
-        ~: let res = bval (HashSet (Set.fromList []))
-           in res
+        ~: (bval (HashSet (Set.fromList [])))
         ~?= False
 
     , "bval hashset"
-        ~: let res = bval (HashSet (Set.fromList [(Constant (Number 1)), (Constant (Number 1)), (Constant (Number 1))]))
-           in res
+        ~: (bval (HashSet (Set.fromList [(Constant (Number 1)), (Constant (Number 1)), (Constant (Number 1))])))
         ~?= True
 
     , "bval empty hashmap"
-        ~: let res = bval (HashMap (Map.fromList []))
-           in res
+        ~: (bval (HashMap (Map.fromList [])))
         ~?= False
 
     , "bval hashmap"
-        ~: let res = bval (HashMap (Map.fromList [(Constant (Number 1), Constant (Text "value")), (Constant (Decimal 2.5), Constant (Number 123))]))
-           in res
+        ~: (bval (HashMap (Map.fromList [(Constant (Number 1), Constant (Text "value")), (Constant (Decimal 2.5), Constant (Number 123))])))
         ~?= True
     ]
 
