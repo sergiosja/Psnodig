@@ -181,8 +181,8 @@ writeElse (Else stmts) indent = do
 getArguments :: [Argument] -> [String]
 getArguments = map (\(Argument name t) -> name ++ " " ++ t)
 
-writeFunc :: Function -> GourmetWriter ()
-writeFunc (Function funcname args stmts) = do
+writeFunc :: FunctionDecl -> GourmetWriter ()
+writeFunc (FunctionDecl funcname args stmts) = do
     tell $ "func " ++ funcname ++ "("
     case length args of
         0 -> tell ") {\n"

@@ -4,6 +4,7 @@ module Gourmet.GourmetParser
     , parseProgramDescription
     , parseStmt
     , parseExpr
+    , parseFunctionDecl
     , parseStructDecl
     ) where
 
@@ -89,14 +90,6 @@ parseStructField =
     StructField <$> parseExpr1 <* sWhiteSpace '.'
                 <*> parseExpr
 
--- parseStructFieldExpr :: Parser Expression
--- parseStructFieldExpr = try (StructFieldExp <$> parseStructField) <|> parseExpr
-
--- update! jeg må ha parseStructFieldExpr blant structFields :((
-    -- må altså refaktorere en del! og knekke denne koden på et vis
-
-
--- Values -- hvis noe går galt: bytt fra reservedOp til char!!!
 
 parseValue :: Parser Value
 parseValue = choice
@@ -160,7 +153,7 @@ parseExpr = buildExpressionParser table term
             ]
             where
                 parseStructFieldExpr =
-                    {-try-} (StructFieldExp <$> parseStructField) -- <|> parseExpr1
+                    StructFieldExp <$> parseStructField
                 parseNotExp =
                     Not <$> (reservedOp "not" *> parseExpr)
                 parseListIndexExp =
@@ -220,9 +213,9 @@ parseArgument :: Parser Argument
 parseArgument =
     Argument <$> identifier <*> identifier
 
-parseFunction :: Parser Function
-parseFunction =
-    Function
+parseFunctionDecl :: Parser FunctionDecl
+parseFunctionDecl =
+    FunctionDecl
         <$> (reserved "func" *> identifier) <* reservedOp "("
         <*> parseArgument `sepBy` comma
         <* reservedOp ")" <* reservedOp "{"
@@ -261,11 +254,11 @@ parseStmt = choice
     , try parseBreakStmt
     , try parseContinueStmt
     , try parseAssignment
-    , try whileStmt
-    , try forEachStmt
-    , try forStmt
-    , try ifStmt
-    , try returnStmt
+    , try parseWhileStmt
+    , try parseForEachStmt
+    , try parseForStmt
+    , try parseIfStmt
+    , try parseReturnStmt
     , try parseFunctionCallStmt
     ] <?> "a statement."
     where
@@ -285,27 +278,27 @@ parseStmt = choice
             Assignment
                 <$> parseAssignmentTarget <* reservedOp ":="
                 <*> parseAssignmentValue
-        whileStmt =
+        parseWhileStmt =
             Loop
                 <$> (reservedOp "while" *> parseExpr) <* reservedOp "{"
                 <*> many parseStmt <* reservedOp "}"
-        forEachStmt =
+        parseForEachStmt =
             ForEach
                 <$> (reservedOp "for" *> identifier) <* reservedOp ":="
                 <*> parseExpr <* reservedOp "{"
                 <*> many parseStmt <* reservedOp "}"
-        forStmt =
+        parseForStmt =
             For
                 <$> (reservedOp "for" *> identifier) <* reservedOp ":="
                 <*> parseExpr <* reservedOp ","
                 <*> parseExpr <* reservedOp "{"
                 <*> many parseStmt <* reservedOp "}"
-        ifStmt =
+        parseIfStmt =
             If
                 <$> (reservedOp "if" *> parseExpr) <* reservedOp "{"
                 <*> many parseStmt <* reservedOp "}"
                 <*> optionMaybe parseElse
-        returnStmt =
+        parseReturnStmt =
             Return <$> (reservedOp "return" *> parseExpr)
 
 parseElse :: Parser Else
@@ -330,6 +323,6 @@ parseGourmet = do
     whiteSpace
     programDescription <- optionMaybe parseProgramDescription
     structs <- many parseStructDecl
-    funcs <- many parseFunction
+    funcs <- many parseFunctionDecl
     functioncall <- optionMaybe parseFunctionCall
     return $ Program programDescription structs funcs functioncall
