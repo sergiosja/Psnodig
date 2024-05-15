@@ -1,7 +1,9 @@
-module Main (main) where
+module Main
+    ( main
+    , interpret
+    ) where
 
--- Psnodig syntax
-import Syntax
+-- Psnodig
 import Interpreter
     ( ExecutionState(..)
     , RuntimeError(RuntimeErrorWithOutput)
@@ -22,7 +24,7 @@ import LaTeX.LatexEnv (extractEnv)
 -- Flowcharts
 import LaTeX.Flowcharts
     ( Environment(..)
-    , writeFlowchart
+    , drawFlowchart
     )
 
 -- External imports
@@ -97,7 +99,7 @@ makeIBP program filename pdf = do
     let parsed = parse parseGourmet "" program
     case parsed of
         Right p -> do
-            let flowTex = execWriter $ runStateT (writeFlowchart p) (Environment [] 0 [0] [])
+            let flowTex = execWriter $ runStateT (drawFlowchart p) (Environment [] 0 [0] [])
             let texfile = gourmet2flowTex filename
             writeFile texfile flowTex
             if pdf then makePDF texfile else return ()
@@ -125,8 +127,8 @@ getAST :: String -> IO ()
 getAST program = do
     let parsed = parse parseGourmet "" program
     case parsed of
-        (Right p) -> print p
-        (Left err) -> putStrLn $ show err
+        Right p -> print p
+        Left err -> putStrLn $ show err
 
 interpret :: String -> IO ()
 interpret program = do
