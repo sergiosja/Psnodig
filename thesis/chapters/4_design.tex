@@ -14,7 +14,7 @@ However, the results they generate are sealed, and we have no choice but to acce
 
 Additionally, we believe these writers actually lie in the same sphere. Thus, it would make sense to gather and apply them in the same tool, rather than having to switch between different ones. Lastly, we see value in users adding their own parsers and code generators, to further increase the tool's usefulness. \\
 
-As the programs discussed in Section 3.3.2 specialise in flowchart generation, the DSLs are not actually executable. We believe that this is something that could be of tremendous use, and have therefore incorporated an interpreter that works on the internal representation of Psnodig. To the best of our knowledge, a tool which combines these exact devices does not currently exist.
+As the programs discussed in Section 3.3.2 specialise in flowchart generation, the DSLs are not actually executable. We believe that this is something that could be of tremendous use, and have therefore incorporated an interpreter that works on the internal representation of Psnodig. To the best of our knowledge, a tool that combines these exact devices does not currently exist.
 
 \section{Psnodig}
 
@@ -31,7 +31,7 @@ Since we are free to add parsers and writers at will, only our imagination (and 
 
 Psnodig's transpilation flow is as follows: source programs are parsed to an internal, intermediate representation. Later, this representation is used to convert the original program further to a new target program. This means that a source program written in different languages can produce the same target program, given that their ASTs are identical. \\
 
-Psnodig also comes with an interpreter, which works on the internal representation. This means that we can add parsers and run the code, without also having to write an interpreter or compiler. \\
+Psnodig also comes with an interpreter, that works on the internal representation. This means that we can add parsers and run the code, without also having to write an interpreter or compiler. \\
 
 All of this leads to a feeling of predictability: We write our source code in an available language. Then we use the interpreter to test it, until we are satisfied with the results. Now we are able to transpile it to TBP and IBP through the command line, rather than having to reconstruct it all manually. \\
 
@@ -67,41 +67,27 @@ Available options:
 <psnodig help>             : Brings you back here!
 \end{lstlisting}
 
-% \texttt{psnodig program}, which parses a program and runs it through the interpreter. If our program contains any reachable print-statements, their arguments will be printed back to the command line. \\
-
-% \texttt{psnodig tbp program}, which parses the program and produces a LaTeX file containing the program's TBP version. We can also add a flag \texttt{pdf} after \texttt{tbp} to get a PDF of the compiled LaTeX file. \\
-
-% \texttt{psnodig ibp program}, which parses the program and produces a LaTeX file containing the program's IBP version. We can also add a flag \texttt{pdf} after \texttt{ibp} to get a PDF of the compiled LaTeX file. \\
-
-% \texttt{psnodig gourmet program}, which parses a source program to an equivalent program in Gourmet syntax. As we only have a parser for Gourmet, converting Gourmet programs back to themselves has been a way to test Psnodig's consistency. \\
-
-% \texttt{psnodig Python program}, which transpiles a source program to an equivalent program in Python syntax. \\
-
-% \texttt{psnodig ast program}, which prints the program's AST to the terminal, given that the program is syntactically correct. This can be a nice way to debug programs, and get a better understanding of how our parsers actually parse our programs. \\
-
-% \texttt{psnodig help}, which yields all the legal commands, and what they provide, in the command line.
-
 \subsection{Syntax}
 
 Psnodig's syntax is located at \Cref{Psnodig's data types in Haskell.}, in the form of Haskell data types. \\
 
-The entry point of a Psnodig program is \texttt{Program}. Since all of its symbols are optional, a minimal working example is actually an empty file. This flexibility allows our parsers and writers to utilise just as much, or as little, of the Psnodig syntax as we wish. \\
+The entry point of a Psnodig program is Program that consists of an optional program description, a list of struct declarations, a list of function declarations, and an optional function call. Since the lists can be empty, a minimal parsable program is actually an empty file. This flexibility allows our parsers and writers to utilise just as much, or as little, of the Psnodig syntax as we wish. \\
 
-Most of the syntax resembles the syntax of common programming languages. However, there are two statements that have been introduced specifically for Psnodig's real use case: \texttt{Hash statements} and \texttt{Annotation statements}. \\
+Most of the syntax resembles the syntax of common programming languages. However, there are two statements that have been introduced specifically for Psnodig's real use case: \textbf{hash} statements and \textbf{annotation} statements. \\
 
-\textbf{Hash statements} are picked up by the parser and intended to be interpreted, but ignored by writers. This lets us abstract away things that we deem to be obvious to our audience. It could also be things that have already been stated elsewhere, but still need to be parsed for our programs to run. The name derives from how we can write single line comments in Python with a hash symbol. \\
+\textbf{Hash} statements are picked up by the parser and intended to be interpreted, but ignored by writers. This lets us abstract away things that we deem to be obvious to our audience. It could also be things that have already been stated elsewhere, but still need to be parsed for our programs to run. The name derives from how we can write single line comments in Python with a hash symbol. \\
 
-A common use case of this is how a lower case \texttt{n} is often used to denote amounts in TBP. By using a hash statement, we avoid including superflous length-function calls in cases where it is obvious what \texttt{n} symbolises. However, this will never be obvious to the interpreter, and thus we still have to include it in our source programs somehow. \\
+A use case of this is how a lower case \texttt{n} is often used to denote amounts in TBP. By using a hash statement, we avoid including superflous length-function calls in cases where the meaning of \texttt{n} is already given in a different context. However, this will never be obvious to the interpreter, and thus we still have to include it in our source programs somehow. \\
 
 \Cref{An AST of a hash statement.} shows an AST of a hash statement. An example of a hash statement in action can be seen in \Cref{hashStmtInAction}. \\
 
 \begin{figure}[ht!]
-    \Tree [.\texttt{Hash statement} \texttt{``\#''} \textit{statement} ]
+    \Tree [.\text{Hash statement} \texttt{``\#''} statement ]
     \caption{An AST of a hash statement.}
     \label{An AST of a hash statement.}
 \end{figure}
 
-\textbf{Annotation statements} are statements that allow us to add an extra layer of abstraction to our output targets. The first string is what is transpiled, without any conversion, whilst the list of statements is reserved for the interpreter. \\
+\textbf{Annotation} statements are statements that allow us to add an extra layer of abstraction to our output targets. The first string is what is transpiled, without any conversion, whilst the list of statements is reserved for the interpreter. \\
 
 A common use case of this is when we wish to swap two elements in a list. In many programming languages, when swapping two elements \texttt{a} and \texttt{b}, we have to assign \texttt{a} to a temporary variable, then assign \texttt{a} to \texttt{b}, before we can finally assign \texttt{b} to that temporary variable. These three implementation-specific lines could easily be abstracted with \texttt{swap a and b}. \\
 
@@ -110,7 +96,7 @@ We can also leave the first value of an Annotation statement to be an empty stri
 Likewise, the second value of an Annotation statement can be left empty. This allows us to explain things solely with natural language. \Cref{An AST of an annotation statement.} shows an AST of an annotation statement. An example of an annotation statement in action can be seen in \Cref{antStmtInAction}. \\
 
 \begin{figure}[ht!]
-    \Tree [.\texttt{Annotation statement} string \texttt{[}\textit{statement}\texttt{]} ]
+    \Tree [.\text{Annotation statement} string \texttt{[}\textit{statement}\texttt{]} ]
     \caption{An AST of an annotation statement.}
     \label{An AST of an annotation statement.}
 \end{figure}
@@ -119,7 +105,7 @@ These two statements are particularly useful when a piece of code is not crucial
 
 \subsection{Interpreter}
 
-A big selling point of Psnodig is that in addition to being a transpiler, we also provide an interpreter which works on the internal representation. For a program to be transpiled, it only needs to be syntactically correct. However, this does not guarantee that the program works as intend. Thus, Psnodig provides users with the ability to test their programs before they are transpiled and later presented, which can be crucial. \\
+A big selling point of Psnodig is that in addition to being a transpiler, we also provide an interpreter that works on the internal representation. For a program to be transpiled, it only needs to be syntactically correct. However, this does not guarantee that the program works as intend. Thus, Psnodig provides users with the ability to test their programs before they are transpiled and later presented, which can be crucial. \\
 
 Take the program presented in \Cref{A syntactically correct program with a subtle logical error.} as an example. The function \\ \texttt{printEvenNumbers} takes two arguments: a list of numbers and the list's length. Then we iterate through this range, and proceed to print every number in the list that is even. However, we check for evenness by doing \texttt{if i \% 2 == 0}, when really we intend to do \texttt{if numbers[i] \% 2 == 0}. The difference is subtle, but by running the program we quickly realise the error when the screen displays 47, 79 and 93 rather than 46 and 22. \\
 
@@ -136,16 +122,16 @@ func printEvenNumbers(numbers list, length int) {
 printEvenNumbers([47, 46, 79, 22, 93], 5)
 \end{lstlisting}
 
-As seen from the syntax in \Cref{Psnodig's data types in Haskell.}, Psnodig programs consist of four parts: An optional program description, a list of struct declarations (which can be empty), a list of function declarations (which can also be empty), and lastly, an optional function call. The function call is the interpreter's entry point, much like a \texttt{main} function in compiler languages like Go, Kotlin and Java.
+As seen from the syntax in \Cref{Psnodig's data types in Haskell.}, Psnodig programs consist of four parts: An optional program description, a list of struct declarations (that can be empty), a list of function declarations (that can also be empty), and lastly, an optional function call. The function call is the interpreter's entry point, much like a \texttt{main} function in compiler languages like Go, Kotlin and Java.
 
 \subsubsection{Scope}
 
 Psnodig works with both a global and a local scope. All structs and functions are global, and can be accessed from within any function. This means that, among other things, functions can be mutually recursive. Variables, on the other hand, are strictly local, and a variable declared in function \texttt{f} cannot be accessed in function \texttt{g}, unless passed as an argument. \\
 
-\Cref{Gourmet program which provokes a runtime error.} and \Cref{Gourmet code without error.} both show syntactically correct programs. However, running the former will yield a runtime error, because \texttt{n} is not available in the scope of \texttt{g}. The latter program will run smoothly, as we pass the variable as an argument to \texttt{g}, which excitedly returns the variable straight back. \\
+\Cref{Gourmet program that provokes a runtime error.} and \Cref{Gourmet code without error.} both show syntactically correct programs. However, running the former will yield a runtime error, because \texttt{n} is not available in the scope of \texttt{g}. The latter program will run smoothly, as we pass the variable as an argument to \texttt{g}, that excitedly returns the variable straight back. \\
 
 \begin{minipage}{.45\textwidth}
-\begin{lstlisting}[caption={Gourmet program which provokes a runtime error.}, captionpos=b, label={Gourmet program which provokes a runtime error.}]
+\begin{lstlisting}[caption={Gourmet program that provokes a runtime error.}, captionpos=b, label={Gourmet program that provokes a runtime error.}]
 func f() {
     n := 5
     return g()
@@ -185,33 +171,33 @@ One could say that it is too expressive, technically allowing iteration of non-i
 
 \subsubsection{Built-in Functions}
 
-The interpreter provides several built-in functions, which are also found in many programming languages. They are also reflected in the TBP writer. If a function call fails, e.g. due to wrong number of arguments provided, or arguments having the wrong type, the program will stop and the user will receive an explanatory error message. \\
+The interpreter provides several built-in functions, that are also found in many programming languages. They are also reflected in the TBP writer. If a function call fails, e.g. due to wrong number of arguments provided, or arguments having the wrong type, the program will stop and the user will receive an explanatory error message. \\
 
-\textbf{print($x_{1}$, $..$, $x_{n}$)}, which takes $n \in \mathbb{N}$ arguments. The arguments must be of type \texttt{Expression}. Each argument is converted to a string and concatenated, separated by a space, before they are printed to the terminal. The function returns the number of arguments passed to it. \\
+\textbf{print($x_{1}$, $..$, $x_{n}$)}, that takes $n \in \mathbb{N}$ arguments. The arguments must be of type \texttt{Expression}. Each argument is converted to a string and concatenated, separated by a space, before they are printed to the terminal. The function returns the number of arguments passed to it. \\
 
-\textbf{length($x$)}, which takes one argument. The argument must be of type \texttt{Text}, \texttt{List}, \texttt{HashSet}, or \texttt{HashMap} (presented in \Cref{Psnodig's data types in Haskell.}). The function returns the length of its argument: Number of characters in the text, number of elements in the list or hashset, or number of mappings in the hashmap. \\
+\textbf{length($x$)}, that takes one argument. The argument must be of type \texttt{Text}, \texttt{List}, \texttt{HashSet}, or \texttt{HashMap} (presented in \Cref{Psnodig's data types in Haskell.}). The function returns the length of its argument: Number of characters in the text, number of elements in the list or hashset, or number of mappings in the hashmap. \\
 
-\textbf{ceil($x$)}, which takes one number $x \in \mathbb{Q}$ as argument. The return value will be rounded up to the nearest $n \in \mathbb{N}$. \\
+\textbf{ceil($x$)}, that takes one number $x \in \mathbb{Q}$ as argument. The return value will be rounded up to the nearest $n \in \mathbb{N}$. \\
 
-\textbf{floor($x$)}, which takes one number $x \in \mathbb{Q}$ as argument. The return value will be rounded down to the nearest $n \in \mathbb{N}$. \\
+\textbf{floor($x$)}, that takes one number $x \in \mathbb{Q}$ as argument. The return value will be rounded down to the nearest $n \in \mathbb{N}$. \\
 
-\textbf{max($x_{1}$, $..$, $x_{n}$)}, which takes $n \in \mathbb{N}_{>0}$ arguments. The arguments themselves must be an $x \in \mathbb{Q}$. The return value will be the largest value amongst the arguments. \\
+\textbf{max($x_{1}$, $..$, $x_{n}$)}, that takes $n \in \mathbb{N}_{>0}$ arguments. The arguments themselves must be an $x \in \mathbb{Q}$. The return value will be the largest value amongst the arguments. \\
 
-\textbf{min($x_{1}$, $..$, $x_{n}$)}, which takes $n \in \mathbb{N}_{>0}$ arguments. The arguments themselves must be an $x \in \mathbb{Q}$. The return value will be the smallest value amongst the arguments. \\
+\textbf{min($x_{1}$, $..$, $x_{n}$)}, that takes $n \in \mathbb{N}_{>0}$ arguments. The arguments themselves must be an $x \in \mathbb{Q}$. The return value will be the smallest value amongst the arguments. \\
 
-\textbf{append($x$, $xs$)}, which takes two arguments. The first argument must be an \texttt{Expression}, and the second argument must be a \texttt{List}. The function will append $x$ to the end of $xs$, thus modifying the list locally. The function returns 1 upon success. \\
+\textbf{append($x$, $xs$)}, that takes two arguments. The first argument must be an \texttt{Expression}, and the second argument must be a \texttt{List}. The function will append $x$ to the end of $xs$, thus modifying the list locally. The function returns 1 upon success. \\
 
-\textbf{add($x$, $hs$)}, which takes two arguments: an \texttt{Expression} $x$ and a \texttt{HashSet} $hs$. It adds the former to the latter. The function returns 1 upon success. \\
+\textbf{add($x$, $hs$)}, that takes two arguments: an \texttt{Expression} $x$ and a \texttt{HashSet} $hs$. It adds the former to the latter. The function returns 1 upon success. \\
 
 \textbf{add($k$, $v$, $hm$)} is an overloaded version of \textbf{add}, this time taking three arguments: An \texttt{Expression} $k$, an \texttt{Expression} $v$, and a \texttt{HashMap} $hm$. It maps $k$ to $v$, and adds the mapping to $hm$. This version of the function also returns 1 upon success. \\
 
-\textbf{get($k$, $hm$)}, which takes two arguments, an \texttt{Expression} $k$ and a \texttt{HashMap} $hm$. If $k$ is a key in $hm$, the function returns the value $v$ that $k$ maps to in $hm$. \\
+\textbf{get($k$, $hm$)}, that takes two arguments, an \texttt{Expression} $k$ and a \texttt{HashMap} $hm$. If $k$ is a key in $hm$, the function returns the value $v$ that $k$ maps to in $hm$. \\
 
-\textbf{in($x$, $xs$)}, which takes two arguments, an \texttt{Expression} $x$ and either a \texttt{List}, a \texttt{HashSet}, or a \texttt{HashMap}. The function will check if $x$ exists in $xs$, and return the appropriate boolean. \\
+\textbf{in($x$, $xs$)}, that takes two arguments, an \texttt{Expression} $x$ and either a \texttt{List}, a \texttt{HashSet}, or a \texttt{HashMap}. The function will check if $x$ exists in $xs$, and return the appropriate boolean. \\
 
-\textbf{pop($x$)}, which takes one argument, a non-empty \texttt{List} $x$. If the list is not empty, the function will modify $x$ by removing $v$, before subsequently returning $v$. \\
+\textbf{pop($x$)}, that takes one argument, a non-empty \texttt{List} $x$. If the list is not empty, the function will modify $x$ by removing $v$, before subsequently returning $v$. \\
 
-\textbf{toString($x$)}, which takes one argument, an \texttt{Expression} $x$. It returns the string version of $x$. Base expressions and lists will look identical, whilst hashset, hashmap and struct expressions vary. \\
+\textbf{toString($x$)}, that takes one argument, an \texttt{Expression} $x$. It returns the string version of $x$. Base expressions and lists will look identical, whilst hashset, hashmap and struct expressions vary. \\
 
 Hashsets are printed on the form \texttt{(expr$_1$, .., expr$_n$)}, hashmaps are printed on the form \texttt{\{key$_1$:value$_1$, .., key$_n$:value$_n$\}}, and structs are printed on the form \texttt{field$_1$:value$_1$, field$_n$:value$_n$}. Nested structs are enclosed in parentheses.
 
@@ -229,7 +215,7 @@ What the languages of computer science introductory courses do have in common, i
 
 \subsection{Lexical Aspects}
 
-Before we reveal Gourmet's grammar, we believe it is valuable to walk thorugh important lexical aspects like keywords, comments and whitespace. These are handled by the lexer, which is presented in its entirety in \Cref{The Gourmet lexer.}.
+Before we reveal Gourmet's grammar, we believe it is valuable to walk thorugh important lexical aspects like keywords, comments and whitespace. These are handled by the lexer, that is presented in its entirety in \Cref{The Gourmet lexer.}.
 
 \subsubsection{Identifiers and Keywords}
 
@@ -237,7 +223,7 @@ An identifier in Gourmet is used to reference either a struct, function or varia
 
 In total, there are 14 keywords in Gourmet: \texttt{while}, \texttt{if}, \texttt{func}, \texttt{true}, \texttt{false}, \texttt{return}, \texttt{else}, \texttt{for}, \texttt{break}, \texttt{continue}, \texttt{struct}, \texttt{not}, \texttt{map} and \texttt{set}. These keywords are also reserved, which means that we cannot define identifiers like \texttt{while} and \texttt{func}. \\
 
-Gourmet allows us to define functions that shadow the built-in functions of Psnodig, however the interpreter will always prefer the built-in ones. While we cannot write and run a function called \texttt{print}, we can always define a function \texttt{print’} or \texttt{print1}, which will be handled just like any other function we define ourselves.
+Gourmet allows us to define functions that shadow the built-in functions of Psnodig, however the interpreter will always prefer the built-in ones. While we cannot write and run a function called \texttt{print}, we can always define a function \texttt{print’} or \texttt{print1}, that will be handled just like any other function we define ourselves.
 
 \subsubsection{Comments}
 
@@ -268,7 +254,7 @@ func f() {
 
 Whitespace can be defined as spaces, newlines and tabs. Gourmet does not differentiate between any of them, and we can use them in our programs exactly how we wish. \\
 
-\Cref{f with a standard amount of whitespace.}, \Cref{f with a lot of whitespace.} and \Cref{f with no whitespace.} show three identical programs, besides the use of whitespace. We have a function \texttt{f}, which defines a variable \texttt{a} and returns it. All three programs will be parsed successfully, and have the same internal representation in Psnodig. \\
+\Cref{f with a standard amount of whitespace.}, \Cref{f with a lot of whitespace.} and \Cref{f with no whitespace.} show three identical programs, besides the use of whitespace. We have a function \texttt{f}, that defines a variable \texttt{a} and returns it. All three programs will be parsed successfully, and have the same internal representation in Psnodig. \\
 
 \begin{lstlisting}[caption={A Gourmet program with a standard amount of whitespace.}, captionpos=b, label={f with a standard amount of whitespace.}]
 func f() {
@@ -347,8 +333,6 @@ Non-terminals are symbols that can be substituted. All the symbols on the left s
 Since the first argument of \texttt{STRUCTFIELD} is \texttt{EXPRESSION}, and the former also appears on the right hand side of the latter, we risk running into a \textit{left-recursive cycle}. A cycle of this nature occurs when the parser attempts to match the same rule again and again, without actually consuming any input. \\
 
 Therefore, we have an additional non-terminal \texttt{EXPRESSION1}, identical to \texttt{EXPRESSION} with the exception of not having a \texttt{STRUCTFIELD} non-terminal on its right hand side. This allows us to change the right hand side of \texttt{STRUCTFIELD} to \texttt{EXPRESSION1 "." EXPRESSION 2}. \\
-
-% Syns alltid left-recursion er vanskelig å forklare men tenk det her. vi fyller hele tiden inn expression med structfield og vice versa. vi leser ikke noe faktisk input, vi bygger bare et giga ast.
 
 \begin{lstlisting}[caption={Gourmet's grammar in EBNF notation.}, captionpos=b, label={The EBNF grammar of the Gourmet programming language.}]
 PROGRAM            $\Leftarrow$ [ PROGRAMDESCRIPTION ] { STRUCTDECL }
@@ -477,7 +461,7 @@ Additionally, since Gourmet boasts most of the characteristics of other dynamica
 
 \section{Python Writer}
 
-As mentioned in Section 4.3, Gourmet's syntax is mainly inspired by Go and Python. As they are far richer languages, and Gourmet almost resembles a subset of Go, we decided to create an additional writer which converts ASTs to Python-like syntax. \\
+As mentioned in Section 4.3, Gourmet's syntax is mainly inspired by Go and Python. As they are far richer languages, and Gourmet almost resembles a subset of Go, we decided to create an additional writer that converts ASTs to Python syntax. \\
 
 The Gourmet and Python writers are very similar, only with a few notable differences, like \texttt{=} over \texttt{:=} for assignment, and colons over curly brackets. The biggest difference, however, is handling structs, as Python does not have them. Instead, they have \textit{classes}. \Cref{The Python equivalent of an empty struct in Gourmet.} shows how we translate an empty struct \texttt{struct Struct\{\}} into a class. \\
 
@@ -494,6 +478,8 @@ Additionally, while Gourmet allows all type hints, Python only allows a few (wit
 Most of Psnodig's built-in functions have equivalents in Python, but not all. For instance, to use \texttt{min} and \texttt{max}, we would have to import the \texttt{math} package. Other than those, we translate \texttt{length} to \texttt{len}, \texttt{get(key, hashmap)} to \texttt{hashmap[key]} etc., given that the correct number of arguments is provided. \\
 
 Python does not inherently have hash- and annotation statements. However, while these are statements that are intended to be hidden during presentation, they are essential to a program's runtime. Therefore, we have decided to convert them to regular statements in Python, also ignoring the first argument of annotation statements. \\
+
+A key difference in design is how \texttt{For} loops are handled. In Psnodig when given a range like \texttt{2, 5}, it will iterate from 2 to 5, including. Python, on the other hand, will iterate from 2 to 5, \textit{excluding}. \\
 
 Lastly, for descriptions of input and output, we have decided to put them at the start of the file as block comments. \Cref{gourmetSquareVariable} shows a program in Gourmet, and \Cref{PythonResult} shows the transpiled version in Python. \\
 
@@ -526,7 +512,7 @@ As already mentioned in Section 4.2.2.3, all built-in Psnodig functions are take
 
 Mathematical expressions are also taken into account. For instance, the value \texttt{BinaryExp Division (Constant (Number 2)) (Constant (Number 1))} will show $\frac{2}{1}$, rather than something like \texttt{2/1}. Similarly, an expression with multiplication will be displayed as \texttt{m $\cdot$ n} rather than \texttt{m * n}. To work with mathematical symbols in LaTeX we use the packages \texttt{amsmath} and \texttt{commath}. They are always included, regardless of the rest of the program. \\
 
-We also declare some macros to match the syntax of Psnodig. Before our programs are transpiled to TBP, we scan it for keywords, which are then reflected the LaTeX file. If our program contains code like \texttt{v := false}, the LaTeX file will include \texttt{\textbackslash SetKw\{False\}\{false\}}, and we will apply \texttt{\textbackslash KwFalse} rather than just ``false''.
+We also declare some macros to match the syntax of Psnodig. Before our programs are transpiled to TBP, we scan it for keywords, that are then reflected the LaTeX file. If our program contains code like \texttt{v := false}, the LaTeX file will include \texttt{\textbackslash SetKw\{False\}\{false\}}, and we will apply \texttt{\textbackslash KwFalse} rather than just ``false''.
 
 \subsection{Output}
 
@@ -534,7 +520,7 @@ If we run \texttt{psnodig tbp program} in our command line, and the program is s
 
 Just like the Gourmet writer, the TBP writer is not able to take the original source code's formatting into account. This means that a program like the one shown in \Cref{Gourmet f} will be transpiled to the one shown in \Cref{How Psnodig transpiles the program from} rather than the one shown in \Cref{Alternative version of f in LaTeX with Algorithm2e.}. \\
 
-\begin{lstlisting}[caption={A Gourmet function which declares a variable and returns it.}, captionpos=b, label={Gourmet f}]
+\begin{lstlisting}[caption={A Gourmet function that declares a variable and returns it.}, captionpos=b, label={Gourmet f}]
 func f(){v:=5 returnv}
 \end{lstlisting}
 
@@ -571,99 +557,101 @@ Lastly, all documents transpiled to TBP include \texttt{\textbackslash DontPrint
 
 \section{Flowchart Writer}
 
-Our third and last writer converts internal representations to LaTeX programs using the TikZ package. Compiling these files produce flowcharts. We believe there is value to working with such a different abstraction level (compared to Gourmet and TBP), and pretty flowcharts helps showcase Psnodig's powerfulness. \\
+Our third and last writer converts internal representations to LaTeX programs using the TikZ package. Compiling these files produce flowcharts. We believe there is value to working with such a different abstraction level (compared to Gourmet, Python and TBP), and pretty flowcharts helps showcase Psnodig's powerfulness. \\
 
-Just like the TBP writer, the IBP writer only works on topmost function in a file, ignoring the program description, structs and function call. Our reasoning is the same as earlier. \\
+Just like the TBP writer, the IBP writer only works on topmost function in a file, ignoring the program description, structs and function call. Our reasoning is the same as earlier.
 
 \subsection{Compatibility with Psnodig}
 
-To make the corresponding flowcharts clear as well as pleasing, we have opted for three different node themes. This will make it easier to differentiate significant contexts. \\
+We build the graph deterministically, adding shapes as we encounter new statements and expressions in the Psnodig AST. We have opted for three different node themes, that makes it easier to distinguish certain contexts. \\
 
 The start node and all return nodes have the same theme of rectangles with white text on a dark background. Statements containing a list of statements have the same theme of ellipses with black text on a yellow background. Lastly, all remaining statements have the theme of rectangles with black text on a light purple background. \Cref{flowchartColours} shows the result of transpiling a simple function, showcasing all the aforementioned node styles. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.75]{assets/chapter5/SimpleProgram_ibp.pdf}
+    \includegraphics[scale=.75]{assets/chapter4/SimpleProgram_ibp.pdf}
     \caption{A program showcasing all the different node types the Flowchart generator produces.}
     \label{flowchartColours}
 \end{figure}
 
 Just like the TBP writer, the IBP writer uses mathematical notation where appropriate. For instance, \texttt{x \&\& y} is transpiled to \texttt{x $\land$ y}. Contrary to the TBP writer however, Psnodig's built-in functions are not considered. That means that code like \texttt{length(collection)} will look identical both in the source code and the corresponding flowchart. \\
 
-\newpage
-
 All statements are displayed in a simple rectangular box, but \texttt{ForEach}-, \texttt{For}-, \texttt{Loop}-, and \texttt{If}-statements are, as previously mentioned, given their own node themes. This is because they break with the standard linear pattern, and contain statements of their own. \\
 
-\texttt{\textbf{ForEach} identifier collection statements} starts with a light yellow rectangle asking if we have iterated \texttt{collection}. From here there are two arrows. The first is labeled \texttt{true} and points to the subsequent statement following the current \texttt{\textbf{ForEach}} (if there are any). \\
+\texttt{ForEach identifier collection statements} starts with a light yellow rectangle asking if we have iterated \texttt{collection}. From here there are two arrows. The first is labeled \texttt{true} and points to the subsequent statement following the current \texttt{\ForEach} (if there are any). \\
 
 The other one is labeled \texttt{false} and points to a statement stating \texttt{identifier $\gets$ next element in collection}. Then, each statement in \texttt{statements} is presented. After the last of these, there is an arrow pointing back to the light yellow rectangle. A working example is presented in \Cref{flochartForEach}. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.75]{assets/chapter5/ForEachProgram_ibp.pdf}
+    \includegraphics[scale=.75]{assets/chapter4/ForEachProgram_ibp.pdf}
     \caption{A \texttt{ForEach}-statement, iterating a variable \texttt{teams}.}
     \label{flochartForEach}
 \end{figure}
 
-\texttt{\textbf{While} condition statements} largely follows the pattern of \texttt{\textbf{ForEach}}. The statement starts with a light yellow rectangle displaying \texttt{condition} followed by a question mark. \\
+\newpage
 
-There are again two edges: The first is labeled \texttt{true} and points to the subsequent statement following the current \texttt{\textbf{While}} (if there are any). The other is labeled \texttt{false} and points to the first statement in \texttt{statements}. The last of these points back to the light yellow rectangle. A working example is presented in \Cref{flochartWhile}. \\
+\texttt{While condition statements} largely follows the pattern of \texttt{ForEach}. The statement starts with a light yellow rectangle displaying \texttt{condition} followed by a question mark. \\
+
+There are again two edges: The first is labeled \texttt{true} and points to the subsequent statement following the current \texttt{While} (if there are any). The other is labeled \texttt{false} and points to the first statement in \texttt{statements}. The last of these points back to the light yellow rectangle. A working example is presented in \Cref{flochartWhile}. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.75]{assets/chapter5/WhileProgram_ibp.pdf}
+    \includegraphics[scale=.75]{assets/chapter4/WhileProgram_ibp.pdf}
     \caption{A \texttt{While}-statement, iterating until \texttt{i} reaches the value of \texttt{bigNumber}.}
     \label{flochartWhile}
 \end{figure}
 
-\texttt{\textbf{For} identifier from to statements} starts with assigning \\ \texttt{identifier} to \texttt{fromRange}. The next node is a light yellow rectangle. If \texttt{from} and \texttt{to} are both numericals, the rectangles text will be either \texttt{from < to ?} or \texttt{from > to ?}, depending on their values. If they are not both numericals, the default is \texttt{from < to ?} since we do not evaluate expressions, and have no way of knowing their actual values. \\
+\texttt{For identifier from to statements} starts with assigning \\ \texttt{identifier} to \texttt{fromRange}. The next node is a light yellow rectangle. If \texttt{from} and \texttt{to} are both numericals, the rectangles text will be either \texttt{from < to ?} or \texttt{from > to ?}, depending on their values. If they are not both numericals, the default is \texttt{from < to ?} since we do not evaluate expressions, and have no way of knowing their actual values. \\
 
-From this light yellow rectangle, we have an edge labeled \texttt{true} which points to the subsequent statement following the current \texttt{\textbf{For}} (if there are any). In the opposite way, an edge labeled \texttt{false} points to the first statement in \texttt{statements}. After the last of these, there is an assignment statement, either incrementing or decrementing \texttt{identifier}, before pointing back to the light yellow rectangle. \\
-
-\Cref{forExample1}, \Cref{forExample2}, and \Cref{forExample3} shows the three different ways a \texttt{\textbf{For}}-statement can be transpiled to a flowchart. \\
-
-\begin{figure}[ht]
+\begin{figure}[ht!]
     \centering
-    \includegraphics[scale=.62]{assets/chapter5/ForProgramPositive_ibp.pdf}
+    \includegraphics[scale=.58]{assets/chapter4/ForProgramPositive_ibp.pdf}
     \caption{A \texttt{For}-statmenet where \texttt{from < to}.}
     \label{forExample1}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[ht!]
     \centering
-    \includegraphics[scale=.62]{assets/chapter5/ForProgramNegative_ibp.pdf}
+    \includegraphics[scale=.58]{assets/chapter4/ForProgramNegative_ibp.pdf}
     \caption{A \texttt{For}-statmenet where \texttt{from > to}.}
     \label{forExample2}
 \end{figure}
 
 \begin{figure}[ht!]
     \centering
-    \includegraphics[scale=.62]{assets/chapter5/ForProgramDefault_ibp.pdf}
+    \includegraphics[scale=.58]{assets/chapter4/ForProgramDefault_ibp.pdf}
     \caption{A \texttt{For}-statmenet where \texttt{from} and \texttt{to} are not both numericals.}
     \label{forExample3}
 \end{figure}
 
-\texttt{\textbf{If} condition statements else} is the most intricate statement of the four discussed in this section. Again we start with a yellow rectangle displaying \texttt{condition} followed by a question mark. An edge labeled \texttt{true} points to the first statement in \texttt{statements}. Another edge labeled \texttt{false} points to either \texttt{else}, the subsequent statement following the current \texttt{\textbf{If}}, or nothing, since both cases are actually optional.
+From this light yellow rectangle, we have an edge labeled \texttt{true} that points to the subsequent statement following the current \texttt{For} (if there are any). In the opposite way, an edge labeled \texttt{false} points to the first statement in \texttt{statements}. After the last of these, there is an assignment statement, either incrementing or decrementing \texttt{identifier}, before pointing back to the light yellow rectangle. \\
+
+\Cref{forExample1}, \Cref{forExample2}, and \Cref{forExample3} shows the three different ways a \texttt{For}-statement can be transpiled to a flowchart. \\
+
+\texttt{If condition statements else} is the most intricate statement of the four discussed in this section. Again we start with a yellow rectangle displaying \texttt{condition} followed by a question mark. An edge labeled \texttt{true} points to the first statement in \texttt{statements}. Another edge labeled \texttt{false} points to either \texttt{else}, the subsequent statement following the current \texttt{If}, or nothing, since both cases are actually optional.
 
 The first example of this section, \Cref{flowchartColours}, actually shows an If-statement. \\
 
-If \texttt{statements} does not contain a \texttt{Return} statement, its last statement must point to the subsequent statement following the current \texttt{\textbf{If}} (if there is one). If \texttt{else} is present, the same applies to its list of statements.\footnote{As we can see in both \Cref{The EBNF grammar of the Gourmet programming language.} and \Cref{Psnodig's data types in Haskell.}, the Else type carries its own list of statements.} \Cref{flowchartIf} depicts a program flow where the \texttt{\textbf{If}} has two \texttt{else} clauses. Since neither the statement list in the original if or the first clause contain a return statement, their final statements point to the subsequent statement following the current If. However, the last \texttt{else} clause does contain a return, and therefore does not point any further. \\
+If \texttt{statements} does not contain a \texttt{Return} statement, its last statement must point to the subsequent statement following the current \texttt{If} (if there is one). If \texttt{else} is present, the same applies to its list of statements.\footnote{As we can see in both \Cref{The EBNF grammar of the Gourmet programming language.} and \Cref{Psnodig's data types in Haskell.}, the Else type carries its own list of statements.} \Cref{flowchartIf} depicts a program flow where the \texttt{If} has two \texttt{else} clauses. Since neither the statement list in the original if or the first clause contain a return statement, their final statements point to the subsequent statement following the current If. However, the last \texttt{else} clause does contain a return, and therefore does not point any further. \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.72]{assets/chapter5/IfElseProgram_ibp.pdf}
+    \includegraphics[scale=.72]{assets/chapter4/IfElseProgram_ibp.pdf}
     \caption{An \texttt{If}-statement with two clauses.}
     \label{flowchartIf}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[scale=.72]{assets/chapter5/SimpleIfProgram_ibp.pdf}
+    \includegraphics[scale=.72]{assets/chapter4/SimpleIfProgram_ibp.pdf}
     \caption{An \texttt{If}-statement without any else-clauses.}
     \label{flowchartIf2}
 \end{figure}
 
-If the last statement in \texttt{statements} is a \texttt{Return}-statement, and the same is the case for all subsequent \texttt{else}s, the next statement after the current \texttt{\textbf{If}} is unreachable. If our code still has this structure, we are told in the command line, and the transpilation is interrupted.
+\newpage
+
+If the last statement in \texttt{statements} is a \texttt{Return}-statement, and the same is the case for all subsequent \texttt{else}s, the next statement after the current \texttt{If} is unreachable. If our code still has this structure, we are told in the command line, and the transpilation is interrupted.
 
 \subsection{Output}
 

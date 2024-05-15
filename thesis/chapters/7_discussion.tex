@@ -1,67 +1,59 @@
 \chapter{Discussion}
 
-In this chapter, we discuss the results we obtained in Section 6.
+In this chapter, we will mainly discuss the results we obtained in Section 6. We will first reflect on the results, before discussing the current limitations of Psnodig.
 
 \section{Reflections}
 
-\subsection{Notation}
-
-The TBP- and IBP writers work on a different abstraction level than those of Gourmet and Python. Where the two last ones are restricted to ASCII-based keywords like \texttt{!=} and \texttt{floor(x)}, the two first ones allow us to use more precise mathematical notation like \texttt{$\neq$} and \texttt{$\lfloor$x$\rfloor$}.
+Based on the results from Section 6, we believe that Psnodig successfully meets the goals set in Section 1.2, and can provide an answer to the problem definition introduced in Section 3.1.
 
 \subsection{Extensible}
 
-We currently only have one parser, for the Gourmet programming language. However, we do believe that similar parsers could be added, without much extra work. The parser is currently 336 lines, and we have also preferred readability to conciseness, so we believe it could be done in even fewer. \\
+Currently Psnodig only has one parser, for an imperative, C-like language. As we saw in Section 6.1, the parser successfully converted programs of varying sizes to Psnodig ASTs. These ASTs were later successfully executed, and also losslessly converted back to the original source programs, to Python programs, and presentation-only targets. \\
 
-\forsup{Oppdater dette tallet 14. mai!}
+The parser consists of 328 lines of code, including boilerplate code like library imports, and putting all exported functions on their own separate line. 28 of these lines are function signatures. \\
 
-An additional point is that the parser clearly works, as discussed in Section 5.8.1, but it is also able to produce the computer programs we wanted to evaluate with ease. Given the general nature of Psnodig, we believe one could follow more or less the same steps that we have, to add a new parser.
-
-\subsubsection{Adding writers}
-
-\forsup{nei, ikke snakk om dette. men kanskje prøv å trekk en linje mellom str på gourmet parser og writer, og python writer, og si at det muligens kan være en liknende mengde jobb å legge til en parser (og parsere for liknende språk).}
-
-\forsup{husk, gourmet- og python writer er egt ikke målet med thesisen. det er FRA soruce code TIL pseudokode og flytdiagram.}
-
-Currently, Psnodig boasts four writers. Two of them are for programming languages, whilst the other two are presentation-only targets. \\
-
-The Gourmet writer works, as we are able to losslessly transpile Gourmet code back to itself. We saw it in Section 6.1, and we were also able to run the transpiled versions and obtain the same results as we did with the original ones. The Gourmet writer spans 224 lines of code, showing the general effort of adding a writer. \\
-
-The Python writer also works, as we are able to run the transpiled versions on the Python interpreter, and receive the same output as we did with Gourmet. The Python writer spans exactly 300 lines of code, showing the general effort of adding a writer for a subset of an existing language. \\
-
-The two presentation-only writers both target LaTeX. Both are able to convert a Psnodig AST to LaTeX, despite the formats being somewhat different. Particularly the IBP writer works on a very different abstraction level, primarily consisting of nodes and edges. However, in the end it worked well, and the writers span 323 and 538 lines of code, respectively.
+The Gourmet writer is even more succinct, consisting of only 224 lines of code, including boilerplate code. The Python writer is slightly larger, with 300 lines of code. However, we could draw parallels between the required amount of code to write a parser and a writer for the same language. In that case, it should be highly achievable to add a parser for (at least a subset of) Python.
 
 \subsection{Executable}
 
-It is clearly executable.
+The results from the evaluation were very satisfying with regards to executability. All algorithms performed precisely as expected, despite being tested on very different inputs, as well as producing different outputs. \\
 
-\subsection{Does it hold up against the problem as a whole?}
+The search functions both returned True when they found the target number in the list, and returned False in the case where it was not present. \\
 
-We believe that Psnodig \textit{does} hold up against the problem definition introduced in Section 3.1, and that it successfully achieves the goals we set in Section 1.2. It is the first of its kind, a publically available tool that transpiles source code to TBP and IBP, as well as being executable, and is easy to add parsers and writers to.
+The BST functions all returned the expected tree values. FindMax successfully located the node with the highest value. Insert was able to insert both integer and decimal values into the tree, whilst preserving the tree's properties. The same applies to Remove, that was able to remove nodes with one, two, and no children, correctly replacing the appropriate values and discarding the target node. Lastly, Search found all the nodes in the tree, and let us know when we looked for a node that was not present. \\
 
-\section{Limitations}
+The sorting algorithms gave us the exact same outputs: three sorted lists. The first test shows that they are able to handle empty lists, avoiding OutOfBounds-exceptions during computation. The second test shows that they are indeed capable of sorting lists of random integers. The third tests ensures that when data is already ordered, it stays unaltered. \\
+
+Both graph algorithms managed to successfully retrieve all the nodes where there was a valid path. Since we also printed the node they were currently visiting, we could see that the algorithms acted differently, albeit expectedly. BFS explored the graph one depth level at a time, exploring node 1 and 4 after starting on node 3. DFS, however, explored one path as far as it could. Despite also starting on node 3, it explored 4 and then 5, before looking at 1.
 
 \subsection{Presentable}
 
-% Complex flowcharts
+Both of our presentation-only writers were able to convert Psnodig ASTs to LaTeX targets, that we then compiled and presented. \\
 
-We are able to successfully transpile all Psnodig data types to flowcharts on their own, and also construct more complex flowcharts, combining statements, expressions and more. \\
+The TBP writer successfully produced pseudocode from Psnodig ASTs. It presents the programs in a similar fashion to the original source program, but is able to abstract over details like swapping variables, finding pivots and associating lists with keys. The possibility of defining our input and output allows us to give the reader a more predictable journey when reading the pseudocode. \\
 
-However, a limitation is that of nested control flow statements, being \texttt{While}, \texttt{For}, \texttt{ForEach}, and \texttt{If}. The biggest problem is that each edge has a fixed size, and when nesting these types of statements, we risk them crashing into each other. This can be seen in \Cref{deleteBSTIBP}, where one of the statements shadow parts of another. We also see, in \Cref{dfsIBP}, that edges sometime interfere with nodes, making it a bit difficult to know where they actually point.
+The IBP writer successfully produced flowcharts, though we are not satisfied with all of the results. However, considering it converts ASTs deterministically, and uses very few lines of code, we believe it to be at least a decent prototype. It especially excels when dealing without control flow statements, with isolated control flow statements, and with if-statements containing many clauses.
+
+\section{Limitations}
+
+Section 6 also identified some limitations of Psnodig. While all the goals in Section 1.2 are met, certain aspects leave us with room for improvement. Discussing these limitations will lead to a more predictable developer experience, since we will be able to anticipate these potential drawbacks.
 
 \subsection{Extensible}
 
-% Paradigm
+Psnodig is primarily built to work with imperative languages, like Go and Python. This made it comfortable to write a parser for Gourmet, as well as the writers for Gourmet and Python. However, adding a parser for a language from a different paradigm might be more challenging. \\
 
-Psnodig is primarily built to work with imperative languages, like Go and Python. This made it comfortable to write a parser for Gourmet, as well as the writers for Gourmet and Python. However, if the languages come from different paradigms, it might make it more challenging. \\
-
-We believe it might be more challenging to add a parser for logic languages like Prolog, formal specification languages like TLA+, query languages like SQL etc. This is because they work in a different, and more specific way than general, imperative languages do. \\
-
-It might also prove challenging to add a writer for these languages, especially if we are very dependent on structs or loops.
-
-\forsup{Implementation language}
-
-To add a parser or writer to Psnodig in the first place, they must be written in Haskell.\footnote{Technically, they can be written in a different language and \textit{transpiled} to Haskell.}
+To add a parser or writer to Psnodig in the first place, they must be written in Haskell.\footnote{Technically, they can be written in a different language and \textit{transpiled} to Haskell.} Even though we believe it is a good fit for this type of job, the language itself is considered to be a difficult programming language to learn~\cite{haskellIsHard1}.
 
 \subsection{Executable}
 
-Doesn't capture infinite loops!
+Naturally, we would like all programs to be executable. However, the interpreter currently stands without an implementation for the statement constructors \textbf{break} and \textbf{continue}. If a program flow runs into either of them, the program will terminate with a warning. Except for these, all Psnodig data types are handled by the interpreter. \\
+
+The way execution currently works, is that the interpreter runs the program, and returns either a final state or a runtime error. When we use the print function in our programs, their arguments are added to the final state. This means that we only see the resulting print statements after the program has run its course. \\
+
+The biggest downside of this, is that we have no way to really identify the bottleneck of infinite loops. Where you can do something like \texttt{while True \{ print("loop") \}} to print \texttt{loop} infinitely many times in many other languages, Psnodig will never print \texttt{loop}, because the program never terminates.
+
+\subsection{Presentable}
+
+As mentioned in \Cref{5_flowchartWriter}, we keep track of a list of ids. This is to help statements point back to their original conditions, and also to know where to continue after writing the inner statements of a control flow statement. However, it does not always seem that this list is being updated correctly. \\
+
+As such, we can encounter problems when we convert nested control flow statements (\texttt{While}, \texttt{For}, \texttt{ForEach}, and \texttt{If}) to IBP. For instance, it makes statement nodes crash more often than necessary, like we see in \Cref{Flowchart of Bubble sort implementation.}. In \Cref{Flowchart of Bucket sort implementation.} we can also see that edges sometime interfere with nodes, making it a bit difficult to know where they actually point. \\

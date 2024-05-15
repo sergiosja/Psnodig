@@ -11,7 +11,7 @@ When writing pseudocode, on the other hand, we are left to our own devices, as i
 
 Correct presentations are important in education where the goal is to teach students concepts they were previously unfamiliar with. At university level, concepts within algorithms and data structures have traditionally proved challenging for undergraduates~\cite{algorithmsAreHard1, algorithmsAreHard2, algorithmsAreHard3}. If their first impression of an algorithm is an incorrect presentation, their path is already hampered. \\
 
-In this thesis we present a tool called \textbf{Psnodig} (pronounced snoo-dee\footnote{Imagine the \textbf{sn} in \textbfit{snow}, the \textbf{oo} in \textbfit{cool}, and the \textbf{dee} in \textbfit{deep}. The silent \textbf{p} is an ode to the silent p in the word \textbfit{pseudocode}, naturally.}), which allows us to convert source code to other, less technical presentations. The presentation targets in this thesis are mainly pseudocode and flowcharts. The target audience is people who study or work with algorithms. \\
+In this thesis we present a tool called \textbf{Psnodig} (pronounced snoo-dee\footnote{Imagine the \textbf{sn} in \textbfit{snow}, the \textbf{oo} in \textbfit{cool}, and the \textbf{dee} in \textbfit{deep}. The silent \textbf{p} is an ode to the silent p in the word \textbfit{pseudocode}, naturally.}), that allows us to convert source code to other, less technical presentations. The presentation targets in this thesis are mainly pseudocode and flowcharts. The target audience is people who study or work with algorithms. \\
 
 The positive effect of teaching algorithms with flowcharts as an alternative to traditional code has been researched since at least the 1980's, and is still being researched this decade~\cite{flowchartsAreGood1, flowchartsAreGood2, flowchartsAreGood3}. However, tools for direct conversion from source code to flowcharts does not seem to be widespread. \\
 
@@ -31,7 +31,7 @@ The overall goal of this thesis is to construct a tool with the following proper
     \item \textbf{Presentable}, users can use Psnodig to convert their source code to a different level of abstraction.
 \end{itemize}
 
-We will use selected algorithms from \cite{pseudocodeInBook2} to evaluate to which degree the tool posesses these properties in Chapter 6. We will then discuss them more in depth in Chapter 7.
+We will use selected algorithms from Algorithm Design and Applications by Michael T. Goodrich and Roberto Tamassia to evaluate to which degree the tool posesses these properties in Chapter 6~\cite{pseudocodeInBook2}. We will then discuss them in greater detail in Chapter 7.
 
 \section{Contributions}
 
@@ -49,21 +49,6 @@ We are able to add parsers and writers to Psnodig at will, making it a flexible 
 
 To the best of our knowledge, Psnodig is the first tool of its kind for transpiling source code to these formats, in additional to being openly available and extensible.
 
-%---
-
-%The Psnodig tool comes with a parser for an imperative C-like language we call Gourmet, to serve as a proof of concept. It is also accompanied by four code generators that can convert an internal representation of Psnodig to four different target programs. They are Gourmet itself, a subset of Python, pseudocode and lastly flowcharts. The two latter are presented in LaTeX, and utilise the Algorithm2e- and TikZ packages, respectively. \\
-
-%To summarise, the contributions include:
-%\begin{itemize}
-%    \item Psnodig, a tool for converting code from one representation to another. It comes with an interpreter that works on the internal representation.
-%    \item A parser and writer for a simple C-like language we have coined \texttt{Gourmet}.
-%    \item A writer for a subset of Python, that we have coined \texttt{Pytite}.
-%    \item A writer for presenting ASTs with text based pseudocode, utilising the Algorithm2e package in LaTeX.
-%    \item A writer for presenting ASTs with flowcharts, utilising the TikZ package, also in LaTeX.
-%\end{itemize}
-
 \section{Project Source Code}
 
 All the source code from the master thesis can be found on Github.\footnote{More specifically, the entire thesis work can be found at \url{https://github.com/sergiosja/Master}. It is actually divided into two folders: \textbfit{psnodig}, containing the source code for the Psnodig tool, and \textbfit{thesis}, containing the LaTeX source code for this thesis.}
-
-\forsup{NOTE: Må huske å gjøre repoet public!}
