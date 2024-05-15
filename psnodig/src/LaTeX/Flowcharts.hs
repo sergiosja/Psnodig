@@ -1,4 +1,16 @@
-module LaTeX.Flowcharts (Environment(..), writeFlowchart) where
+module LaTeX.Flowcharts
+    ( Environment(..)
+    , drawFlowchart
+    , drawFunctionDecl
+    , drawStmts
+    , drawExpr
+    , drawStartstopNode
+    , drawStatementNode
+    , drawDecisionNode
+    , lastElseIsReturn
+    , stmtCount
+    , drawOpCrementHelper
+    ) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -11,7 +23,7 @@ import Syntax
 data Environment = Environment
     { edges :: [(Int, String)]
     , lastId :: Int
-    , coreId :: [Int]
+    , coreIds :: [Int]
     , activeBranches :: [String]
     }
 
@@ -39,16 +51,16 @@ getNextEdge = do
 
 setCoreId :: Int -> Flowchart ()
 setCoreId newCoreId = do
-    currStack@(Environment { coreId = ids }) <- get
-    put currStack { coreId = (newCoreId : ids) }
+    currStack@(Environment { coreIds = ids }) <- get
+    put currStack { coreIds = (newCoreId : ids) }
 
 popCoreId :: Flowchart Int
 popCoreId = do
-    currStack@(Environment { coreId = ids }) <- get
+    currStack@(Environment { coreIds = ids }) <- get
     case ids of
-        [] -> error "Flowchart error: Called `popCoreId` with empty coreId stack"
+        [] -> error "Flowchart error: Called `popCoreId` with empty coreIds stack"
         (currentCoreId : rest) -> do
-            put currStack { coreId = rest }
+            put currStack { coreIds = rest }
             return currentCoreId
 
 peekCoreId :: Flowchart String
@@ -84,7 +96,6 @@ lastElseIsReturn (Just (Else stmts)) =
     case last stmts of { Return _ -> True ; _ -> False }
 lastElseIsReturn (Just (ElseIf _ _ maybeElse)) =
     lastElseIsReturn maybeElse
-
 
 stmtCount :: [Statement] -> Int
 stmtCount [] = 0
@@ -212,7 +223,7 @@ drawExpr (BinaryExp op expr1 expr2) = drawExpr expr1 ++ drawOp op ++ drawExpr ex
 drawExpr (ListIndex listName exprs) = listName ++ drawIndexExprs exprs
 drawExpr (CallExp functionCall) = drawFunctionCall functionCall
 drawExpr (Not expr) = "not " ++ drawExpr expr
-drawExpr (StructExpr (Struct structName exprs)) = structName ++ "(" ++ intercalateExprs exprs
+drawExpr (StructExpr (Struct structName exprs)) = structName ++ "(" ++ intercalateExprs exprs ++ ")"
 drawExpr (StructFieldExp (StructField expr1 expr2)) =
     drawExpr expr1 ++ "." ++ drawExpr expr2
 
@@ -270,6 +281,9 @@ drawStmts (stmt@(If _ _ maybeElse) : x : xs) fromIf = do
         drawStmts xs False
     else
         drawStmts (x:xs) (not $ hasElse maybeElse)
+
+    -- in the case where else has a return, and is the last stmt in the list,
+    --     don't draw edges to the `next` stmt, because there isn't one!
 
 drawStmts (stmt@(Loop _ _) : rest) fromIf = do
     if fromIf then initiateStmtRight stmt
@@ -370,8 +384,7 @@ drawStmt Continue currentId pos =
 
 drawAssignmentTarget :: AssignmentTarget -> String
 drawAssignmentTarget (VariableTarget v) = v
-drawAssignmentTarget (ListIndexTarget v indexes) =
-    v ++ (show $ map (\x -> "[" ++ drawExpr x ++ "]") indexes)
+drawAssignmentTarget (ListIndexTarget v indexes) = v ++ drawIndexExprs indexes
 drawAssignmentTarget (StructFieldTarget (StructField x y)) =
     drawExpr x ++ "." ++ drawExpr y
 
@@ -476,8 +489,8 @@ drawForCrement crementId parentId crement = do
 
 -- Functions
 
-drawFunction :: Function -> Flowchart ()
-drawFunction (Function name args stmts) = do
+drawFunctionDecl :: FunctionDecl -> Flowchart ()
+drawFunctionDecl (FunctionDecl name args stmts) = do
     tell $ "\\node (0) [startstop] {" ++ name ++ "(" ++ intercalateArgs args ++ ")};\n"
     if null stmts then return ()
     else drawStmts stmts False
@@ -516,22 +529,20 @@ addEdge fromId toId direction = do
 
 -- Entry point
 
--- hadde vært kult om man kunne sende med egne sånne? feks gjennom en fil, også er brukeren selv ansvarlig for at alt er riktig
--- istedenfor å være bundet til startstop, io osv. å legge inn en egen \tikzstyle{sergey_custom} = [rectangle, minimum width=15cm, ..]
 constantConfig :: Flowchart ()
 constantConfig = do
     tell "\\documentclass[margin=3mm]{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{shapes, arrows}\n\n"
-    tell "\\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]\n"
-    tell "\\tikzstyle{statement} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!20]\n"
+    tell "\\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=1cm, minimum height=1cm, text centered, draw=black, text=white, fill=black!80]\n"
+    tell "\\tikzstyle{statement} = [rectangle, minimum width=1cm, minimum height=1cm, text centered, draw=black, fill=blue!20]\n"
     tell "\\tikzstyle{decision} = [rectangle, minimum height=1cm, text centered, draw=black, fill=yellow!30]\n"
     tell "\\tikzstyle{edge} = [thick, ->, >=stealth]\n\n"
     tell "\\begin{document}\n\\begin{tikzpicture}[node distance=2cm]\n\n"
 
-writeFlowchart :: Program -> Flowchart ()
-writeFlowchart (Program _ _ funcs _) =
+drawFlowchart :: Program -> Flowchart ()
+drawFlowchart (Program _ _ funcs _) =
     if null funcs then return ()
     else do
         constantConfig
-        drawFunction $ head funcs
+        drawFunctionDecl $ head funcs
         drawEdges
         tell "\n\\end{tikzpicture}\n\\end{document}"
