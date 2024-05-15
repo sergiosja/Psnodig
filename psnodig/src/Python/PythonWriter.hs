@@ -83,9 +83,11 @@ writeValue (Text str) = tell $ show str
 writeValue (List exprs) = do
     tell "["
     intercalateExprs exprs "]"
-writeValue (HashSet exprs) = do
-    tell "{"
-    intercalateExprs (Set.toList exprs) "}"
+writeValue (HashSet exprs) =
+    if null exprs then tell "set()"
+    else do
+        tell "{"
+        intercalateExprs (Set.toList exprs) "}"
 writeValue (HashMap hmap) = do
     tell "{"
     let pairs = Map.toList hmap
@@ -137,40 +139,43 @@ writeStmt (Assignment target value) _ = do
     writeAssignmentTarget target
     tell " = "
     writeAssignmentValue value
+    tell "\n"
 writeStmt (Loop expr stmts) indent = do
     tell "while "
     writeExpr expr
     tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 writeStmt (ForEach item expr stmts) indent = do
     tell $ "for " ++ item ++ " in "
     writeExpr expr
     tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 writeStmt (For item from to stmts) indent = do
     tell $ "for " ++ item ++ " in range("
     writeExpr from
     tell ", "
     writeExpr to
     tell "):\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 writeStmt (If expr stmts maybeElse) indent = do
     tell "if "
     writeExpr expr
     tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
     case maybeElse of
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
 writeStmt (Return expr) _ = do
     tell "return "
     writeExpr expr
-writeStmt (CallStmt functioncall) _ =
+    tell "\n"
+writeStmt (CallStmt functioncall) _ = do
     writeFunctionCall functioncall
+    tell "\n"
 writeStmt Break _ =
-    tell "break"
+    tell "break\n"
 writeStmt Continue _ =
-    tell "continue"
+    tell "continue\n"
 writeStmt (HashStmt stmt) indent =
     writeStmt stmt indent
 writeStmt as@(AnnotationStmt _ _) indent =
@@ -179,25 +184,25 @@ writeStmt as@(AnnotationStmt _ _) indent =
 writeAnnotationStmt :: Statement -> Int -> PythonWriter ()
 writeAnnotationStmt (AnnotationStmt _ []) _ = return ()
 writeAnnotationStmt (AnnotationStmt _ (x:xs)) indent = do
-    writeStmt x indent >> tell "\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent) >> writeStmt stmt indent >> tell "\n") xs
+    writeStmt x indent
+    mapM_ (\stmt -> (tell $ addIndents $ indent) >> writeStmt stmt indent) xs
 writeAnnotationStmt _ _ = return ()
 
 writeElse :: Else -> Int -> PythonWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
     tell ((addIndents indent) ++ "elif ") >> writeExpr expr >> tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
     case maybeElse of
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
 writeElse (Else stmts) indent = do
-    tell "else:\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
+    tell ((addIndents indent) ++ "else:\n")
+    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 
-writeFunc :: Function -> PythonWriter ()
-writeFunc (Function funcname args stmts) = do
+writeFunc :: FunctionDecl -> PythonWriter ()
+writeFunc (FunctionDecl funcname args stmts) = do
     tell $ "def " ++ funcname ++ "(" ++ (intercalateArgs $ translateArgs args)
-    mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1 >> tell "\n") stmts
+    mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1) stmts
 
 writeFunctionCall :: FunctionCall -> PythonWriter ()
 writeFunctionCall (FunctionCall "length" args) =
@@ -292,8 +297,8 @@ writeProgramDescription (Just (ProgramDescription input output)) = do
 writePython :: Program -> PythonWriter ()
 writePython (Program programDescription structs funcs funcCall) = do
     writeProgramDescription programDescription
-    mapM_ (\s -> (writeClass s) >> tell "\n\n") structs
-    mapM_ (\f -> (writeFunc f) >> tell "\n\n") funcs
+    mapM_ (\s -> (writeClass s) >> tell "\n") structs
+    mapM_ (\f -> (writeFunc f) >> tell "\n") funcs
     case funcCall of
         Just f -> writeFunctionCall f
         Nothing -> return ()
