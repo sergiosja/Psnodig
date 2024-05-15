@@ -71,7 +71,7 @@ testStructDecl :: Test
 testStructDecl = TestList
     [ "write empty struct"
         ~: (execWriter $ writeClass (StructDecl "Person" []))
-        ~?= "class Person:\n\tdef __init__(self):\n\t\tpass"
+        ~?= "class Person:\n\tdef __init__(self):\n\t\tpass\n"
 
     , "write small struct"
         ~: (execWriter $ writeClass (StructDecl "Person" [Argument "age" "int"]))
