@@ -1,8 +1,13 @@
 module Interpreter
     ( ExecutionState(..)
-    , RuntimeError(RuntimeErrorWithOutput)
+    , RuntimeError(..)
     , runPsnodig
     , evalStmt
+    , evalExpr
+    , processStructDecls
+    , stringifyValue
+    , bval
+    , callFunction
     ) where
 
 import Syntax
@@ -15,9 +20,8 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 type StructDecls = Map.Map String [String]
-type FuncEnv = Map.Map String Function
+type FuncDecls = Map.Map String FunctionDecl
 type Scope = [[(String, Value)]]
--- type Scope = [Map.Map String Value]
 type ScopeStack = [Scope]
 
 -- type Binding = (String, Value)
@@ -27,22 +31,27 @@ type ScopeStack = [Scope]
 
 data ExecutionState = ExecutionState
     { structDecls :: StructDecls
-    , funcEnv     :: FuncEnv
+    , funcDecls     :: FuncDecls
     , scopeStack  :: ScopeStack
     , output      :: [String]
     }
+    deriving (Show, Eq)
 
 data RuntimeError =
       VariableNotFound String
+    | OutOfBounds String
     | FunctionNotFound String
     | StructNotFound String
     | ArithmeticError String
+    | ListNotFound String
     | BadArgument String
+    | InvalidStructField String
+    | NoImplementationError String
     | WrongNumberOfArguments String
     | NoReturnError String
-    | Error String
+    | MissingEntryPoint String
     | RuntimeErrorWithOutput [String] RuntimeError
-    deriving (Show)
+    deriving (Show, Eq)
 
 type Psnodig = StateT ExecutionState (ExceptT RuntimeError IO)
 
@@ -112,8 +121,8 @@ updateListVar listName indexExprs value = do
         Just (List list) -> do
             list' <- updateNestedListVar (List list) indexExprs value
             findAndUpdateScope listName list'
-        Just _ -> throwError' $ BadArgument $ "\"" ++ listName ++ "\" is not a list."
-        Nothing -> throwError' $ VariableNotFound $ "No list \"" ++ listName ++ "\" previously defined."
+        Just _ -> throwError' (ListNotFound $ "\"" ++ listName ++ "\" is not a list.")
+        Nothing -> throwError' (VariableNotFound $ "No list \"" ++ listName ++ "\" previously defined.")
 
 updateNestedListVar :: Value -> [Expression] -> Value -> Psnodig Value
 updateNestedListVar (List list) (indexExpr : []) value = do
@@ -122,8 +131,8 @@ updateNestedListVar (List list) (indexExpr : []) value = do
         Number index ->
             if 0 <= index && (fromInteger index) < length list
             then return $ List $ replaceValueAtIndex list (fromInteger index) value
-            else throwError' $ Error $ "Index " ++ show index ++ " out of bounds."
-        _ -> throwError' $ BadArgument $ "List index must evaluate to a number."
+            else throwError' (OutOfBounds $ "Index " ++ show index ++ " out of bounds.")
+        _ -> throwError' (BadArgument $ "List index must be a number.")
 
 updateNestedListVar (List list) (indexExpr : rest) value = do
     maybeIndex <- evalExpr indexExpr
@@ -134,17 +143,17 @@ updateNestedListVar (List list) (indexExpr : rest) value = do
                 innerList <- evalExpr $ list !! (fromInteger index)
                 (List list') <- updateNestedListVar innerList rest value
                 return $ List $ replaceValueAtIndex list (fromInteger index) (List list')                
-            else throwError' $ Error $ "Index " ++ show index ++ " out of bounds."
-        _ -> throwError' $ BadArgument $ "List index must evaluate to a number."
+            else throwError' (OutOfBounds $ "Index " ++ show index ++ " out of bounds.")
+        _ -> throwError' (BadArgument $ "List index must be a number.")
 
-updateNestedListVar _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 1" -- fix this lool
+updateNestedListVar _ _ _ = throwError' (ListNotFound "Tried to update a list at an index, but provided argument is not a list.")
 
 findAndUpdateScope :: String -> Value -> Psnodig ()
 findAndUpdateScope listName newList = do
     currScope@(ExecutionState { scopeStack = (scopes : rest) }) <- get
     case updateScopes scopes listName newList of
         Just newScopes -> put currScope { scopeStack = (newScopes : rest) }
-        Nothing -> throwError' $ VariableNotFound $ "List " ++ listName ++ " not found."
+        Nothing -> throwError' (ListNotFound $ "List " ++ listName ++ " not found.")
 
 updateScopes :: [[(String, Value)]] -> String -> Value -> Maybe [[(String, Value)]]
 updateScopes [] _ _ = Nothing
@@ -154,16 +163,16 @@ updateScopes (scope:rest) listName newList =
     else
         (scope :) <$> updateScopes rest listName newList
 
-lookupFunc :: String -> Psnodig (Maybe Function)
+lookupFunc :: String -> Psnodig (Maybe FunctionDecl)
 lookupFunc funcName = do
-    ExecutionState { funcEnv = env } <- get
+    ExecutionState { funcDecls = env } <- get
     return $ Map.lookup funcName env
 
-bindFunc :: String -> Function -> Psnodig ()
+bindFunc :: String -> FunctionDecl -> Psnodig ()
 bindFunc name func = do
     env <- get
-    let newFuncEnv = Map.insert name func (funcEnv env)
-    put env { funcEnv = newFuncEnv }
+    let newFuncEnv = Map.insert name func (funcDecls env)
+    put env { funcDecls = newFuncEnv }
 
 
 -- Structs
@@ -190,12 +199,12 @@ bindStruct name (Struct maybeStruct args) = do
                 values <- mapM evalExpr args
                 bindVar name (StructVal $ zip args' values)
             else
-                throwError' $ WrongNumberOfArguments $ "Provided " ++ show (length args) ++ " args to a struct that takes " ++ show (length args') ++ " args."
-        Nothing -> throwError' $ StructNotFound $ "No struct \"" ++ maybeStruct ++ "\" previously defined."
+                throwError' (WrongNumberOfArguments $ "Provided " ++ show (length args) ++ " args to a struct that takes " ++ show (length args') ++ " args.")
+        Nothing -> throwError' (StructNotFound $ "No struct \"" ++ maybeStruct ++ "\" previously defined.")
 
 updateStruct :: String -> [(String, Value)] -> Psnodig ()
 updateStruct name fields =
-    bindVar name (StructVal fields) -- fix this! not safe. should use something like [if k == name then (k, newVal) else (k, v) | k, v <- existingList]
+    bindVar name (StructVal fields)
 
 updateStructField :: StructField -> Expression -> Psnodig ()
 updateStructField (StructField structName fieldExpr) valueExpr = do
@@ -206,47 +215,45 @@ updateStructField (StructField structName fieldExpr) valueExpr = do
                 Just (StructVal fields) -> do
                     StructVal newEnv <- updateField fields fieldExpr valueExpr
                     updateStruct name newEnv
-                _ -> throwError' $ BadArgument $ name ++ " is not a defined struct. 1"
+                _ -> throwError' (StructNotFound $ name ++ " is not a defined struct.")
         listIndex@(ListIndex listName indexExprs) -> do
             maybeStruct <- evalExpr listIndex
             case maybeStruct of
                 StructVal fields -> do
                     StructVal newEnv <- updateField fields fieldExpr valueExpr
                     updateListVar listName indexExprs (StructVal newEnv)
-                _ -> throwError' $ BadArgument $ listName ++ " does not contain a struct at given index."
-        _ -> throwError' $ BadArgument "Cannot update struct field(s) of first argument."
+                _ -> throwError' (StructNotFound $ listName ++ " does not contain a struct at given index.")
+        _ -> throwError' (BadArgument "Attempted to update struct field, but provided argument is not a defined struct.")
 
 updateField :: [(String, Value)] -> Expression -> Expression -> Psnodig Value
 updateField env fieldExpr valueExpr = do
     case fieldExpr of
-        VariableExp name -> do -- tree.right := valueExpr. "right" skal finnes i env
-            newVal <- evalExpr valueExpr -- Verdi
+        VariableExp name -> do
+            newVal <- evalExpr valueExpr
             updateListEntry env name newVal
-            -- return $ StructVal [(if name == arg then (arg, newVal) else (arg, val)) | (arg, val) <- env] -- hvis vi finner "right", erstatt dens verdi med newVal
-        (ListIndex listName indexExprs) -> -- p.friends[0] := valueExpr.
+        (ListIndex listName indexExprs) ->
             case lookup listName env of
                 Just list@(List _) -> do
                     list' <- updateSingleFieldList list indexExprs valueExpr
                     return $ StructVal [(if listName == arg then (arg, list') else (arg, val)) | (arg, val) <- env]
-                _ -> throwError' $ BadArgument "Blud this aint even a lizt!"
-        (StructFieldExp (StructField field fieldExpr')) -> -- first.second.third := 5
+                _ -> throwError' (ListNotFound $ "Tried to update " ++ listName ++ ", but argument is not a list.")
+        (StructFieldExp (StructField field fieldExpr')) ->
             case field of
                 VariableExp name -> do
-                    case lookup name env of -- ("second", [(), .., ()]) skal finnes i env. kjør rekursivt med de fieldsene
+                    case lookup name env of
                         Just (StructVal fields) -> do
                             fields' <- updateField fields fieldExpr' valueExpr
                             updateListEntry env name fields'
-                            -- return $ StructVal [(if name == arg then (arg, fields') else (arg, val)) | (arg, val) <- env]
-                        _ -> throwError' $ BadArgument "Line 210 in Interpreter.hs! This aint fields! Maybe I should draw this or summin"
-                (ListIndex listName indexExprs) -> do -- first.second[0].third := 4
+                        _ -> throwError' (InvalidStructField $ name ++ " does not contain struct fields.")
+                (ListIndex listName indexExprs) -> do
                     case lookup listName env of
                         Just list@(List _) -> do
                             list' <- updateRecursiveFieldList list indexExprs fieldExpr' valueExpr
                             updateListEntry env listName list'
-                        _ -> throwError' $ BadArgument "Sorry blud doesnt work 2" -- change these
-                _ -> throwError' $ BadArgument "Sorry blud doesnt work 3"
+                        _ -> throwError' (ListNotFound $ listName ++ " is not a list.")
+                _ -> throwError' (BadArgument $ show field ++ " is not a valid field.")
                         
-        _ -> throwError' $ BadArgument "Sorry blud doesnt work 4"
+        _ -> throwError' (BadArgument "Cannot update provided field.")
 
 
 updateSingleFieldList :: Value -> [Expression] -> Expression -> Psnodig Value
@@ -257,8 +264,8 @@ updateSingleFieldList (List list) (indexExpr : []) valueExpr = do
         Number index ->
             if 0 <= index && (fromInteger index) < length list
             then return $ List (replaceValueAtIndex list (fromInteger index) value)
-            else throwError' $ BadArgument "List index outtta boundz!"
-        _ -> throwError' $ BadArgument "Bruh!"
+            else throwError' (OutOfBounds "Tried to update list, but index is out of bounds.")
+        _ -> throwError' (BadArgument "Tried to update list, but provided index is not a number.")
 
 updateSingleFieldList (List list) (indexExpr : rest) valueExpr = do
     maybeIndex <- evalExpr indexExpr
@@ -266,14 +273,14 @@ updateSingleFieldList (List list) (indexExpr : rest) valueExpr = do
         Number index ->
             if 0 <= index && (fromInteger index) < length list
             then do
-                let listExpr = list !! (fromInteger index) -- tror dette vil være en expression av typen (Constant (List [..]))
+                let listExpr = list !! (fromInteger index)
                 list' <- evalExpr listExpr
                 list'' <- updateSingleFieldList list' rest valueExpr
                 return $ List (replaceValueAtIndex list (fromInteger index) list'')
-            else throwError' $ BadArgument "List index outtta boundz!" -- change
-        _ -> throwError' $ BadArgument "Not int!" -- change
+            else throwError' (OutOfBounds "Tried to update list, but index is out of bounds.")
+        _ -> throwError' (BadArgument "Tried to update list, but provided index is not a number.")
 
-updateSingleFieldList _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 5" -- change this
+updateSingleFieldList _ _ _ = throwError' (ListNotFound "Tried to update list index value, but provided argument is not a list.")
 
 
 updateRecursiveFieldList :: Value -> [Expression] -> Expression -> Expression -> Psnodig Value
@@ -286,8 +293,8 @@ updateRecursiveFieldList (List list) (indexExpr : []) fieldExpr valueExpr = do
                 StructVal fields <- evalExpr $ list !! (fromInteger index)
                 list' <- updateField fields fieldExpr valueExpr
                 return $ List (replaceValueAtIndex list (fromInteger index) list')
-            else throwError' $ BadArgument "List index outtta boundz!" -- change
-        _ -> throwError' $ BadArgument "Sorry blud doesnt work 6" -- change this
+            else throwError' (OutOfBounds "Tried to update list, but index is out of bounds.")
+        _ -> throwError' (BadArgument "Tried to update list, but provided index is not a number.")
 
 updateRecursiveFieldList (List list) (indexExpr : rest) fieldExpr valueExpr = do
     maybeIndex <- evalExpr indexExpr
@@ -299,34 +306,55 @@ updateRecursiveFieldList (List list) (indexExpr : rest) fieldExpr valueExpr = do
                 list' <- evalExpr listExpr
                 list'' <- updateRecursiveFieldList list' rest fieldExpr valueExpr
                 return $ List (replaceValueAtIndex list (fromInteger index) list'')
-            else throwError' $ BadArgument "List index outtta boundz!" --change
-        _ -> throwError' $ BadArgument "Not int!" --change
+            else throwError' (OutOfBounds "Tried to update list, but index is out of bounds.")
+        _ -> throwError' (BadArgument "Tried to update list, but provided index is not a number.")
 
-updateRecursiveFieldList _ _ _ _ = throwError' $ BadArgument "Sorry blud doesnt work 7" --change
+updateRecursiveFieldList _ _ _ _ = throwError' (ListNotFound "Tried to update list index value, but provided argument is not a list.")
 
 
 updateListEntry :: [(String, Value)] -> String -> Value -> Psnodig Value
 updateListEntry env name newVal = return $ StructVal [(if name == arg then (arg, newVal) else (arg, val)) | (arg, val) <- env]
 
+-- Values
+
+evalValue :: Value -> Psnodig Value
+evalValue (List list) = do
+    vals <- mapM evalExpr list
+    return $ List (map (\v -> Constant v) vals)
+evalValue (HashSet hs) = do
+    vals <- mapM evalExpr (Set.toList hs)
+    return $ HashSet (Set.fromList (map (\v -> Constant v) vals))
+evalValue (HashMap hm) = do
+    vals <- mapM evalPair (Map.toList hm)
+    return $ HashMap (Map.fromList (map (\(k, v) -> (Constant k, Constant v)) vals))
+evalValue v = return v
+
+evalPair :: (Expression, Expression) -> Psnodig (Value, Value)
+evalPair (x, y) = do
+    x' <- evalExpr x
+    y' <- evalExpr y
+    return (x', y')
+
+
 -- Expressions
 
 evalExpr :: Expression -> Psnodig Value
-evalExpr (Constant v) = return v
+evalExpr (Constant v) = evalValue v
 evalExpr (VariableExp var) = do
     maybeVar <- lookupVar var
     case maybeVar of
         Just val -> return val
-        Nothing -> throwError' $ VariableNotFound $ "Variable " ++ var ++ " not found!"
+        Nothing -> throwError' (VariableNotFound $ "Variable " ++ var ++ " not found.")
 evalExpr (BinaryExp op expr1 expr2) = do
     res <- operate op expr1 expr2
     case res of
-        Left errMsg -> throwError' $ ArithmeticError errMsg
+        Left errMsg -> throwError' (ArithmeticError errMsg)
         Right val -> return val
 evalExpr (ListIndex var indexExprs) = do
     maybeList <- lookupVar var
     case maybeList of
         Just val -> evalNestedIndex val indexExprs
-        Nothing  -> throwError' $ VariableNotFound $ "List" ++ var ++ "not found!"
+        Nothing  -> throwError' (ListNotFound $ "List " ++ var ++ " not found.")
 evalExpr (CallExp fcall) = callFunction fcall
 evalExpr (Not expr) = (Boolean . not . bval) <$> evalExpr expr
 evalExpr (StructFieldExp structField) = evalStructFieldExprMain structField
@@ -338,8 +366,8 @@ evalExpr (StructExpr (Struct maybeStruct exprs)) = do
             then do
                 values <- mapM evalExpr exprs
                 return (StructVal $ zip fields values)
-            else throwError' $ BadArgument $ "Incorrect number of arguments provided for struct " ++ maybeStruct ++ "."
-        Nothing -> throwError' $ BadArgument $ "Struct " ++ maybeStruct ++ " is not defined."
+            else throwError' (WrongNumberOfArguments $ "Incorrect number of arguments provided for struct " ++ maybeStruct ++ ".")
+        Nothing -> throwError' (StructNotFound $ "Struct " ++ maybeStruct ++ " is not defined.")
 
 evalStructFieldExprMain :: StructField -> Psnodig Value
 evalStructFieldExprMain (StructField structName fieldExpr) =
@@ -348,14 +376,13 @@ evalStructFieldExprMain (StructField structName fieldExpr) =
             maybeStruct <- lookupVar name
             case maybeStruct of
                 Just (StructVal fields) -> evalStructFieldExprRec fields fieldExpr
-                invalidField -> throwError' $ BadArgument $ "Either '" ++ name ++ "' is not a defined struct, or a field of '" ++
-                                                           (show invalidField) ++ "' is attempted evaluated. Make sure to check your base cases!"
+                _ -> throwError' (StructNotFound $ name ++ " is not a defined struct.")
         listIndex@(ListIndex listName _) -> do
             maybeStruct <- evalExpr listIndex
             case maybeStruct of
                 StructVal fields -> evalStructFieldExprRec fields fieldExpr
-                _ -> throwError' $ BadArgument $ listName ++ " does not contain a struct at given index."
-        _ -> throwError' $ BadArgument "Cannot lookup struct field(s) of first argument."
+                _ -> throwError' (StructNotFound $ listName ++ " does not contain a struct at given index.")
+        _ -> throwError' (StructNotFound $ "Cannot lookup struct field(s) of " ++ show structName ++ ".")
 
 evalStructFieldExprRec :: [(String, Value)] -> Expression -> Psnodig Value
 evalStructFieldExprRec fields expr = do
@@ -363,25 +390,25 @@ evalStructFieldExprRec fields expr = do
         VariableExp name ->
             case lookup name fields of
                 Just v -> return v
-                Nothing -> throwError' $ BadArgument "Invalid struct field."
+                Nothing -> throwError' (StructNotFound $ name ++ " is not a valid struct.")
         (ListIndex name indexExprs) ->
             case lookup name fields of
-                Just list@(List _) -> evalNestedIndex list indexExprs -- dobbelsjekk denne
-                _ -> throwError' $ BadArgument "Invalid struct field."
+                Just list@(List _) -> evalNestedIndex list indexExprs
+                _ -> throwError' (StructNotFound $ name ++ " is not a valid struct.")
         (StructFieldExp (StructField field expr')) ->
             case field of
                 VariableExp name -> do
                     case lookup name fields of
                         Just (StructVal fields') -> evalStructFieldExprRec fields' expr'
-                        _ -> throwError' $ BadArgument $ "Tried calling " ++ name ++ " with invalid field."
+                        _ -> throwError' (InvalidStructField $ name ++ " field does not exist on provided struct.")
                 (ListIndex name indexExprs) ->
                     case lookup name fields of
                         Just list@(List _) -> do
                             StructVal fields' <- evalNestedIndex list indexExprs
                             evalStructFieldExprRec fields' expr'
-                        _ -> throwError' $ BadArgument "Invalid struct field."
-                _ -> throwError' $ BadArgument "Tried to access field of non-struct identifier. 1"
-        _ -> throwError' $ BadArgument "Tried to access field of non-struct identifier. 2"
+                        _ -> throwError' (InvalidStructField $ name ++ " field does not exist on provided struct.")
+                _ -> throwError' (BadArgument $ show field ++ " is an invalid struct field.")
+        _ -> throwError' (StructNotFound $ "Provided argument is not a struct. Make sure to wrap structfield in parentheses.")
 
 
 -- Operators
@@ -459,7 +486,7 @@ operate' NotEqual (Decimal x) (Number y) = Right $ Boolean $ x /= (fromInteger y
 operate' NotEqual (Number x) (Decimal y) = Right $ Boolean $ (fromInteger x) /= y
 operate' NotEqual Nil Nil = Right $ Boolean False
 operate' NotEqual (Text t1) (Text t2) = Right $ Boolean $ t1 /= t2
-operate' Equal (Boolean x) (Boolean y) = Right $ Boolean $ x /= y
+operate' NotEqual (Boolean x) (Boolean y) = Right $ Boolean $ x /= y
 operate' NotEqual _ _ = Right $ Boolean False
 
 operate' op x y = Left $ "Incompatible operands! Tried to apply " ++
@@ -521,7 +548,7 @@ evalStmt (ForEach ident expr stmts) = do
     maybeIterable <- evalExpr expr >>= toIterable
     case maybeIterable of
         Just values -> foldM (executeForEachLoopScope ident stmts) (Left ()) values
-        Nothing -> throwError' $ BadArgument "Collection argument is not an iterable. If this is a function call, dereference it before applying as a collection."
+        Nothing -> throwError' (BadArgument "Collection argument is not an iterable. If this is a function call, dereference it before applying as a collection.")
 
 evalStmt (For ident expr1 expr2 stmts) = do
     val1 <- evalExpr expr1
@@ -529,7 +556,7 @@ evalStmt (For ident expr1 expr2 stmts) = do
     case (fromNumber val1, fromNumber val2) of
         (Just n1, Just n2) ->
             foldM (executeForLoopScope ident stmts) (Left ()) (forRange n1 n2)
-        _ -> throwError' $ BadArgument "Range must be whole numbers!"
+        _ -> throwError' (BadArgument "Provided arguments in for-loop must be whole numbers.")
 
 evalStmt (CallStmt f) =
     callFunction f >> return (Left ())
@@ -540,9 +567,8 @@ evalStmt (HashStmt stmt) =
 evalStmt (AnnotationStmt _ stmts) =
     evalStmts stmts
 
--- Should be implemented at some point.
-evalStmt Break = throwError' $ BadArgument "No implementation for `Break`. Avoid usage when executing programs."
-evalStmt Continue = throwError' $ BadArgument "No implementation for `Continue`. Avoid usage when executing programs."
+evalStmt Break = throwError' (NoImplementationError "No implementation for `Break`. Avoid usage when executing programs.")
+evalStmt Continue = throwError' (NoImplementationError "No implementation for `Continue`. Avoid usage when executing programs.")
 
 
 evalElse :: Else -> Psnodig (Either () Value)
@@ -589,33 +615,32 @@ forRange x y = if x <= y then [x..y] else [x,x-1..y]
 callFunction :: FunctionCall -> Psnodig Value
 callFunction (FunctionCall "floor" args) = do
     when (length args /= 1)
-        $ throwError' $ WrongNumberOfArguments "Function 'floor' takes 1 argument: floor( numeric )."
+        $ throwError' (WrongNumberOfArguments "Function 'floor' takes 1 argument: floor( numeric ).")
     value <- evalExpr $ head args
     case value of
         Number _ -> return $ value
         Decimal d -> return . Number $ floor d
-        _ -> throwError' $ BadArgument "Function 'floor' can only be applied to numeric values."
+        _ -> throwError' (BadArgument "Function 'floor' can only be applied to numeric values.")
 
 callFunction (FunctionCall "ceil" args) = do
     when (length args /= 1)
-        $ throwError' $ WrongNumberOfArguments "Function 'ceil' takes 1 argument: ceil( numeric )."
+        $ throwError' (WrongNumberOfArguments "Function 'ceil' takes 1 argument: ceil( numeric ).")
     value <- evalExpr $ head args
     case value of
         Number _ -> return $ value
         Decimal d -> return . Number $ ceiling d
-        _ -> throwError' $ BadArgument "Function 'ceil' can only be applied to numeric values."
+        _ -> throwError' (BadArgument "Function 'ceil' can only be applied to numeric values.")
 
--- la disse ta inn en liste med tall også!
 callFunction (FunctionCall "min" args) = do
     values <- mapM evalExpr args
     unless (all (\v -> isNumber v || isDecimal v) values) $
-        throwError' $ BadArgument "All arguments to function 'min' must be numeric values."
+        throwError' (BadArgument "All arguments to function 'min' must be numeric values.")
     
     let numberList = mapMaybe fromNumber values
     let decimalList = mapMaybe fromDecimal values
 
     case (numberList, decimalList) of
-        ([], []) -> throwError' $ BadArgument "Cannot call `min` with no arguments"
+        ([], []) -> throwError' (BadArgument "Cannot call `min` with no arguments.")
         (_, []) -> return . Number $ minimum numberList
         ([], _) -> return . Decimal $ minimum decimalList
         (_, _) -> return $
@@ -627,13 +652,13 @@ callFunction (FunctionCall "min" args) = do
 callFunction (FunctionCall "max" args) = do
     values <- mapM evalExpr args
     unless (all (\v -> isNumber v || isDecimal v) values) $
-        throwError' $ BadArgument "All arguments to function 'max' must be numeric values."
+        throwError' (BadArgument "All arguments to function 'max' must be numeric values.")
 
     let numberList = mapMaybe fromNumber values
     let decimalList = mapMaybe fromDecimal values
 
     case (numberList, decimalList) of
-        ([], []) -> throwError' $ BadArgument "Cannot call `max` with no arguments"
+        ([], []) -> throwError' (BadArgument "Cannot call `max` with no arguments.")
         (_, []) -> return . Number $ maximum numberList
         ([], _) -> return . Decimal $ maximum decimalList
         (_, _) -> return $
@@ -644,7 +669,7 @@ callFunction (FunctionCall "max" args) = do
 
 callFunction (FunctionCall "get" args) = do
     when (length args /= 2)
-        $ throwError' $ WrongNumberOfArguments "Function 'get' takes 2 arguments: get( key , map )."
+        $ throwError' (WrongNumberOfArguments "Function 'get' takes 2 arguments: get( key , map ).")
     let mapExpr = head $ tail args
     case mapExpr of
         VariableExp mapName -> do
@@ -657,13 +682,13 @@ callFunction (FunctionCall "get" args) = do
                             var <- evalExpr (head args)
                             case Map.lookup (Constant var) m of
                                 Just v -> evalExpr v
-                                Nothing -> throwError' $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ (show $ head args) ++ " is likely an invalid key."
-                _ -> throwError' $ BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ mapName ++ " is likely an invalid Hashmap."
-        _ -> throwError' $ BadArgument "Function 'get' takes two arguments: get( key, map )."
+                                Nothing -> throwError' (BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ (show $ head args) ++ " is likely an invalid key.")
+                _ -> throwError' (BadArgument $ "Function 'get' takes two arguments: get( key, map ). " ++ mapName ++ " is likely an invalid Hashmap.")
+        _ -> throwError' (BadArgument "Function 'get' takes two arguments: get( key, map ).")
 
 callFunction (FunctionCall "add" args) = do
     when (length args < 2 || length args > 3)
-        $ throwError' $ WrongNumberOfArguments "Function 'add' takes either 2 arguments: add( value , set ) or 3 arguments: add( key, value, map )."
+        $ throwError' (WrongNumberOfArguments "Function 'add' takes either 2 arguments: add( value , set ) or 3 arguments: add( key, value, map ).")
     if length args == 2
     then do
         let VariableExp setName = args !! 1
@@ -674,7 +699,7 @@ callFunction (FunctionCall "add" args) = do
                 let newSet = HashSet $ Set.insert (Constant newVal) hs
                 findAndUpdateScope setName newSet
                 return $ Number 1
-            _ -> throwError' $ BadArgument "Function 'add'. Second argument is likely not a HashSet."
+            _ -> throwError' (BadArgument "Function 'add'. Second argument is likely not a HashSet.")
     else do
         let VariableExp mapName = args !! 2
         maybeMap <- evalExpr (VariableExp mapName)
@@ -686,11 +711,11 @@ callFunction (FunctionCall "add" args) = do
                 let newMap = HashMap $ Map.insert (Constant newKey) (Constant newVal) hm
                 findAndUpdateScope mapName newMap
                 return $ Number 1
-            _ -> throwError' $ BadArgument "Function 'add'. Third argument is likely not a HashMap."
+            _ -> throwError' (BadArgument "Function 'add'. Third argument is likely not a HashMap.")
 
 callFunction (FunctionCall "in" args) = do
     when (length args /= 2)
-        $ throwError' $ WrongNumberOfArguments "Function 'in' takes 2 arguments: add( value , list/set/map )."
+        $ throwError' (WrongNumberOfArguments "Function 'in' takes 2 arguments: add( value , list/set/map ).")
     let target = head args
     maybeCollection <- evalExpr (head $ tail args)
     case maybeCollection of
@@ -705,16 +730,16 @@ callFunction (FunctionCall "in" args) = do
             return $ Boolean $ case Map.lookup (Constant targetValue) hm of
                 Just _ -> True
                 Nothing -> False
-        _ -> throwError' $ BadArgument "Second argument of function `in` must be of type List, HashSet, or HashMap."
+        _ -> throwError' (BadArgument "Second argument of function `in` must be of type List, HashSet, or HashMap.")
 
 callFunction (FunctionCall "pop" args) = do
     when (length args /= 1)
-        $ throwError' $ WrongNumberOfArguments "Function 'pop' takes 1 argument: pop( list )."
+        $ throwError' (WrongNumberOfArguments "Function 'pop' takes 1 argument: pop( list ).")
     maybeList <- evalExpr (head args)
     case maybeList of
         List list ->
             if null list
-            then throwError' $ BadArgument $ "Function `pop` takes non-empty list as argument. Make sure the provided list is not empty."
+            then throwError' (BadArgument $ "Function `pop` takes non-empty list as argument. Make sure the provided list is not empty.")
             else do
                 lastValue <- evalExpr (last list)
                 case head args of
@@ -730,17 +755,17 @@ callFunction (FunctionCall "pop" args) = do
                         let newList = Constant (List $ init list)
                         updateStructField s newList
                         return lastValue
-                    _ -> throwError' $ BadArgument $ "Unreachable?"
-        _ -> throwError' $ BadArgument $ "Function `pop` takes a list as argument. Make sure the provided argument is a list."
+                    _ -> throwError' (BadArgument $ (show $ head args) ++ " is not a valid list.")
+        _ -> throwError' (BadArgument $ "Function `pop` takes a list as argument. " ++ show (head args) ++ " is possibly not a list.")
 
 callFunction (FunctionCall "append" args) = do
     when (length args /= 2)
-        $ throwError' $ WrongNumberOfArguments "Function 'append' takes 2 arguments: append( value , list )."
+        $ throwError' (WrongNumberOfArguments "Function 'append' takes 2 arguments: append( value , list ).")
     let targetListExpr = args !! 1
     maybeList <- evalExpr targetListExpr
-    case maybeList of -- Evaluerer uttrykket for å være sikker på at det har verdien (List _)
+    case maybeList of
         List list ->
-            case targetListExpr of -- Men hva slags uttrykk ble egentlig sendt som argument?
+            case targetListExpr of
                 VariableExp listName -> do
                     newValue <- evalExpr (head args)
                     let newList = List $ list ++ [(Constant newValue)]
@@ -757,8 +782,8 @@ callFunction (FunctionCall "append" args) = do
                     let newList = Constant (List $ list ++ [(Constant newValue)])
                     updateStructField s newList
                     return $ Number 1
-                _ -> throwError' $ BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list."
-        _ -> throwError' $ BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is possibly not a list."
+                _ -> throwError' (BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is likely an invalid list.")
+        _ -> throwError' (BadArgument $ "Function 'append' takes two arguments: append( value , list ). The second argument is possibly not a list.")
 
 callFunction (FunctionCall "print" args) = do
     values <- mapM evalExpr args
@@ -774,14 +799,14 @@ callFunction (FunctionCall "length" args) = do
         (List l) -> toNum l
         (HashSet s) -> toNum $ Set.toList s
         (HashMap m) -> toNum $ Map.toList m
-        _ -> throwError' $ BadArgument "length can only be called with iterable!"
+        _ -> throwError' (BadArgument "length function can only be called with an iterable argument.")
     where
         toNum :: [a] -> Psnodig Value
         toNum = return . Number . toInteger . length
 
 callFunction (FunctionCall "toString" args) = do
     when (length args /= 1)
-        $ throwError' $ WrongNumberOfArguments "Function 'toString' takes 1 argument: toString( value )."
+        $ throwError' (WrongNumberOfArguments "Function 'toString' takes 1 argument: toString( value ).")
     str <- (evalExpr $ head args) >>= (flip stringifyValue) False
     return . Text $ str
 
@@ -791,12 +816,12 @@ callFunction (FunctionCall name args) = do
         Just func -> do
             argsValues <- mapM evalExpr args
             applyFunction func argsValues
-        Nothing -> throwError' $ FunctionNotFound name
+        Nothing -> throwError' (FunctionNotFound $ name ++ " function is not previously declared. Check the spelling.")
 
-applyFunction :: Function -> [Value] -> Psnodig Value
-applyFunction (Function name args stmts) values = do
+applyFunction :: FunctionDecl -> [Value] -> Psnodig Value
+applyFunction (FunctionDecl name args stmts) values = do
     when (length args /= length values)
-        $ throwError' $ WrongNumberOfArguments $ "Function '" ++ name ++ "' takes a different number of args than provided!"
+        $ throwError' (WrongNumberOfArguments $ "Function '" ++ name ++ "' takes a different number of args than provided!")
     pushFunctionScope
     zipWithM_ bindVar (map fstArg args) values
     res <- evalStmts stmts
@@ -809,17 +834,17 @@ applyFunction (Function name args stmts) values = do
 evalProgram :: Program -> Psnodig ()
 evalProgram (Program _ structs funcs entryPoint) = do
     mapM_ processStructDecls structs
-    mapM_ processFunDecl funcs -- don't allow multiple declaratins, and no shadowing library functions!
+    mapM_ processFunDecl funcs
     case entryPoint of
         Just f -> void $ callFunction f
-        Nothing -> throwError $ BadArgument "No function call to run the program."
+        Nothing -> throwError (MissingEntryPoint "No function call located to run your program.")
   where
-    processFunDecl f@(Function name _ _) = bindFunc name f
+    processFunDecl f@(FunctionDecl name _ _) = bindFunc name f
 
 initialState :: ExecutionState
 initialState = ExecutionState
     { structDecls = Map.empty
-    , funcEnv = Map.empty
+    , funcDecls = Map.empty
     , scopeStack = []
     , output = []
     }
@@ -841,14 +866,15 @@ bval (Number n) = if n > 0 then True else False
 bval (Decimal d) = if d > 0.0 then True else False
 bval (Text "") = False
 bval (List []) = False
+bval (HashSet hs) = not (Set.null hs)
+bval (HashMap hm) = not (Map.null hm)
 bval _ = True
 
 toIterable :: Value -> Psnodig (Maybe [Value])
 toIterable (Text t) = return . Just $ map (Text . return) t
 toIterable (List exprs) = Just <$> mapM evalExpr exprs
 toIterable (HashSet s) = Just <$> mapM evalExpr (Set.toList s)
-toIterable (HashMap m) = Just <$> mapM (\(x, _) -> evalExpr x) (Map.toList m) -- can access values by calling the map with keys!
-                -- (HashMap m) -> Just <$> mapM (\(x, y) -> liftM2 (,) (evalExpr x) (evalExpr y)) (Map.toList m)
+toIterable (HashMap m) = Just <$> mapM (\(x, _) -> evalExpr x) (Map.toList m)
 toIterable _ = return Nothing
 
 fromNumber :: Value -> Maybe Integer
@@ -891,11 +917,6 @@ stringifyHMap exprs = do
     let strPairList = map (\(x, y) -> x ++ ": " ++ y) vals'
     return $ "{" ++ intercalate ", " strPairList ++ "}"
     where
-        evalPair :: (Expression, Expression) -> Psnodig (Value, Value)
-        evalPair (x, y) = do
-            x' <- evalExpr x
-            y' <- evalExpr y
-            return (x', y')
         stringifyPair :: (Value, Value) -> Psnodig (String, String)
         stringifyPair (x, y) = do
             x' <- stringifyValue x False
@@ -908,9 +929,9 @@ stringifyStruct fields = do
     return $ intercalate ", " fields'
     where
         stringifyField :: (String, Value) -> Psnodig String
-        stringifyField (str, (StructVal fields)) = do
-            fields <- stringifyStruct fields
-            return $ str ++ ": (" ++ fields ++ ")"
+        stringifyField (str, (StructVal innerFields)) = do
+            stringFields <- stringifyStruct innerFields
+            return $ str ++ ": (" ++ stringFields ++ ")"
         stringifyField (str, val) = do
             val' <- stringifyValue val False
             return $ str ++ ": " ++ val'
@@ -923,19 +944,18 @@ evalNestedIndex (List list) (indexExpr:indexExprs) = do
         Number n -> 
             if 0 <= n && n < fromIntegral (length list)
             then do
-                nextVal <- evalExpr $ list !! fromInteger n -- burde sjekke at list !! fromInteger n er lov! at det ikke gir outofbounds ellerno
+                nextVal <- evalExpr $ list !! fromInteger n
                 evalNestedIndex nextVal indexExprs
-            else throwError' $ BadArgument $ "Attempted to access index " ++ (show n) ++ " of list with length " ++ (show $ length list) ++ "!"
-        _ -> throwError' $ BadArgument "Index must evaluate to a number"
-evalNestedIndex _ _ = throwError' $ BadArgument "Expected a list for index operation"
+            else throwError' (OutOfBounds $ "Attempted to access index " ++ show n ++ " of list with length " ++ show (length list) ++ ".")
+        _ -> throwError' (BadArgument "Index must evaluate to a number.")
+evalNestedIndex _ _ = throwError' (ListNotFound "Expected a list for index operation.")
 
--- denne er avhengig av at man VET at index er good fra før!
 replaceValueAtIndex :: [Expression] -> Int -> Value -> [Expression]
 replaceValueAtIndex list index newVal =
     if length list == 1 then [(Constant newVal)]
-    -- if length list <= index then [(Constant newVal)]
-    else let (before, _ : after) = splitAt index list
-    in before ++ (Constant newVal) : after
+    else case splitAt index list of
+        (before, []) -> before ++ [Constant newVal]
+        (before, _ : after) -> before ++ (Constant newVal) : after
 
 updateValue :: Eq a => a -> b -> (a, b) -> (a, b)
 updateValue targetKey newVal (key, val) =
@@ -948,54 +968,3 @@ throwError' :: RuntimeError -> Psnodig a
 throwError' err = do
     currentOutput <- gets output
     throwError $ RuntimeErrorWithOutput currentOutput err
-
--- -- Thought:
--- -- There are no global variables
--- -- Funcs and structs are global, but variables are always local to their own functions
-
-{-
-func f() {
-    x = 5
-    return g()
-}
-
-func g() {
-    x = 10 -- is the original x overwritten?
-    return x
-}
-
-perhaps we should have a stack of variables
-all new, local variables are put on top of the stack.
-when we use a variable, we look from the top and down, until we find a matching one.
-
-e.g. [x=5, x=10]
-when using x, the first one we see is the =10 one
-
-and then, when leaving a function, we empty the stack.
-so we keep a counter as well, on how many elements we've added to the stack
-a global counter, I guess?
-at the stard and at the end of the program, it should be 0
-
-what about this
-
-struct P {
-    age int,
-    friends int
-}
-
-func m() {
-    prsn := struct P(29, 12)
-    f(prsn)
-}
-
-yh okey, only look in struct scope when declaring new structs, but not when looking for variables :)
-
--}
-
-
--- {- problemet her er at bind egt skal funke for ting som
---     x = 5 og h = Height(1, 2, 3)
-
---     når vi har bare struct Height { a int b int c int } etc., så har vi
---     ikke egentlig noen 
---  -}
