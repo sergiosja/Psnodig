@@ -53,7 +53,7 @@ writeClass :: StructDecl -> PythonWriter ()
 writeClass (StructDecl name args) = do
     tell $ "class " ++ name ++ ":\n"
     tell $ "\tdef __init__(self" ++ writeInstanceVariables (unwrapArgs args) ++ "):\n"
-    if null args then tell "\t\tpass"
+    if null args then tell "\t\tpass\n"
     else mapM_ tell $ map (\x -> "\t\tself." ++ x ++ " = " ++ x ++ "\n") (unwrapArgs args)
     where
         writeInstanceVariables :: [String] -> String
@@ -144,24 +144,28 @@ writeStmt (Loop expr stmts) indent = do
     tell "while "
     writeExpr expr
     tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
+    if null stmts then tell $ (addIndents $ indent+1) ++ "pass\n"
+    else mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 writeStmt (ForEach item expr stmts) indent = do
     tell $ "for " ++ item ++ " in "
     writeExpr expr
     tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
+    if null stmts then tell $ (addIndents $ indent+1) ++ "pass\n"
+    else mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 writeStmt (For item from to stmts) indent = do
     tell $ "for " ++ item ++ " in range("
     writeExpr from
     tell ", "
     writeExpr to
     tell "):\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
+    if null stmts then tell $ (addIndents $ indent+1) ++ "pass\n"
+    else mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 writeStmt (If expr stmts maybeElse) indent = do
     tell "if "
     writeExpr expr
     tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
+    if null stmts then tell $ (addIndents $ indent+1) ++ "pass\n"
+    else mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
     case maybeElse of
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
@@ -191,18 +195,21 @@ writeAnnotationStmt _ _ = return ()
 writeElse :: Else -> Int -> PythonWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
     tell ((addIndents indent) ++ "elif ") >> writeExpr expr >> tell ":\n"
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
+    if null stmts then tell $ (addIndents $ indent+1) ++ "pass\n"
+    else mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
     case maybeElse of
         Just elsePart -> writeElse elsePart indent
         Nothing -> return ()
 writeElse (Else stmts) indent = do
     tell ((addIndents indent) ++ "else:\n")
-    mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
+    if null stmts then tell $ (addIndents $ indent+1) ++ "pass\n"
+    else mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1)) stmts
 
 writeFunc :: FunctionDecl -> PythonWriter ()
 writeFunc (FunctionDecl funcname args stmts) = do
     tell $ "def " ++ funcname ++ "(" ++ (intercalateArgs $ translateArgs args)
-    mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1) stmts
+    if null stmts then tell "\tpass\n"
+    else mapM_ (\stmt -> tell "\t" >> writeStmt stmt 1) stmts
 
 writeFunctionCall :: FunctionCall -> PythonWriter ()
 writeFunctionCall (FunctionCall "length" args) =
