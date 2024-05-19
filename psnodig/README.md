@@ -17,7 +17,5 @@ The flowchart writer is a prototype, as it still struggles with complex programs
 
 Here are all additions to the source code, after I submitted the thesis 15th of May.
 
-- This README.
-- [This](https://github.com/sergiosja/Psnodig) README (commit: eaf3d9b76ad34b3c321e88657acb7ed530ab0d77).
 - Removal of old files (commit: d39a597919ed7f55de9a91d69b870cc2e04dd25d).
 - Updated unit tests of Python writer (commit: a0e8e219094659c09c60344b46036f04e98d5133).
