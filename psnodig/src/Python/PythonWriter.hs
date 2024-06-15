@@ -109,36 +109,32 @@ writeExpr (Constant v) = writeValue v
 writeExpr (VariableExp var) = tell var
 writeExpr (BinaryExp op exp1 exp2) =
     writeExpr exp1 >> writeOp op >> writeExpr exp2
-writeExpr (CallExp functioncall) = do
+writeExpr (CallExp functioncall) =
     writeFunctionCall functioncall
 writeExpr (ListIndex name indexes) = do
     tell name
     mapM_ (\x -> tell "[" >> writeExpr x >> tell "]") indexes
 writeExpr (Not expr) = do
-    tell $ "not "
+    tell "not "
     writeExpr expr
 writeExpr (StructExpr struct) =
     writeStruct struct
 writeExpr (StructFieldExp structField) =
     writeStructField structField
 
-writeAssignmentTarget :: AssignmentTarget -> PythonWriter ()
-writeAssignmentTarget (VariableTarget var) = tell var
-writeAssignmentTarget (ListIndexTarget var indexes) = do
+writeAssignmentVar :: AssignmentVar -> PythonWriter ()
+writeAssignmentVar (VariableTarget var) = tell var
+writeAssignmentVar (ListIndexTarget var indexes) = do
     tell var
     mapM_ (\x -> tell "[" >> writeExpr x >> tell "]") indexes
-writeAssignmentTarget (StructFieldTarget struct) =
+writeAssignmentVar (StructFieldTarget struct) =
     writeStructField struct
 
-writeAssignmentValue :: AssignmentValue -> PythonWriter ()
-writeAssignmentValue (ExpressionValue expr) = writeExpr expr
-writeAssignmentValue (StructValue struct) = writeStruct struct
-
 writeStmt :: Statement -> Int -> PythonWriter ()
-writeStmt (Assignment target value) _ = do
-    writeAssignmentTarget target
+writeStmt (Assignment target expr) _ = do
+    writeAssignmentVar target
     tell " = "
-    writeAssignmentValue value
+    writeExpr expr
     tell "\n"
 writeStmt (Loop expr stmts) indent = do
     tell "while "

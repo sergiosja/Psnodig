@@ -90,7 +90,7 @@ writeExpr (ListIndex name indexes) = do
     tell name
     mapM_ (\x -> tell "[" >> writeExpr x >> tell "]") indexes
 writeExpr (Not expr) = do
-    tell $ "not "
+    tell "not "
     writeExpr expr
 writeExpr (StructExpr struct) =
     writeStruct struct
@@ -102,23 +102,19 @@ writeFunctionCall (FunctionCall funcname args) = do
     tell $ funcname ++ "("
     writeArgs args ")"
 
-writeAssignmentTarget :: AssignmentTarget -> GourmetWriter ()
-writeAssignmentTarget (VariableTarget var) = tell var
-writeAssignmentTarget (ListIndexTarget var indexes) = do
+writeAssignmentVar :: AssignmentVar -> GourmetWriter ()
+writeAssignmentVar (VariableTarget var) = tell var
+writeAssignmentVar (ListIndexTarget var indexes) = do
     tell var
     mapM_ (\x -> tell "[" >> writeExpr x >> tell "]") indexes
-writeAssignmentTarget (StructFieldTarget struct) =
+writeAssignmentVar (StructFieldTarget struct) =
     writeStructField struct
 
-writeAssignmentValue :: AssignmentValue -> GourmetWriter ()
-writeAssignmentValue (ExpressionValue expr) = writeExpr expr
-writeAssignmentValue (StructValue struct) = writeStruct struct
-
 writeStmt :: Statement -> Int -> GourmetWriter ()
-writeStmt (Assignment target value) _ = do
-    writeAssignmentTarget target
+writeStmt (Assignment target expr) _ = do
+    writeAssignmentVar target
     tell " := "
-    writeAssignmentValue value
+    writeExpr expr
 writeStmt (Loop expr stmts) indent = do
     tell "while "
     writeExpr expr

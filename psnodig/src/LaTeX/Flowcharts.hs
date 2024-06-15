@@ -332,8 +332,8 @@ drawStmts (stmt : stmts) fromIf =
             drawStmts stmts False
 
 drawStmt :: Statement -> String -> String -> Flowchart ()
-drawStmt (Assignment target value) currentId pos =
-    drawStatementNode currentId pos (drawAssignmentTarget target ++ " $\\gets$ " ++ drawAssignmentValue value)
+drawStmt (Assignment target expr) currentId pos =
+    drawStatementNode currentId pos (drawAssignmentVar target ++ " $\\gets$ " ++ drawExpr expr)
 
 drawStmt (Loop expr stmts) currentId pos = do
     drawDecisionNode currentId pos (drawExpr expr)
@@ -382,15 +382,11 @@ drawStmt Break currentId pos =
 drawStmt Continue currentId pos =
     drawStatementNode currentId pos "continue"
 
-drawAssignmentTarget :: AssignmentTarget -> String
-drawAssignmentTarget (VariableTarget v) = v
-drawAssignmentTarget (ListIndexTarget v indexes) = v ++ drawIndexExprs indexes
-drawAssignmentTarget (StructFieldTarget (StructField x y)) =
+drawAssignmentVar :: AssignmentVar -> String
+drawAssignmentVar (VariableTarget v) = v
+drawAssignmentVar (ListIndexTarget v indexes) = v ++ drawIndexExprs indexes
+drawAssignmentVar (StructFieldTarget (StructField x y)) =
     drawExpr x ++ "." ++ drawExpr y
-
-drawAssignmentValue :: AssignmentValue -> String
-drawAssignmentValue (ExpressionValue expr) = drawExpr expr
-drawAssignmentValue (StructValue (Struct name exprs)) = name ++ "(" ++ intercalateExprs exprs ++ ")"
 
 
 -- Special statement helpers

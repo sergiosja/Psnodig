@@ -227,8 +227,8 @@ parseFunctionCall =
         <$> identifier <* reservedOp "("
         <*> parseExpr `sepBy` comma <* reservedOp ")"
 
-parseAssignmentTarget :: Parser AssignmentTarget
-parseAssignmentTarget = choice
+parseAssignmentVar :: Parser AssignmentVar
+parseAssignmentVar = choice
     [ try parseStructFieldTarget
     , try parseListIndexTarget
     , parseVariableTarget
@@ -237,13 +237,6 @@ parseAssignmentTarget = choice
         parseStructFieldTarget = StructFieldTarget <$> parseStructField
         parseListIndexTarget = ListIndexTarget <$> identifier <*> many1 (reservedOp "[" *> parseExpr <* reservedOp "]")
         parseVariableTarget = VariableTarget <$> identifier
-
-parseAssignmentValue :: Parser AssignmentValue
-parseAssignmentValue = try parseStructValue <|> parseExpressionValue
-    where
-        parseStructValue = StructValue <$> parseStruct
-        parseExpressionValue = ExpressionValue <$> parseExpr
-
 
 -- Parse statements
 
@@ -276,8 +269,8 @@ parseStmt = choice
             CallStmt <$> parseFunctionCall
         parseAssignment =
             Assignment
-                <$> parseAssignmentTarget <* reservedOp ":="
-                <*> parseAssignmentValue
+                <$> parseAssignmentVar <* reservedOp ":="
+                <*> parseExpr
         parseWhileStmt =
             Loop
                 <$> (reservedOp "while" *> parseExpr) <* reservedOp "{"
@@ -325,4 +318,4 @@ parseGourmet = do
     structs <- many parseStructDecl
     funcs <- many parseFunctionDecl
     functioncall <- optionMaybe parseFunctionCall
-    return $ Program programDescription structs funcs functioncall
+    return (Program programDescription structs funcs functioncall)

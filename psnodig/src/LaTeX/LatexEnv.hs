@@ -26,15 +26,22 @@ collectFuncDeclarations (FunctionDecl name _ stmts) = do
 
 collectFunctionCall :: FunctionCall -> Collector ()
 collectFunctionCall (FunctionCall name exprs) = do
-    modify (\(funcs, keywords) -> (Set.insert name funcs, keywords))
+    case name of
+        "in" -> return ()
+        "length" -> return ()
+        "floor" -> return ()
+        "ceil" -> return ()
+        "add" -> return ()
+        "append" -> return ()
+        _ -> modify (\(funcs, keywords) -> (Set.insert name funcs, keywords))
     mapM_ collectExpr exprs
 
 -- Statements
 
 collectStmt :: Statement -> Collector ()
-collectStmt (Assignment target value) = do
-    collectAssignmentTarget target
-    collectAssignmentValue value
+collectStmt (Assignment target expr) = do
+    collectAssignmentVar target
+    collectExpr expr
 collectStmt (Loop expr stmts) = do
     collectExpr expr
     mapM_ collectStmt stmts
@@ -62,15 +69,10 @@ collectStmt Break =
 collectStmt Continue =
     modify (\(funcs, keywords) -> (funcs, Set.insert "continue" keywords))
 
-collectAssignmentTarget :: AssignmentTarget -> Collector ()
-collectAssignmentTarget (ListIndexTarget _ exprs) =
+collectAssignmentVar :: AssignmentVar -> Collector ()
+collectAssignmentVar (ListIndexTarget _ exprs) =
     mapM_ collectExpr exprs
-collectAssignmentTarget _ = return ()
-
-collectAssignmentValue :: AssignmentValue -> Collector ()
-collectAssignmentValue (ExpressionValue expr) =
-    collectExpr expr
-collectAssignmentValue _ = return ()
+collectAssignmentVar _ = return ()
 
 collectMaybeElse :: Maybe Else -> Collector ()
 collectMaybeElse (Just (ElseIf expr stmts maybeElse)) = do

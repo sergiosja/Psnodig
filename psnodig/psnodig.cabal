@@ -31,8 +31,7 @@ library
       LaTeX.Flowcharts
       LaTeX.LatexEnv
       LaTeX.LatexWriter
-      Petite.PetiteParser
-      Petite.PetiteTranspiler
+      Python.PythonWriter
       Syntax
   other-modules:
       Paths_psnodig
@@ -40,8 +39,7 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      QuickCheck
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , containers
     , mtl
     , parsec
@@ -56,8 +54,7 @@ executable psnodig
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , containers
     , mtl
     , parsec
@@ -69,15 +66,14 @@ test-suite psnodig-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_psnodig
+      InterpreterTest Parsers.Gourmet Writers.Flowchart Writers.Gourmet Writers.Pseudocode Writers.Python
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
+      HUnit
     , base >=4.7 && <5
     , containers
-    , hspec
     , mtl
     , parsec
     , process

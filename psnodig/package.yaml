@@ -23,7 +23,6 @@ dependencies:
   - base >= 4.7 && < 5
   - parsec
   - mtl
-  - QuickCheck
   - process
   - containers
 
@@ -56,6 +55,13 @@ executables:
 tests:
   psnodig-test:
     main: Spec.hs
+    other-modules:
+      InterpreterTest
+      Parsers.Gourmet
+      Writers.Flowchart
+      Writers.Gourmet
+      Writers.Pseudocode
+      Writers.Python
     source-dirs: test
     ghc-options:
       - -threaded
@@ -63,5 +69,4 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - psnodig
-      - QuickCheck
-      - hspec
+      - HUnit

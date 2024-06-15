@@ -39,10 +39,10 @@ data Argument = Argument String String
 -- Statements
 
 data Statement =
-      Assignment AssignmentTarget AssignmentValue
+      Assignment AssignmentVar Expression
     | Loop Expression [Statement]
     | If Expression [Statement] (Maybe Else)
-    | ForEach String Expression [Statement]
+    | ForEach String Iterable [Statement] -- change expr to `data Iterable = ListIterable | .. | TextIterable`
     | For String Expression Expression [Statement]
     | CallStmt FunctionCall
     | Return Expression
@@ -52,15 +52,10 @@ data Statement =
     | Continue
     deriving (Eq, Show, Read, Ord)
 
-data AssignmentTarget =
+data AssignmentVar =
       VariableTarget String
     | ListIndexTarget String [Expression]
     | StructFieldTarget StructField
-    deriving (Eq, Show, Read, Ord)
-
-data AssignmentValue =
-      ExpressionValue Expression
-    | StructValue Struct
     deriving (Eq, Show, Read, Ord)
 
 data Else =

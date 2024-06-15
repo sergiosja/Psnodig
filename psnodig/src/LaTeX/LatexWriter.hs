@@ -99,15 +99,15 @@ writeExpr (BinaryExp op exp1 exp2) fromMaths = do
             tell $ if not fromMaths then "$" else ""
         _ -> do
             writeExpr exp1 fromMaths
-            if not fromMaths then tell " $" >> transpileOp op >> tell "$ "
-            else tell " " >> transpileOp op >> tell " "
+            if not fromMaths then tell " $" >> writeOp op >> tell "$ "
+            else tell " " >> writeOp op >> tell " "
             writeExpr exp2 fromMaths
-writeExpr (CallExp functioncall) _ = do
+writeExpr (CallExp functioncall) _ =
     writeFunctionCall functioncall
 writeExpr (ListIndex name indexes) _ = do
     tell name
     mapM_ (\x -> tell "[" >> writeExpr x False >> tell "]") indexes
-writeExpr (Not expr) fromMaths = do
+writeExpr (Not expr) fromMaths =
     case expr of
         (CallExp (FunctionCall "in" args)) -> do
             writeExpr (head args) False
@@ -152,7 +152,7 @@ writeFunctionCall (FunctionCall funcname args) = do
             writeExpr (last args) False
         "add" -> do
             tell "add "
-            if length args == 2
+            if length args == 3
             then do
                 tell "("
                 writeExpr (head args) False >> tell ", "
@@ -184,10 +184,10 @@ writeFunc (FunctionDecl funcname args stmts) = do
 -- Statements
 
 writeStmt :: Statement -> Int -> LatexWriter ()
-writeStmt (Assignment target value) _ = do
-    writeAssignmentTarget target
+writeStmt (Assignment target expr) _ = do
+    writeAssignmentVar target
     tell " $\\gets$ "
-    writeAssignmentValue value
+    writeExpr expr False
     tell " \\;"
 writeStmt (Loop expr stmts) indent = do
     tell "\\While{$"
@@ -233,19 +233,15 @@ writeStmt Break _ =
 writeStmt Continue _ =
     tell "\\KwContinue \\;"
 
-writeAssignmentTarget :: AssignmentTarget -> LatexWriter ()
-writeAssignmentTarget (VariableTarget var) = tell $ "\\texttt{" ++ var ++ "}"
-writeAssignmentTarget (ListIndexTarget var indexes) = do
+writeAssignmentVar :: AssignmentVar -> LatexWriter ()
+writeAssignmentVar (VariableTarget var) = tell $ "\\texttt{" ++ var ++ "}"
+writeAssignmentVar (ListIndexTarget var indexes) = do
     tell var
     mapM_ (\x -> tell "[" >> writeExpr x False >> tell "]") indexes
-writeAssignmentTarget (StructFieldTarget struct) = do
+writeAssignmentVar (StructFieldTarget struct) = do
     tell "$"
     writeStructField struct
     tell "$"
-
-writeAssignmentValue :: AssignmentValue -> LatexWriter ()
-writeAssignmentValue (ExpressionValue expr) = writeExpr expr False
-writeAssignmentValue (StructValue struct) = writeStruct struct
 
 writeElse :: Else -> Int -> LatexWriter ()
 writeElse (ElseIf expr stmts maybeElse) indent = do
@@ -265,21 +261,20 @@ writeElse (Else stmts) indent = do
 
 -- Operators
 
-transpileOp :: Operator -> LatexWriter ()
-transpileOp op = tell $ case op of
-    Plus             -> "+"
-    Minus            -> "-"
-    Times            -> "\\cdot"
-    Division         -> "/"
-    LessThan         -> "<"
-    LessThanEqual    -> "\\leq"
-    GreaterThan      -> ">"
-    GreaterThanEqual -> "\\geq"
-    Equal            -> "="
-    NotEqual         -> "\\neq"
-    And              -> "\\land"
-    Or               -> "\\lor"
-    Modulo           -> "\\%"
+writeOp :: Operator -> LatexWriter ()
+writeOp Plus = tell "+"
+writeOp Minus = tell "-"
+writeOp Times = tell "\\cdot"
+writeOp Division = tell "/"
+writeOp LessThan = tell "<"
+writeOp LessThanEqual = tell "\\leq"
+writeOp GreaterThan = tell ">"
+writeOp GreaterThanEqual = tell "\\geq"
+writeOp Equal = tell "="
+writeOp NotEqual = tell "\\neq"
+writeOp And = tell "\\land"
+writeOp Or = tell "\\lor"
+writeOp Modulo = tell "\\%"
 
 
 -- Static stuff

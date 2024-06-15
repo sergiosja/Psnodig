@@ -31,7 +31,7 @@ type ScopeStack = [Scope]
 
 data ExecutionState = ExecutionState
     { structDecls :: StructDecls
-    , funcDecls     :: FuncDecls
+    , funcDecls   :: FuncDecls
     , scopeStack  :: ScopeStack
     , output      :: [String]
     }
@@ -505,19 +505,10 @@ evalStmts (stmt:stmts) = do
         Right value -> return (Right value)
 
 evalStmt :: Statement -> Psnodig (Either () Value)
-evalStmt (Assignment assTarget assValue) =
-    case assValue of
-        (ExpressionValue expr) -> do
-            value <- evalExpr expr
-            case assTarget of
-                (VariableTarget var) ->
-                    bindVar var value >> return (Left ())
-                (ListIndexTarget var indexExprs) ->
-                    updateListVar var indexExprs value >> return (Left ())
-                (StructFieldTarget structField) ->
-                    updateStructField structField expr >> return (Left ())
-        (StructValue struct) ->
-            case assTarget of
+evalStmt (Assignment assVar assExpr) =
+    case assExpr of -- burde egt ikke være to sjekker her. bedre å ha en sjekk i bindVar. fordi feks bindStruct går dit uansett?
+        (StructExpr struct) ->
+            case assVar of
                 (VariableTarget var) ->
                     bindStruct var struct >> return (Left ())
                 (ListIndexTarget var indexExprs) -> do
@@ -525,6 +516,15 @@ evalStmt (Assignment assTarget assValue) =
                     updateListVar var indexExprs fields >> return (Left ())
                 (StructFieldTarget structField) ->
                     updateStructField structField (StructExpr struct) >> return (Left ())
+        _ -> do
+            value <- evalExpr assExpr
+            case assVar of
+                (VariableTarget var) ->
+                    bindVar var value >> return (Left ())
+                (ListIndexTarget var indexExprs) ->
+                    updateListVar var indexExprs value >> return (Left ())
+                (StructFieldTarget structField) ->
+                    updateStructField structField assExpr >> return (Left ())
 
 evalStmt (Loop expr stmts) = do
     val <- evalExpr expr
@@ -778,7 +778,6 @@ callFunction (FunctionCall "append" args) = do
                     return $ Number 1 -- burde egt returnere listen?
                 StructFieldExp s@(StructField _ _) -> do
                     newValue <- evalExpr (head args)
-                    -- List currList <- evalStructFieldExprMain s
                     let newList = Constant (List $ list ++ [(Constant newValue)])
                     updateStructField s newList
                     return $ Number 1
