@@ -174,8 +174,20 @@ writeElse (Else stmts) indent = do
     mapM_ (\stmt -> (tell $ addIndents $ indent+1) >> writeStmt stmt (indent+1) >> tell "\n") stmts
     tell $ (addIndents indent) ++ "}"
 
+convertType :: Type -> String
+convertType NilType = "nil"
+convertType BooleanType = "bool"
+convertType NumberType = "int"
+convertType DecimalType = "dec"
+
+convertType TextType = "str"
+convertType ListType = "list"
+convertType HashSetType = "hset"
+convertType HashMapType = "hmap"
+convertType (StructType s) = s
+
 getArguments :: [Argument] -> [String]
-getArguments = map (\(Argument name t) -> name ++ " " ++ t)
+getArguments = map (\(Argument name t) -> name ++ " " ++ (convertType t))
 
 writeFunc :: FunctionDecl -> GourmetWriter ()
 writeFunc (FunctionDecl funcname args stmts) = do

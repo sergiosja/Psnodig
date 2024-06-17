@@ -33,15 +33,14 @@ unwrapArgs :: [Argument] -> [String]
 unwrapArgs = map (\(Argument name _) -> name)
 
 translateArg :: Argument -> String
-translateArg (Argument name t) = name ++
+translateArg (Argument name t) = name ++ ": " ++
     case t of
-        "int" -> ": int"
-        "float" -> ": float"
-        "double" -> ": float"
-        "str" -> ": str"
-        "boolean" -> ": bool"
-        "nil" -> ": None"
-        _ -> ""
+        NilType     -> "None"
+        BooleanType -> "bool"
+        NumberType  -> "int"
+        DecimalType -> "float"
+        TextType    -> "str"
+        _           -> ""
 
 translateArgs :: [Argument] -> [String]
 translateArgs args =
