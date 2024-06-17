@@ -30,7 +30,8 @@ lexer = Token.makeTokenParser emptyDef {
     Token.reservedNames =
         [ "while", "if", "func", "true", "false"
         , "return", "else", "for", "break", "set"
-        , "map", "not", "struct", "continue"
+        , "map", "not", "struct", "continue", "bool"
+        , "int", "dec", "str", "list", "hset", "hmap"
         ],
     Token.commentStart = "/*",
     Token.commentEnd = "*/",
@@ -103,7 +104,7 @@ parseValue = choice
     , try parseList
     ]
     where
-        parseNil = reservedOp "nil" *> pure Nil
+        parseNil = string "nil" *> pure Nil
         parseBool =
             Boolean <$> (reservedOp "true" *> pure True
                     <|> reservedOp "false" *> pure False)
@@ -121,6 +122,38 @@ parseValue = choice
 
 parsePair :: Parser (Expression, Expression)
 parsePair = (,) <$> parseExpr <* colon <*> parseExpr
+
+parseType :: Parser Type
+parseType = choice
+    [ try parseNilType
+    , try parseBooleanType
+    , try parseNumberType
+    , try parseDecimalType
+    , try parseTextType
+    , try parseListType
+    , try parseHashSetType
+    , try parseHashMapType
+    , parseStructType
+    ]
+    where
+        parseNilType =
+            reserved "nil" *> pure NilType
+        parseBooleanType =
+            reserved "bool" *> pure BooleanType
+        parseNumberType =
+            reserved "int" *> pure NumberType
+        parseDecimalType =
+            reserved "dec" *> pure DecimalType
+        parseTextType =
+            reserved "str" *> pure TextType
+        parseListType =
+            reserved "list" *> pure ListType
+        parseHashSetType =
+            reserved "hset" *> pure HashSetType
+        parseHashMapType =
+            reserved "hmap" *> pure HashMapType
+        parseStructType =
+            StructType <$> identifier
 
 -- Parse expressions
 
@@ -211,7 +244,7 @@ parseExpr1 = buildExpressionParser table term
 
 parseArgument :: Parser Argument
 parseArgument =
-    Argument <$> identifier <*> identifier
+    Argument <$> identifier <*> parseType
 
 parseFunctionDecl :: Parser FunctionDecl
 parseFunctionDecl =

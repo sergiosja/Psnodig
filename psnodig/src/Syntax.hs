@@ -26,14 +26,14 @@ data StructField = StructField Expression Expression
 
 -- Functions
 
-data FunctionDecl = FunctionDecl String [Argument] [Statement]
+data FunctionDecl = FunctionDecl String [Argument] [Statement] -- legg inn typer her
     deriving (Eq, Show, Read, Ord)
 
 data FunctionCall = FunctionCall String [Expression]
     deriving (Eq, Show, Read, Ord)
 
 
-data Argument = Argument String String
+data Argument = Argument String Type
     deriving (Eq, Show, Read, Ord)
 
 -- Statements
@@ -42,7 +42,7 @@ data Statement =
       Assignment AssignmentVar Expression
     | Loop Expression [Statement]
     | If Expression [Statement] (Maybe Else)
-    | ForEach String Iterable [Statement] -- change expr to `data Iterable = ListIterable | .. | TextIterable`
+    | ForEach String Expression [Statement] -- change expr to `data Iterable = ListIterable | .. | TextIterable`
     | For String Expression Expression [Statement]
     | CallStmt FunctionCall
     | Return Expression
@@ -72,8 +72,9 @@ data Expression =
     | ListIndex String [Expression]
     | CallExp FunctionCall
     | Not Expression
-    | StructExpr Struct
+    | StructExpr Struct -- flytt denne ut og lag en assignmentValue likevel
     | StructFieldExp StructField
+    -- | ParensExpr Expression -- parses med parenteser
     deriving (Eq, Show, Read, Ord)
 
 data Operator =
@@ -104,4 +105,16 @@ data Value =
     | HashSet (Set.Set Expression)
     | HashMap (Map.Map Expression Expression)
     | StructVal [(String, Value)]
+    deriving (Eq, Show, Read, Ord)
+
+data Type =
+      NilType
+    | BooleanType
+    | NumberType
+    | DecimalType
+    | TextType
+    | ListType
+    | HashSetType
+    | HashMapType
+    | StructType String -- i interpreten kan dette sjekkes opp mot den i structdecl!
     deriving (Eq, Show, Read, Ord)
