@@ -1,0 +1,39 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,commath} 
+\usepackage[linesnumbered, ruled]{algorithm2e}
+\SetKwProg{proc}{Procedure}{}{}
+\SetKwFunction{DFS}{DFS}
+\SetKwFunction{add}{add}
+\SetKwFunction{append}{append}
+\SetKwFunction{get}{get}
+\SetKwFunction{length}{length}
+\SetKwFunction{pop}{pop}
+\SetKwFunction{print}{print}
+\SetKw{KwNot}{not}
+\DontPrintSemicolon
+\renewcommand{\thealgocf}{}
+\begin{document}
+
+\begin{algorithm}[H]
+\KwIn{A set of visited nodes, a stack of nodes, a graph and a starting node}
+\KwOut{The list of booleans}
+\proc{$\DFS(visited, stack, graph, node)$}{
+	add node to visited \;
+	append node to stack \;
+	\While{$\abs{stack} > 0$}{
+		\texttt{m} $\gets$ \pop(stack) \;
+		
+		\For{$nb \in \get(m, graph)$}{
+			\uIf{$nb \notin visited$}{
+				add nb to visited \;
+				append nb to stack \;
+			}
+		}
+	}
+	\Return visited \;
+}
+\caption{DFS}
+\end{algorithm}
+
+\end{document}

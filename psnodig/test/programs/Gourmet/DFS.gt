@@ -1,0 +1,20 @@
+? A set of visited nodes, a stack of nodes, a graph and a starting node?
+! The list of booleans!
+
+func DFS(visited x, stack x, graph x, node x) {
+    add(node, visited)
+    append(node, stack)
+    while length(stack) > 0 {
+        m := pop(stack)
+        # print(m)
+        for nb := get(m, graph) {
+            if not in(nb, visited) {
+                add(nb, visited)
+                append(nb, stack)
+            }
+        }
+    }
+    return visited
+}
+
+DFS(set {}, [], map {}, 0)

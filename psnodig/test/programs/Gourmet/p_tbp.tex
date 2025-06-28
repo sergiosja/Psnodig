@@ -3,24 +3,32 @@
 \usepackage{amsmath,commath} 
 \usepackage[linesnumbered, ruled]{algorithm2e}
 \SetKwProg{proc}{Procedure}{}{}
-\SetKwFunction{Person}{Person}
-\SetKwFunction{f}{f}
-\SetKwFunction{print}{print}
-\SetKw{KwTo}{to}
+\SetKwFunction{BinarySearch}{BinarySearch}
+\SetKw{KwFalse}{false}
+\SetKw{KwTrue}{true}
 \DontPrintSemicolon
 \renewcommand{\thealgocf}{}
 \begin{document}
 
 \begin{algorithm}[H]
-\proc{$\f()$}{
-	\For{$team \in teams$}{
-		\print(team) \;
+\proc{$\BinarySearch(A, x)$}{
+	\texttt{low} $\gets$ 0 \;
+	\texttt{high} $\gets$ \abs{A} $-$ 1 \;
+	\While{$low \leq high$}{
+		\texttt{i} $\gets$ $\lfloor$$\frac{low + high}{2}$$\rfloor$ \;
+		\uIf{$A[i] = x$}{
+			\Return \KwTrue \;
+		}
+		\uElseIf{$A[i] > x$}{
+			\texttt{high} $\gets$ i $-$ 1 \;
+		}
+		\uElse{
+			\texttt{low} $\gets$ i $+$ 1 \;
+		}
 	}
-	\For{$index \gets 0$ \KwTo $10$}{
-		\print(index) \;
-	}
+	\Return \KwFalse \;
 }
-\caption{f}
+\caption{BinarySearch}
 \end{algorithm}
 
 \end{document}
