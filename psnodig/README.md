@@ -13,6 +13,43 @@ Psnodig has a writer for the following formats:
 
 The flowchart writer is a prototype, as it still struggles with complex programs (particularly the presence of nested control flow statements).
 
+# Use
+
+First you must clone the repository. Then run
+
+```
+stack install
+```
+
+To execute a Gourmet program, run
+
+```
+psnodig <program.gt>
+```
+
+To transpile a Gourmet program to pseudocode (LaTeX and PDF), run
+
+```
+psnodig tbp pdf <program.gt>
+```
+
+To transpile a Gourmet program to a flowchart (LaTeX and PDF), run
+
+```
+psnodig ibp pdf <program.gt>
+```
+
+You can also drop `pdf` if you only want the LaTeX file. To transpile a Gourmet program to Gourmet and Python, you can run
+
+```
+psnodig gourmet <program.gt>
+```
+
+```
+psnodig python <program.gt>
+```
+
+
 # Post submission additions
 
 Here are all additions to the source code, after I submitted the thesis 15th of May.
